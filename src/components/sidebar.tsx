@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -20,6 +20,10 @@ import {
 } from "lucide-react";
 import { Icons } from "@/assets";
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 interface NavChild {
   label: string;
   href: string;
@@ -32,6 +36,10 @@ interface NavItem {
   children?: NavChild[];
 }
 
+// ---------------------------------------------------------------------------
+// FULL NAV ITEMS (TIDAK DIPOTONG)
+// ---------------------------------------------------------------------------
+
 const navItems: NavItem[] = [
   {
     label: "Dashboard",
@@ -42,8 +50,30 @@ const navItems: NavItem[] = [
     label: "Perusahaan",
     icon: Building2,
     children: [
-      { label: "Daftar Perusahaan", href: "/perusahaan" },
-      { label: "Tambah Perusahaan", href: "/perusahaan/tambah" },
+      {
+        label: "Daftar Perusahaan Bersertifikat BNSP",
+        href: "/perusahaan/bnsp",
+      },
+      {
+        label: "Daftar Perusahaan Kantor Pusat",
+        href: "/perusahaan/kantor-pusat",
+      },
+      { label: "Daftar Perusahaan TBK", href: "/perusahaan/tbk" },
+      { label: "Daftar Perusahaan PROPER", href: "/perusahaan/proper" },
+      {
+        label: "Daftar Perusahaan PROPER 2x Kali Biru",
+        href: "/perusahaan/proper-2kali-biru",
+      },
+      { label: "Daftar Perusahaan ISO", href: "/perusahaan/iso" },
+      { label: "Daftar Perusahaan Customer", href: "/perusahaan/customer" },
+      { label: "Daftar Perusahaan Prioritas", href: "/perusahaan/prioritas" },
+      { label: "Daftar Perusahaan ENV : MA", href: "/perusahaan/env-ma" },
+      { label: "Daftar Perusahaan Vendor", href: "/perusahaan/vendor" },
+      {
+        label: "Daftar Perusahaan Per. berdasarkan Alamat",
+        href: "/perusahaan/berdasarkan-alamat",
+      },
+      { label: "Daftar Jabatan Teknis", href: "/perusahaan/jabatan-teknis" },
     ],
   },
   {
@@ -88,19 +118,40 @@ const navItems: NavItem[] = [
       { label: "Daftar Login", href: "/karyawan/daftar-login" },
       { label: "Form Cuti", href: "/karyawan/form-cuti" },
       { label: "List Cuti", href: "/karyawan/list-cuti" },
-      { label: "Riwayat Cuti", href: "/karyawan/riwayat-cuti" },
-      { label: "Profil", href: "/karyawan/profil" },
     ],
   },
 ];
 
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function Sidebar() {
   const pathname = usePathname();
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+
+  // ✅ Persist state
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return JSON.parse(localStorage.getItem("openMenus") || "{}");
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
+
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  useEffect(() => {
+    localStorage.setItem("openMenus", JSON.stringify(openMenus));
+  }, [openMenus]);
+
   function toggleMenu(label: string) {
-    setOpenMenus((prev) => ({ ...prev, [label]: !prev[label] }));
+    setOpenMenus((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
   }
 
   function isActive(href?: string) {
@@ -113,16 +164,16 @@ export default function Sidebar() {
     return item.children?.some((c) => isActive(c.href)) ?? false;
   }
 
-  // Shared nav content — dipakai di desktop dan mobile
   function NavContent({ onLinkClick }: { onLinkClick?: () => void }) {
     return (
       <>
-        {/* Nav */}
         <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isParentActive(item);
-            const isOpen = openMenus[item.label];
+
+            // 🔥 ini kuncinya
+            const isOpen = openMenus[item.label] ?? active;
 
             if (!item.children) {
               return (
@@ -130,13 +181,13 @@ export default function Sidebar() {
                   key={item.label}
                   href={item.href!}
                   onClick={onLinkClick}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium ${
                     active
                       ? "bg-emerald-50 text-emerald-600"
                       : "text-zinc-600 hover:bg-emerald-50 hover:text-emerald-600"
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -146,16 +197,16 @@ export default function Sidebar() {
               <div key={item.label}>
                 <button
                   onClick={() => toggleMenu(item.label)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium ${
                     active
                       ? "bg-emerald-50 text-emerald-600"
                       : "text-zinc-600 hover:bg-emerald-50 hover:text-emerald-600"
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className="w-4 h-4" />
                   <span className="flex-1 text-left">{item.label}</span>
                   <ChevronDown
-                    className={`w-3 h-3 shrink-0 transition-transform duration-200 ${
+                    className={`w-3 h-3 transition-transform ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -168,7 +219,7 @@ export default function Sidebar() {
                         key={child.href}
                         href={child.href}
                         onClick={onLinkClick}
-                        className={`block px-2 py-1.5 rounded-md text-xs transition-colors ${
+                        className={`block px-2 py-1.5 text-xs ${
                           isActive(child.href)
                             ? "text-emerald-600 font-medium"
                             : "text-zinc-500 hover:text-emerald-600"
@@ -184,29 +235,25 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Bottom: Settings & Logout */}
+        {/* Bottom */}
         <div className="px-2 py-3 border-t border-zinc-200 space-y-0.5">
           <Link
-            href="/pengaturan"
-            onClick={onLinkClick}
-            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-              isActive("/pengaturan")
-                ? "bg-emerald-50 text-emerald-600"
-                : "text-zinc-600 hover:bg-emerald-50 hover:text-emerald-600"
-            }`}
+            href="/karyawan/profil"
+            className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-600 hover:text-emerald-600"
           >
-            <Settings className="w-4 h-4 shrink-0" />
+            <Settings className="w-4 h-4" />
             <span>Pengaturan</span>
           </Link>
+
           <button
             onClick={() => {
               localStorage.removeItem("token");
               localStorage.removeItem("user");
               window.location.href = "/login";
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-zinc-600 hover:bg-red-50 hover:text-red-500 transition-colors"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-600 hover:text-red-500"
           >
-            <LogOut className="w-4 h-4 shrink-0" />
+            <LogOut className="w-4 h-4" />
             <span>Logout</span>
           </button>
         </div>
@@ -216,18 +263,15 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* ─── Desktop Sidebar ─── */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-[250px] bg-white z-40">
-        {/* Logo */}
-        <div className="flex items-center px-4 py-4 border-b border-zinc-200">
-          <div className="relative w-full h-8">
+      {/* Desktop */}
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-[250px] bg-white">
+        <div className="flex justify-center pb-4 pt-4">
+          <div className="w-full max-w-[10rem]">
             <Image
               src={Icons.BenefitaText}
-              alt="Benefita"
-              fill
-              className="object-contain"
+              alt="logo"
+              className="w-full h-auto object-contain"
               priority
-              quality={100}
             />
           </div>
         </div>
@@ -235,47 +279,26 @@ export default function Sidebar() {
         <NavContent />
       </aside>
 
-      {/* ─── Mobile: Hamburger trigger ─── */}
-      {/* Tombol ini dirender di AppLayout/Header, tapi bisa juga di sini */}
+      {/* Mobile */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-lg bg-white text-zinc-600 hover:text-emerald-600 transition-colors"
+        className="md:hidden fixed top-3 left-3 z-50 p-2 bg-white rounded"
       >
         <Menu className="w-5 h-5" />
       </button>
 
-      {/* ─── Mobile Sidebar Overlay ─── */}
       {mobileOpen && (
         <>
-          {/* Backdrop */}
           <div
-            className="md:hidden fixed inset-0 z-40 bg-black/50"
+            className="fixed inset-0 bg-black/50"
             onClick={() => setMobileOpen(false)}
           />
 
-          {/* Sidebar panel — sama persis dengan desktop, cuma lebih narrow */}
-          <aside className="md:hidden fixed left-0 top-0 h-screen w-[220px] bg-white z-50 flex flex-col">
-            {/* Logo + close */}
-            <div className="flex items-center gap-2 px-4 py-4 border-b border-zinc-200">
-              <div className="relative flex-1 h-8">
-                <Image
-                  src={Icons.BenefitaText}
-                  alt="Benefita"
-                  fill
-                  className="object-contain"
-                  priority
-                  quality={100}
-                />
-              </div>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="shrink-0 p-1 text-zinc-600 hover:text-emerald-600 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <NavContent onLinkClick={() => setMobileOpen(false)} />
+          <aside className="fixed left-0 top-0 h-screen w-[220px] bg-white z-50">
+            <button onClick={() => setMobileOpen(false)}>
+              <X />
+            </button>
+            <NavContent />
           </aside>
         </>
       )}
