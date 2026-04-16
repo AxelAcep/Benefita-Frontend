@@ -230,7 +230,7 @@ export default function KalenderTraining() {
         ))}
       </div>
 
-      {/* Table */}
+      {/* Tables */}
       <div className="overflow-x-auto">
         <table className="w-full text-xs" style={{ minWidth: "900px" }}>
           <thead>
