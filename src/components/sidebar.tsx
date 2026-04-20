@@ -27,6 +27,7 @@ import { Icons } from "@/assets";
 interface NavChild {
   label: string;
   href: string;
+  children?: NavChild[]; // ✅ support nested
 }
 
 interface NavItem {
@@ -37,7 +38,7 @@ interface NavItem {
 }
 
 // ---------------------------------------------------------------------------
-// FULL NAV ITEMS (TIDAK DIPOTONG)
+// Nav Items
 // ---------------------------------------------------------------------------
 
 const navItems: NavItem[] = [
@@ -80,8 +81,34 @@ const navItems: NavItem[] = [
     label: "BDO & Aktivitas",
     icon: Activity,
     children: [
-      { label: "Aktivitas BDO", href: "/bdo" },
-      { label: "Laporan", href: "/bdo/laporan" },
+      { label: "Akun Perusahaan (BDO)", href: "/bdo/akun-perusahaan" },
+      { label: "Pengiriman Brosur (POS)", href: "/bdo/pengiriman-brosur" },
+      { label: "Rekap Aktifitas Harian", href: "/bdo/rekap-aktifitas-harian" },
+      { label: "Rekap Kontrak Bulanan", href: "/bdo/rekap-aktifitas-bulanan" },
+      { label: "ASAP / Daftar ASAP", href: "/bdo/asap" },
+      { label: "Tugas", href: "/bdo/tugas" },
+      {
+        label: "Aset Marketing",
+        href: "/bdo/aset-marketing",
+        children: [
+          {
+            label: "Whatsapp Story",
+            href: "/bdo/aset-marketing/whatsapp-story",
+          },
+          {
+            label: "Email Blasting Bulan Ini",
+            href: "/bdo/aset-marketing/email-blasting-bulan-ini",
+          },
+          {
+            label: "Email Blasting Bulan Depan",
+            href: "/bdo/aset-marketing/email-blasting-bulan-depan",
+          },
+          {
+            label: "Email Blasting Bulan Depan (Prioritas)",
+            href: "/bdo/aset-marketing/email-blasting-bulan-depan-prioritas",
+          },
+        ],
+      },
     ],
   },
   {
@@ -129,7 +156,6 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
 
-  // ✅ Persist state
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -147,11 +173,8 @@ export default function Sidebar() {
     localStorage.setItem("openMenus", JSON.stringify(openMenus));
   }, [openMenus]);
 
-  function toggleMenu(label: string) {
-    setOpenMenus((prev) => ({
-      ...prev,
-      [label]: !prev[label],
-    }));
+  function toggleMenu(key: string) {
+    setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
   function isActive(href?: string) {
@@ -161,7 +184,81 @@ export default function Sidebar() {
 
   function isParentActive(item: NavItem) {
     if (item.href) return isActive(item.href);
-    return item.children?.some((c) => isActive(c.href)) ?? false;
+    return item.children?.some((c) => isChildActive(c)) ?? false;
+  }
+
+  // ✅ Rekursif: cek apakah child atau sub-child-nya ada yang aktif
+  function isChildActive(child: NavChild): boolean {
+    if (isActive(child.href)) return true;
+    return child.children?.some((sc) => isChildActive(sc)) ?? false;
+  }
+
+  // ✅ Render child — bisa punya sub-children (1 level nested)
+  function renderChild(child: NavChild, onLinkClick?: () => void) {
+    const hasSubChildren = child.children && child.children.length > 0;
+    const childActive = isChildActive(child);
+
+    // Key unik pakai href supaya tidak konflik antar parent
+    const menuKey = child.href;
+    const isOpen = openMenus[menuKey] ?? childActive;
+
+    if (!hasSubChildren) {
+      return (
+        <Link
+          key={child.href}
+          href={child.href}
+          onClick={onLinkClick}
+          className={`block px-2 py-1.5 text-xs rounded ${
+            isActive(child.href)
+              ? "text-emerald-600 font-medium"
+              : "text-zinc-500 hover:text-emerald-600"
+          }`}
+        >
+          {child.label}
+        </Link>
+      );
+    }
+
+    return (
+      <div key={child.href}>
+        {/* Header sub-menu — bisa diklik untuk expand */}
+        <button
+          onClick={() => toggleMenu(menuKey)}
+          className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded ${
+            childActive
+              ? "text-emerald-600 font-medium"
+              : "text-zinc-500 hover:text-emerald-600"
+          }`}
+        >
+          <span>{child.label}</span>
+          <ChevronDown
+            className={`w-3 h-3 transition-transform flex-shrink-0 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {/* Sub-children */}
+        {isOpen && (
+          <div className="ml-3 pl-3 border-l border-zinc-100 space-y-0.5 mt-0.5">
+            {child.children!.map((sub) => (
+              <Link
+                key={sub.href}
+                href={sub.href}
+                onClick={onLinkClick}
+                className={`block px-2 py-1.5 text-[11px] rounded ${
+                  isActive(sub.href)
+                    ? "text-emerald-600 font-medium"
+                    : "text-zinc-400 hover:text-emerald-600"
+                }`}
+              >
+                {sub.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   function NavContent({ onLinkClick }: { onLinkClick?: () => void }) {
@@ -171,8 +268,6 @@ export default function Sidebar() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isParentActive(item);
-
-            // 🔥 ini kuncinya
             const isOpen = openMenus[item.label] ?? active;
 
             if (!item.children) {
@@ -214,20 +309,9 @@ export default function Sidebar() {
 
                 {isOpen && (
                   <div className="mt-0.5 ml-3 pl-3 border-l border-zinc-200 space-y-0.5">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        onClick={onLinkClick}
-                        className={`block px-2 py-1.5 text-xs ${
-                          isActive(child.href)
-                            ? "text-emerald-600 font-medium"
-                            : "text-zinc-500 hover:text-emerald-600"
-                        }`}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
+                    {item.children.map((child) =>
+                      renderChild(child, onLinkClick),
+                    )}
                   </div>
                 )}
               </div>
@@ -275,7 +359,6 @@ export default function Sidebar() {
             />
           </div>
         </div>
-
         <NavContent />
       </aside>
 
@@ -293,12 +376,14 @@ export default function Sidebar() {
             className="fixed inset-0 bg-black/50"
             onClick={() => setMobileOpen(false)}
           />
-
-          <aside className="fixed left-0 top-0 h-screen w-[220px] bg-white z-50">
-            <button onClick={() => setMobileOpen(false)}>
-              <X />
+          <aside className="fixed left-0 top-0 h-screen w-[220px] bg-white z-50 flex flex-col">
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="self-end p-3"
+            >
+              <X className="w-5 h-5" />
             </button>
-            <NavContent />
+            <NavContent onLinkClick={() => setMobileOpen(false)} />
           </aside>
         </>
       )}
