@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Menu,
   X,
+  FileText,
 } from "lucide-react";
 import { Icons } from "@/assets";
 
@@ -115,8 +116,45 @@ const navItems: NavItem[] = [
     label: "Peserta & Sertifikasi",
     icon: Users,
     children: [
-      { label: "Peserta", href: "/peserta" },
-      { label: "Sertifikasi", href: "/peserta/sertifikasi" },
+      { label: "Peserta Final", href: "/peserta/final" },
+      { label: "pemegang sertifikat BNSP", href: "/peserta/sertifikat-bnsp" },
+      {
+        label: "Daftar Permintaan Peserta (Offline)",
+        href: "/peserta/permintaan-offline",
+      },
+      { label: "Daftar Peserta (Bulanan)", href: "/peserta/bulanan" },
+      { label: "Daftar Peserta FIX (Bulanan)", href: "/peserta/fix" },
+      { label: "Daftar Peserta Cancle (Bulanan)", href: "/peserta/cancle" },
+      { label: "Rekap Peserta per AE", href: "/peserta/rekap-ae" },
+      { label: "Rekap Peserta per Customer", href: "/peserta/rekap-customer" },
+      {
+        label: "Rekap Peserta Reguler (Tahunan)",
+        href: "/peserta/rekap-tahunan",
+      },
+      {
+        label: "Rekap Pelatihan Running (Tahunan)",
+        href: "/peserta/rekap-pelatihan",
+      },
+      { label: "Data Peserta Uji (LSP)", href: "/peserta/data-uji" },
+      {
+        label: "Data Peserta Uji + Pelatihan (LSP)",
+        href: "/peserta/data-uji-pelatihan",
+      },
+    ],
+  },
+  {
+    label: "Dokumen",
+    icon: FileText,
+    children: [
+      { label: "Permintaan Nomor Surat (Umum)", href: "/dokumen/umum" },
+      {
+        label: "Permintaan Nomor Surat (Marketing)",
+        href: "/dokumen/marketing",
+      },
+      {
+        label: "Permintaan Nomor Surat (LSP)",
+        href: "/dokumen/lsp",
+      },
     ],
   },
   {
