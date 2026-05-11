@@ -1,5 +1,16 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// ─────────────────────────────────────────────
+// TYPES — tidak berubah
+// ─────────────────────────────────────────────
+
+export interface User {
+  id: string;
+  nama: string;
+  email: string;
+  role: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -11,12 +22,7 @@ export interface LoginResponse {
   requireOtp: boolean;
   message: string;
   token?: string;
-  user?: {
-    id: string;
-    nama: string;
-    email: string;
-    role: string;
-  };
+  user?: User;
 }
 
 export interface VerifyOtpRequest {
@@ -29,15 +35,43 @@ export interface VerifyOtpRequest {
 export interface VerifyOtpResponse {
   message: string;
   token: string;
-  user: {
-    id: string;
-    nama: string;
-    email: string;
-    role: string;
-  };
+  user: User;
 }
 
-// Generate device hash dari browser fingerprint sederhana
+// ─────────────────────────────────────────────
+// IN-MEMORY SESSION
+// Access token disimpan di sini — tidak menyentuh localStorage sama sekali.
+// Hilang saat tab/halaman ditutup, tapi silent refresh akan ambil yang baru
+// otomatis selama refresh token (httpOnly cookie) masih valid.
+// ─────────────────────────────────────────────
+
+interface Session {
+  token: string;
+  user: User;
+}
+
+let _session: Session | null = null;
+
+export function getSession(): Session | null {
+  return _session;
+}
+
+export function getAccessToken(): string | null {
+  return _session?.token ?? null;
+}
+
+function setSession(token: string, user: User) {
+  _session = { token, user };
+}
+
+function clearSession() {
+  _session = null;
+}
+
+// ─────────────────────────────────────────────
+// DEVICE HELPERS — tidak berubah
+// ─────────────────────────────────────────────
+
 export function generateDeviceHash(): string {
   const nav = window.navigator;
   const raw = `${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
@@ -58,31 +92,150 @@ export function generateDeviceLabel(): string {
   return "Unknown Browser";
 }
 
+// ─────────────────────────────────────────────
+// AUTH API
+// ─────────────────────────────────────────────
+
 export async function loginUser(payload: LoginRequest): Promise<LoginResponse> {
   const res = await fetch(`${API_URL}/api/user/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include", // supaya cookie refresh_token diterima browser
     body: JSON.stringify(payload),
   });
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Login gagal");
+
+  // Kalau device trusted, langsung simpan ke memory
+  if (!data.requireOtp && data.token && data.user) {
+    setSession(data.token, data.user);
+  }
+
   return data;
 }
 
-export async function verifyOtp(payload: VerifyOtpRequest): Promise<VerifyOtpResponse> {
+export async function verifyOtp(
+  payload: VerifyOtpRequest,
+): Promise<VerifyOtpResponse> {
   const res = await fetch(`${API_URL}/api/user/verify-otp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(payload),
   });
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Verifikasi OTP gagal");
+
+  // Simpan ke memory setelah OTP sukses
+  setSession(data.token, data.user);
+
   return data;
 }
 
-export function saveSession(token: string, user: VerifyOtpResponse["user"]) {
-  localStorage.setItem("token", token);
-  localStorage.setItem("user", JSON.stringify(user));
+/**
+ * Silent refresh — panggil saat:
+ * 1. App pertama kali load (cek apakah cookie masih valid)
+ * 2. fetchWithAuth dapat 401 (access token expired)
+ *
+ * Refresh token dikirim otomatis oleh browser via httpOnly cookie.
+ * Return true kalau berhasil, false kalau harus login ulang.
+ */
+let isRefreshing = false; // Variable di luar fungsi
+
+export async function silentRefresh(): Promise<boolean> {
+  if (isRefreshing) return false; // Cegah pemanggilan ganda
+  isRefreshing = true;
+
+  try {
+    const res = await fetch(`${API_URL}/api/user/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      clearSession();
+      return false;
+    }
+
+    const data = await res.json();
+    setSession(data.token, data.user);
+    return true;
+  } catch {
+    clearSession();
+    return false;
+  } finally {
+    isRefreshing = false; // Reset lock
+  }
+}
+
+/**
+ * Logout — hapus memory + minta server clear cookie
+ */
+export async function logout(): Promise<void> {
+  try {
+    await fetch(`${API_URL}/api/user/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+  } finally {
+    clearSession();
+  }
+}
+
+// ─────────────────────────────────────────────
+// FETCH WRAPPER
+// Pakai ini untuk semua request yang butuh autentikasi.
+// Otomatis sisipkan Authorization header + retry sekali kalau 401.
+// ─────────────────────────────────────────────
+
+export async function fetchWithAuth(
+  input: RequestInfo,
+  init: RequestInit = {},
+): Promise<Response> {
+  const doFetch = (token: string) =>
+    fetch(input, {
+      ...init,
+      credentials: "include",
+      headers: {
+        ...init.headers,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+  const token = getAccessToken();
+  if (!token) throw new Error("Tidak ada sesi aktif.");
+
+  const res = await doFetch(token);
+
+  // Access token expired → coba silent refresh sekali
+  if (res.status === 401) {
+    const refreshed = await silentRefresh();
+    if (!refreshed) throw new Error("Sesi berakhir. Silakan login ulang.");
+
+    const newToken = getAccessToken()!;
+    return doFetch(newToken);
+  }
+
+  return res;
+}
+
+export interface PegawaiDropdownItem {
+  id: string;
+  nama: string;
+  prefix?: string | null;
+  kode?: string | null;
+}
+
+export async function getPegawaiMarketingSales(): Promise<
+  PegawaiDropdownItem[]
+> {
+  const res = await fetch(`${API_URL}/api/user/dropdown/sales`); // endpoint backend
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengambil data pegawai");
+  }
+  const data = await res.json();
+  return data.data; // asumsikan response { data: PegawaiDropdownItem[] }
 }

@@ -18,9 +18,13 @@ import {
   Menu,
   X,
   FileText,
+  Database,
 } from "lucide-react";
 import { Icons } from "@/assets";
+// Tambah useAuth di import
+import { useAuth } from "@/context/AuthContext";
 
+// Di dalam component Sidebar(), tambah:
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -185,6 +189,11 @@ const navItems: NavItem[] = [
       { label: "List Cuti", href: "/karyawan/list-cuti" },
     ],
   },
+  {
+    label: "Database",
+    href: "/database",
+    icon: Database,
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -193,6 +202,7 @@ const navItems: NavItem[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { logout: handleLogout } = useAuth();
 
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
@@ -368,11 +378,7 @@ export default function Sidebar() {
           </Link>
 
           <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              localStorage.removeItem("user");
-              window.location.href = "/login";
-            }}
+            onClick={handleLogout}
             className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-600 hover:text-red-500"
           >
             <LogOut className="w-4 h-4" />
