@@ -430,12 +430,21 @@ export default function DetailInstansiPerusahaanPage() {
 
         {/* --- TAB CONTENT --- */}
         <div className="animate-in fade-in duration-300">
-          <div className="flex w-full justify-end">
+          <div className="flex w-full justify-end gap-3">
             <Button
               className="mb-2 bg-emerald-500 hover:bg-emerald-600"
               onClick={() => setPosModalOpen(true)}
             >
               Kirim pos
+            </Button>
+
+            <Button
+              className="mb-2 bg-emerald-500 hover:bg-emerald-600"
+              onClick={() =>
+                router.push(`/database/perusahaan/${id}/penawaran`)
+              }
+            >
+              Buat Penawaran
             </Button>
           </div>
 

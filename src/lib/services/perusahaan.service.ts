@@ -942,3 +942,100 @@ export async function deletePosPerusahaan(
   }
   return res.json();
 }
+
+// ── Interfaces ──
+export interface Penawaran {
+  id: string;
+  kodePelatihan: string[];
+  tanggal: string;
+  filePath: string | null;
+}
+
+// ── CREATE ──
+export async function createPenawaran(data: {
+  kodePelatihan: string[];
+}): Promise<Penawaran> {
+  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kodePelatihan: data.kodePelatihan }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal membuat penawaran.");
+  }
+  return res.json();
+}
+
+// ── GET ALL ──
+export async function getPenawaran(): Promise<Penawaran[]> {
+  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran`, {
+    method: "GET",
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengambil data penawaran.");
+  }
+  return res.json();
+}
+
+// ── GET BY ID ──
+export async function getPenawaranById(id: string): Promise<Penawaran> {
+  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran/${id}`, {
+    method: "GET",
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengambil penawaran.");
+  }
+  return res.json();
+}
+
+// ── UPDATE ──
+export async function updatePenawaran(
+  id: string,
+  data: {
+    kodePelatihan?: string[];
+    file?: File;
+  },
+): Promise<Penawaran> {
+  const formData = new FormData();
+  if (data.kodePelatihan) {
+    formData.append("kodePelatihan", JSON.stringify(data.kodePelatihan));
+  }
+  if (data.file) {
+    formData.append("file", data.file);
+  }
+
+  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran/${id}`, {
+    method: "PUT",
+    body: formData,
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengupdate penawaran.");
+  }
+  return res.json();
+}
+
+// ── DELETE ──
+export async function deletePenawaran(
+  id: string,
+): Promise<{ message: string }> {
+  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal menghapus penawaran.");
+  }
+  return res.json();
+}
+
+// ── UPLOAD FILE ──
+export async function uploadFilePenawaran(
+  id: string,
+  file: File,
+): Promise<Penawaran> {
+  return updatePenawaran(id, { file });
+}

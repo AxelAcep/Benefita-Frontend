@@ -12,6 +12,12 @@ import {
   createPosPerusahaan,
   updatePosPerusahaan,
   deletePosPerusahaan,
+  Penawaran,
+  getPenawaran,
+  createPenawaran,
+  updatePenawaran,
+  deletePenawaran,
+  uploadFilePenawaran,
 } from "@/lib/services/perusahaan.service";
 
 const PAGE_SIZE = 4;
@@ -260,4 +266,104 @@ export function usePosPerusahaan(idPerusahaan: string) {
   }, []);
 
   return { data, loading, error, refetch: fetch, create, update, remove };
+}
+
+export function usePenawaran() {
+  const [data, setData] = useState<Penawaran[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getPenawaran();
+      setData(result);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
+
+  const create = useCallback(async (kodePelatihan: string[]) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const created = await createPenawaran({ kodePelatihan });
+      setData((prev) => [created, ...prev]);
+      return created;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const update = useCallback(
+    async (id: string, payload: { kodePelatihan?: string[]; file?: File }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const updated = await updatePenawaran(id, payload);
+        setData((prev) =>
+          prev.map((item) => (item.id === updated.id ? updated : item)),
+        );
+        return updated;
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
+  const remove = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await deletePenawaran(id);
+      setData((prev) => prev.filter((item) => item.id !== id));
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const uploadFile = useCallback(async (id: string, file: File) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await uploadFilePenawaran(id, file);
+      setData((prev) =>
+        prev.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      return updated;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetch,
+    create,
+    update,
+    remove,
+    uploadFile,
+  };
 }
