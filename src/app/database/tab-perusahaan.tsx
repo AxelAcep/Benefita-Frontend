@@ -43,9 +43,6 @@ export default function TabPerusahaan() {
           >
             Tambah Data
           </TableButton>
-          <TableButton isReverse onClick={() => {}}>
-            Kirim pos
-          </TableButton>
         </div>
       </div>
 

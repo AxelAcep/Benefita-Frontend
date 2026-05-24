@@ -806,3 +806,139 @@ export async function updateHakAksesKaryawan(
     );
   }
 }
+
+export interface LogPerubahan {
+  id: string;
+  perusahaanId: string;
+  field: string;
+  dataLama: string | null;
+  dataBaru: string | null;
+  diubahOleh: string;
+  tanggal: string;
+}
+
+export interface LogPaginationResponse {
+  success: boolean;
+  data: LogPerubahan[];
+  pagination: {
+    totalData: number;
+    totalPages: number;
+    currentPage: number;
+    limit: number;
+  };
+}
+
+export async function getLogPerusahaan(
+  perusahaanId: string,
+  page: number = 1,
+  limit: number = 10,
+  search: string = "",
+): Promise<LogPaginationResponse> {
+  // Build query string
+  const query = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    search: search,
+  }).toString();
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan/${perusahaanId}/logs?${query}`,
+    {
+      method: "GET",
+    },
+  );
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengambil data history.");
+  }
+
+  return res.json();
+}
+
+// ── Interfaces ──
+export interface PosPerusahaan {
+  id: string;
+  nama: string;
+  jabatan: string;
+  acc: string;
+  followUp: string | null;
+  noInduk: string;
+}
+
+// ── CREATE ──
+export async function createPosPerusahaan(data: {
+  noInduk: string;
+  nama: string;
+  jabatan: string;
+  acc: string;
+  followUp?: string;
+}): Promise<PosPerusahaan> {
+  const res = await fetchWithAuth(`${API_URL}/api/database/perusahaan/pos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal menambah POS.");
+  }
+  return res.json();
+}
+
+// ── GET ──
+export async function getPosPerusahaan(
+  idPerusahaan: string,
+): Promise<PosPerusahaan[]> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan/pos/${idPerusahaan}`,
+    { method: "GET" },
+  );
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengambil data POS.");
+  }
+  return res.json();
+}
+
+// ── UPDATE ──
+export async function updatePosPerusahaan(
+  idPerusahaan: string,
+  data: {
+    id: string;
+    nama?: string;
+    jabatan?: string;
+    acc?: string;
+    followUp?: string;
+  },
+): Promise<PosPerusahaan> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan/pos/${idPerusahaan}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    },
+  );
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengupdate POS.");
+  }
+  return res.json();
+}
+
+// ── DELETE ──
+export async function deletePosPerusahaan(
+  id: string,
+): Promise<{ message: string }> {
+  const res = await fetchWithAuth(`${API_URL}/api/database/perusahaan/pos`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal menghapus POS.");
+  }
+  return res.json();
+}

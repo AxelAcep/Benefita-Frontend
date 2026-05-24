@@ -5,6 +5,13 @@ import {
   PaginationMeta,
   getHakAksesPerusahaan,
   GetHakAksesPerusahaanResponse,
+  LogPerubahan,
+  getLogPerusahaan,
+  PosPerusahaan,
+  getPosPerusahaan,
+  createPosPerusahaan,
+  updatePosPerusahaan,
+  deletePosPerusahaan,
 } from "@/lib/services/perusahaan.service";
 
 const PAGE_SIZE = 4;
@@ -89,4 +96,168 @@ export function useHakAksesPerusahaan(perusahaanId: string) {
   }, [perusahaanId]);
 
   return { data, loading, error };
+}
+
+export function useLogPerusahaan(
+  perusahaanId: string,
+  options: { page: number; search: string },
+) {
+  const [data, setData] = useState<LogPerubahan[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // State untuk Pagination & Filter
+  const [page, setPage] = useState<number>(1);
+  const [search, setSearch] = useState<string>("");
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalData, setTotalData] = useState<number>(0);
+
+  const fetchLogs = useCallback(async () => {
+    if (!perusahaanId) return;
+
+    setLoading(true);
+    try {
+      const response = await getLogPerusahaan(perusahaanId, page, 10, search);
+      setData(response.data);
+      setTotalPages(response.pagination.totalPages);
+      setTotalData(response.pagination.totalData);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan saat memuat history.");
+    } finally {
+      setLoading(false);
+    }
+  }, [perusahaanId, page, search]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      setLoading(true);
+      try {
+        const res = await getLogPerusahaan(
+          perusahaanId,
+          options.page,
+          10,
+          options.search,
+        );
+        setData(res.data);
+        setTotalPages(res.pagination.totalPages);
+        setTotalData(res.pagination.totalData);
+      } catch (err) {
+        setError("Gagal load history");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, [perusahaanId, options.page, options.search]); //
+
+  return {
+    data,
+    loading,
+    error,
+    page,
+    setPage,
+    search,
+    setSearch,
+    totalPages,
+    totalData,
+    refresh: fetchLogs,
+  };
+}
+
+// ── usePosPerusahaan ──
+export function usePosPerusahaan(idPerusahaan: string) {
+  const [data, setData] = useState<PosPerusahaan[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getPosPerusahaan(idPerusahaan);
+      setData(result);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [idPerusahaan]);
+
+  useEffect(() => {
+    if (idPerusahaan) fetch();
+  }, [idPerusahaan, fetch]);
+
+  const create = useCallback(
+    async (payload: {
+      nama: string;
+      jabatan: string;
+      acc: string;
+      followUp?: string;
+    }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const created = await createPosPerusahaan({
+          ...payload,
+          noInduk: idPerusahaan,
+        });
+        setData((prev) => [...prev, created]);
+        return created;
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [idPerusahaan],
+  );
+
+  const update = useCallback(
+    async (payload: {
+      id: string;
+      nama?: string;
+      jabatan?: string;
+      acc?: string;
+      followUp?: string;
+    }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const updated = await updatePosPerusahaan(idPerusahaan, payload);
+        setData((prev) =>
+          prev.map((item) => (item.id === updated.id ? updated : item)),
+        );
+        return updated;
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [idPerusahaan],
+  );
+
+  const remove = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await deletePosPerusahaan(id);
+      setData((prev) => prev.filter((item) => item.id !== id));
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { data, loading, error, refetch: fetch, create, update, remove };
 }

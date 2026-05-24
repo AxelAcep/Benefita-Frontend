@@ -15,10 +15,18 @@ export function useUpdateHakAkses() {
     setSuccess(false);
 
     try {
-      await updateHakAksesKaryawan(payload);
+      const response = await updateHakAksesKaryawan(payload);
       setSuccess(true);
+      return response; // Kembalikan response jika perlu
     } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan saat memperbarui hak akses.");
+      // Ambil pesan error detail dari backend jika ada
+      const message =
+        err.response?.data?.message || err.message || "Terjadi kesalahan";
+
+      setError(message);
+
+      // KRUSIAL: Lempar error-nya keluar supaya catch di UI terpancing
+      throw new Error(message);
     } finally {
       setLoading(false);
     }

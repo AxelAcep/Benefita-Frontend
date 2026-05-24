@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import CardDetailPerusahaan from "../(form)/card-overview";
@@ -15,6 +15,8 @@ import { useDropdownSales } from "@/hooks/use-dropdown-sales";
 import { useUpdateHakAkses } from "@/hooks/use-update-hak";
 import type { AkunStatus } from "../(form)/card-overview";
 import { X, Save, Users, ShieldCheck } from "lucide-react"; // Optional: jika ada lucide
+import { Button } from "@/components/ui/button";
+import ModalKirimPos from "../(form)/modal-pos";
 
 type TabKey = "detail" | "peserta" | "contact-person" | "daily" | "riwayat";
 
@@ -31,8 +33,11 @@ export default function DetailInstansiPerusahaanPage() {
   const { data, loading, error } = useHakAksesPerusahaan(id);
   const { data: pegawaiOptions, loading: loadingPegawai } = useDropdownSales();
   const { update, loading: updating, error: updateError } = useUpdateHakAkses();
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<TabKey>("detail");
+  const [isPosModalOpen, setPosModalOpen] = useState(false);
+
   const [notification, setNotification] = useState<{
     message: string;
     type: "success" | "error";
@@ -76,19 +81,72 @@ export default function DetailInstansiPerusahaanPage() {
     };
 
     try {
+      // Kalau hook lo sudah bener (nge-throw error), dia bakal loncat ke catch
       await update(payload);
+
       setNotification({
         message: "Hak akses berhasil diperbarui!",
         type: "success",
       });
       setModalOpen(false);
-    } catch (err) {
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (err: any) {
+      // Ambil pesan error asli dari backend yang di-throw hook tadi
       setNotification({
-        message: "Gagal memperbarui hak akses.",
+        message: err.message || "Gagal memperbarui hak akses.",
         type: "error",
       });
+      // Modal jangan di-close biar user bisa benerin pilihannya
     }
   };
+
+  useEffect(() => {
+    if (data && data.akses) {
+      const getIdsByJenis = (jenis: string) => {
+        return (
+          data.akses
+            .filter((a) => a.jenisAkses === jenis)
+            // Tambahkan pengecekan array di sini
+            .map((a) => {
+              if (Array.isArray(a.pegawai)) {
+                return a.pegawai[0]?.id; // Jika array, ambil index 0
+              }
+              return (a.pegawai as any)?.id; // Jika object, ambil id
+            })
+            .filter((id) => id !== undefined) as string[]
+        );
+      };
+
+      setFormData({
+        env: {
+          status: mapStatus(
+            data.akses.find((a) => a.jenisAkses === "ENV")?.status,
+          ),
+          pegawaiIds: getIdsByJenis("ENV"),
+        },
+        csr: {
+          status: mapStatus(
+            data.akses.find((a) => a.jenisAkses === "CSR")?.status,
+          ),
+          pegawaiIds: getIdsByJenis("CSR"),
+        },
+        tsm: {
+          status: mapStatus(
+            data.akses.find((a) => a.jenisAkses === "TSM")?.status,
+          ),
+          pegawaiIds: getIdsByJenis("TSM"),
+        },
+        epm: {
+          status: mapStatus(
+            data.akses.find((a) => a.jenisAkses === "EPM")?.status,
+          ),
+          pegawaiIds: getIdsByJenis("EPM"),
+        },
+      });
+    }
+  }, [data]);
 
   if (loading || !data) {
     return (
@@ -121,25 +179,34 @@ export default function DetailInstansiPerusahaanPage() {
               status: mapStatus(
                 data.akses.find((a) => a.jenisAkses === "ENV")?.status,
               ),
-              kode: [],
+              // Ambil kode/prefix dari semua pegawai di akses ENV
+              kode: data.akses
+                .filter((a) => a.jenisAkses === "ENV")
+                .map((a: any) => a.pegawai?.nama || a.pegawai?.kode || ""),
             },
             csr: {
               status: mapStatus(
                 data.akses.find((a) => a.jenisAkses === "CSR")?.status,
               ),
-              kode: [],
+              kode: data.akses
+                .filter((a) => a.jenisAkses === "CSR")
+                .map((a: any) => a.pegawai?.nama || a.pegawai?.kode || ""),
             },
             tsm: {
               status: mapStatus(
                 data.akses.find((a) => a.jenisAkses === "TSM")?.status,
               ),
-              kode: [],
+              kode: data.akses
+                .filter((a) => a.jenisAkses === "TSM")
+                .map((a: any) => a.pegawai?.nama || a.pegawai?.kode || ""),
             },
             epm: {
               status: mapStatus(
                 data.akses.find((a) => a.jenisAkses === "EPM")?.status,
               ),
-              kode: [],
+              kode: data.akses
+                .filter((a) => a.jenisAkses === "EPM")
+                .map((a: any) => a.pegawai?.nama || a.pegawai?.kode || ""),
             },
           }}
           onEdit={() => setModalOpen(true)}
@@ -209,7 +276,7 @@ export default function DetailInstansiPerusahaanPage() {
                             </span>
                           </div>
 
-                          <select
+                          {/* <select
                             value={currentData.status}
                             onChange={(e) =>
                               setFormData((prev) => ({
@@ -227,7 +294,7 @@ export default function DetailInstansiPerusahaanPage() {
                                 {s}
                               </option>
                             ))}
-                          </select>
+                          </select> */}
                         </div>
 
                         {/* List Pegawai (Vertical Scroll di dalam kolom) */}
@@ -363,6 +430,22 @@ export default function DetailInstansiPerusahaanPage() {
 
         {/* --- TAB CONTENT --- */}
         <div className="animate-in fade-in duration-300">
+          <div className="flex w-full justify-end">
+            <Button
+              className="mb-2 bg-emerald-500 hover:bg-emerald-600"
+              onClick={() => setPosModalOpen(true)}
+            >
+              Kirim pos
+            </Button>
+          </div>
+
+          {isPosModalOpen && (
+            <ModalKirimPos
+              noInduk={id}
+              onClose={() => setPosModalOpen(false)}
+            />
+          )}
+
           {activeTab === "detail" && (
             <TabDetailPerusahaan
               id={id}
@@ -380,7 +463,7 @@ export default function DetailInstansiPerusahaanPage() {
           {activeTab === "peserta" && <TabPeserta />}
           {activeTab === "contact-person" && <TabContactPerson id={id} />}
           {activeTab === "daily" && <TabDaily id={id} />}
-          {activeTab === "riwayat" && <TabRiwayat />}
+          {activeTab === "riwayat" && <TabRiwayat id={id} />}
         </div>
       </div>
     </AppLayout>

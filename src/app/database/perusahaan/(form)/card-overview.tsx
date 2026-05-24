@@ -95,9 +95,9 @@ function AkunColumn({ type, item }: { type: BadgeKey; item: AkunItem }) {
             <span className="text-zinc-300">—</span>
           )}
         </div>
-        <span className={`text-[11px] font-bold shrink-0 ${config.text}`}>
+        {/* <span className={`text-[11px] font-bold shrink-0 ${config.text}`}>
           {item.status}
-        </span>
+        </span> */}
       </div>
     </div>
   );
