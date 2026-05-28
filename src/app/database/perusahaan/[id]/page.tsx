@@ -17,6 +17,8 @@ import type { AkunStatus } from "../(form)/card-overview";
 import { X, Save, Users, ShieldCheck } from "lucide-react"; // Optional: jika ada lucide
 import { Button } from "@/components/ui/button";
 import ModalKirimPos from "../(form)/modal-pos";
+import ModalRequestPosisi from "../(form)/modal-request";
+import { usePermohonanHakAkses } from "@/hooks/use-perusahaan";
 
 type TabKey = "detail" | "peserta" | "contact-person" | "daily" | "riwayat";
 
@@ -37,6 +39,8 @@ export default function DetailInstansiPerusahaanPage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>("detail");
   const [isPosModalOpen, setPosModalOpen] = useState(false);
+  const { create, loading: creatingPermohonan } = usePermohonanHakAkses();
+  const [isRequestPosisiOpen, setRequestPosisiOpen] = useState(false);
 
   const [notification, setNotification] = useState<{
     message: string;
@@ -68,6 +72,22 @@ export default function DetailInstansiPerusahaanPage() {
     return status && validStatuses.includes(status as AkunStatus)
       ? (status as AkunStatus)
       : "-";
+  };
+
+  const handleRequestPosisiSubmit = async (jenisAkses: string) => {
+    try {
+      await create({ perusahaanId: id, jenisAkses });
+      setNotification({
+        message: "Permohonan berhasil diajukan!",
+        type: "success",
+      });
+      setRequestPosisiOpen(false);
+    } catch (err: any) {
+      setNotification({
+        message: err.message || "Gagal mengajukan permohonan.",
+        type: "error",
+      });
+    }
   };
 
   const handleModalSubmit = async () => {
@@ -446,12 +466,28 @@ export default function DetailInstansiPerusahaanPage() {
             >
               Buat Penawaran
             </Button>
+
+            <Button
+              className="mb-2 bg-emerald-500 hover:bg-emerald-600"
+              onClick={() => setRequestPosisiOpen(true)}
+            >
+              Request Posisi
+            </Button>
           </div>
 
           {isPosModalOpen && (
             <ModalKirimPos
               noInduk={id}
               onClose={() => setPosModalOpen(false)}
+            />
+          )}
+
+          {isRequestPosisiOpen && (
+            <ModalRequestPosisi
+              perusahaanId={id}
+              isSaving={creatingPermohonan}
+              onClose={() => setRequestPosisiOpen(false)}
+              onSubmit={handleRequestPosisiSubmit}
             />
           )}
 

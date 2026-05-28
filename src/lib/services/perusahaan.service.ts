@@ -3,7 +3,7 @@ import { fetchWithAuth } from "@/lib/services/login.service";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface Perusahaan {
-  id: number;
+  id: string;
   nama: string;
   alamatPusat: string;
   noTelp: string | null;
@@ -20,6 +20,7 @@ export interface GetPerusahaanParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  jenisInstansi?: string;
 }
 
 export interface GetPerusahaanResponse {
@@ -85,9 +86,11 @@ export async function getPerusahaan(
   params: GetPerusahaanParams = {},
 ): Promise<GetPerusahaanResponse> {
   const query = new URLSearchParams();
+
   if (params.search) query.append("search", params.search);
   if (params.page) query.append("page", params.page.toString());
   if (params.pageSize) query.append("pageSize", params.pageSize.toString());
+  if (params.jenisInstansi) query.append("jenisInstansi", params.jenisInstansi);
 
   const url = `${API_URL}/api/database/perusahaan?${query.toString()}`;
 
@@ -1038,4 +1041,98 @@ export async function uploadFilePenawaran(
   file: File,
 ): Promise<Penawaran> {
   return updatePenawaran(id, { file });
+}
+
+// ── Interfaces ──
+export interface PegawaiSimple {
+  id: string;
+  nama: string;
+}
+
+export interface PermohonanHakAkses {
+  id: string;
+  kodePerusahaan: string;
+  namaPerusahaan: string;
+  jenisAkses: string;
+  pegawaiAssigned: PegawaiSimple[];
+  pegawaiPengaju: PegawaiSimple;
+  tanggal: string;
+  status: "pending" | "diterima" | "ditolak";
+}
+
+export interface PermohonanPaginationResponse {
+  data: PermohonanHakAkses[];
+  pagination: {
+    totalData: number;
+    totalPages: number;
+    currentPage: number;
+    limit: number;
+  };
+}
+
+// ── CREATE ──
+export async function createPermohonanHakAkses(data: {
+  perusahaanId: string;
+  jenisAkses: string;
+}): Promise<PermohonanHakAkses> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/permohonan-hak-akses`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    },
+  );
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengajukan permohonan.");
+  }
+  return res.json();
+}
+
+// ── GET ALL ──
+export async function getPermohonanHakAkses(
+  page: number = 1,
+  limit: number = 10,
+  search: string = "",
+): Promise<PermohonanPaginationResponse> {
+  const query = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    search,
+  }).toString();
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/permohonan-hak-akses?${query}`,
+    {
+      method: "GET",
+    },
+  );
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Gagal mengambil data permohonan.");
+  }
+  return res.json();
+}
+
+// ── UPDATE STATUS ──
+export async function updateStatusPermohonan(
+  id: string,
+  terima: boolean,
+): Promise<PermohonanHakAkses> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/permohonan-hak-akses/${id}/status`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terima }),
+    },
+  );
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(
+      errorData.message || "Gagal memperbarui status permohonan.",
+    );
+  }
+  return res.json();
 }

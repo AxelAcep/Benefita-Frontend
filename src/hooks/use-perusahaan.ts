@@ -18,11 +18,15 @@ import {
   updatePenawaran,
   deletePenawaran,
   uploadFilePenawaran,
+  PermohonanHakAkses,
+  getPermohonanHakAkses,
+  createPermohonanHakAkses,
+  updateStatusPermohonan,
 } from "@/lib/services/perusahaan.service";
 
 const PAGE_SIZE = 4;
 
-export function usePerusahaan() {
+export function usePerusahaan(jenisInstansi?: string) {
   const [data, setData] = useState<Perusahaan[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>({
     total: 0,
@@ -43,6 +47,7 @@ export function usePerusahaan() {
         search,
         page: currentPage,
         pageSize: PAGE_SIZE,
+        jenisInstansi,
       });
       setData(res.data);
       setMeta(res.meta);
@@ -51,7 +56,7 @@ export function usePerusahaan() {
     } finally {
       setLoading(false);
     }
-  }, [search, currentPage]);
+  }, [search, currentPage, jenisInstansi]);
 
   useEffect(() => {
     load();
@@ -365,5 +370,99 @@ export function usePenawaran() {
     update,
     remove,
     uploadFile,
+  };
+}
+
+export function usePermohonanHakAkses() {
+  const [data, setData] = useState<PermohonanHakAkses[]>([]);
+  const [pagination, setPagination] = useState({
+    totalData: 0,
+    totalPages: 1,
+    currentPage: 1,
+    limit: 10,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const fetch = useCallback(async (page: number, searchVal: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await getPermohonanHakAkses(page, 10, searchVal);
+      setData(result.data);
+      setPagination(result.pagination);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch(currentPage, search);
+  }, [currentPage, search, fetch]);
+
+  const handleSearch = useCallback((val: string) => {
+    setSearch(val);
+    setCurrentPage(1);
+  }, []);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  const create = useCallback(
+    async (payload: { perusahaanId: string; jenisAkses: string }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const created = await createPermohonanHakAkses(payload);
+        await fetch(currentPage, search);
+        return created;
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPage, search, fetch],
+  );
+
+  const updateStatus = useCallback(async (id: string, terima: boolean) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updated = await updateStatusPermohonan(id, terima);
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === updated.id
+            ? { ...item, status: terima ? "diterima" : "ditolak" }
+            : item,
+        ),
+      );
+      return updated;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return {
+    data,
+    pagination,
+    loading,
+    error,
+    search,
+    currentPage,
+    handleSearch,
+    handlePageChange,
+    refetch: () => fetch(currentPage, search),
+    create,
+    updateStatus,
   };
 }

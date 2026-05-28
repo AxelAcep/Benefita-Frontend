@@ -8,7 +8,7 @@ import { usePerusahaan } from "@/hooks/use-perusahaan";
 import { useRouter } from "next/navigation";
 import Anchor from "@/components/base/anchor";
 
-export default function TabPerusahaan() {
+export default function TabPerusahaan({ jenisInstansi = "PERUSAHAAN" }) {
   const {
     data,
     meta,
@@ -19,7 +19,7 @@ export default function TabPerusahaan() {
     handleSearch,
     handlePageChange,
     reload,
-  } = usePerusahaan();
+  } = usePerusahaan(jenisInstansi);
   const router = useRouter();
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">

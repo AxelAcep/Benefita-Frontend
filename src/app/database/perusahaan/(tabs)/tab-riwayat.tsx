@@ -40,6 +40,23 @@ export default function TabRiwayat({ id }: TabRiwayatProps) {
   // ── Handlers ──
   const handleSearch = (value: string) => setSearch(value);
 
+  const formatValue = (value: any) => {
+    if (value == null) return "-";
+
+    if (typeof value === "string" || typeof value === "number") {
+      return value;
+    }
+
+    if (typeof value === "object") {
+      return Object.entries(value)
+        .filter(([key, v]) => key !== "id" && v !== null && v !== "")
+        .map(([, v]) => v)
+        .join(", ");
+    }
+
+    return "-";
+  };
+
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
@@ -178,10 +195,10 @@ export default function TabRiwayat({ id }: TabRiwayatProps) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-red-500  italic bg-red-50/30">
-                    {row.dataLama || "-"}
+                    {formatValue(row.dataLama)}
                   </td>
                   <td className="px-4 py-3 text-xs text-emerald-600 font-medium bg-emerald-50/30">
-                    {row.dataBaru || "-"}
+                    {formatValue(row.dataBaru)}
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-500">
                     {row.diubahOleh}
