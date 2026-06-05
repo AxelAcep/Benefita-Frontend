@@ -21,7 +21,7 @@ import {
 import {
   useGetOnePerusahaan,
   useUpdatePerusahaan,
-} from "@/hooks/use-edit-perusahaan";
+} from "@/hooks/use-instansi-edit-perusahaan";
 
 // ─────────────────────────────────────────────
 // TYPES

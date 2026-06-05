@@ -10,8 +10,10 @@ import {
 // useGetOnePerusahaan
 // ─────────────────────────────────────────────
 
+export type PerusahaanFlat = Record<string, any>;
+
 interface UseGetOnePerusahaanReturn {
-  data: PerusahaanMapped | null;
+  data: PerusahaanFlat | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
@@ -20,11 +22,11 @@ interface UseGetOnePerusahaanReturn {
 export function useGetOnePerusahaan(
   noInduk: string,
 ): UseGetOnePerusahaanReturn {
-  const [data, setData] = useState<PerusahaanMapped | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [data, setData] = useState<PerusahaanFlat | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!noInduk) return;
 
     setIsLoading(true);
@@ -32,6 +34,8 @@ export function useGetOnePerusahaan(
 
     try {
       const result = await getOnePerusahaan(noInduk);
+
+      // backend sudah flat → langsung pakai
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
@@ -41,10 +45,15 @@ export function useGetOnePerusahaan(
   }, [noInduk]);
 
   useEffect(() => {
-    fetch();
-  }, [fetch]);
+    fetchData();
+  }, [fetchData]);
 
-  return { data, isLoading, error, refetch: fetch };
+  return {
+    data,
+    isLoading,
+    error,
+    refetch: fetchData,
+  };
 }
 
 // ─────────────────────────────────────────────

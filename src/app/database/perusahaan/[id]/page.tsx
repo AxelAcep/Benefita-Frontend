@@ -296,7 +296,7 @@ export default function DetailInstansiPerusahaanPage() {
                             </span>
                           </div>
 
-                          {/* <select
+                          <select
                             value={currentData.status}
                             onChange={(e) =>
                               setFormData((prev) => ({
@@ -314,7 +314,7 @@ export default function DetailInstansiPerusahaanPage() {
                                 {s}
                               </option>
                             ))}
-                          </select> */}
+                          </select>
                         </div>
 
                         {/* List Pegawai (Vertical Scroll di dalam kolom) */}

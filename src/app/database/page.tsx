@@ -66,7 +66,7 @@ export default function InstansiPerusahaanPage() {
       {activeTab === "pemda" && <TabPemda />}
       {activeTab === "instansi-daerah" && <TabInstansiDaerah />}
       {activeTab === "sekolah" && <TabSekolah />}
-      {activeTab === "daily" && <TabDaily />}
+      {activeTab === "daily" && <TabDaily id="daily" />}
       {activeTab === "alokasi-akun" && <TabAlokasiAkun />}
     </AppLayout>
   );

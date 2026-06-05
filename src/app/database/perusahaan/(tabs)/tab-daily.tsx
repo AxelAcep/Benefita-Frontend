@@ -17,6 +17,7 @@ import ModalDailyActivity, {
   type DailyActivityFormData,
 } from "../(form)/modal-daily";
 import Notification from "@/components/base/notifications";
+import { getSession } from "@/lib/services/login.service";
 
 // ─────────────────────────────────────────────
 // PROPS
@@ -55,6 +56,8 @@ export default function TabDaily({ id }: TabDailyProps) {
     id: string;
     label: string;
   } | null>(null);
+
+  const session = getSession();
 
   // ── Debounce search ──
   useEffect(() => {
@@ -136,7 +139,7 @@ export default function TabDaily({ id }: TabDailyProps) {
     // perusahaan → dari id props (noInduk perusahaan)
     const today = new Date().toISOString().split("T")[0];
     const payload = {
-      pegawaiId: "cmoytu0it0003jcg4zm9edvua", // TODO: ambil dari session/auth context
+      pegawaiId: session?.user.id || "",
       kontak: form.kontak || "",
       jenisTraining: form.jenisTraining || "",
       keterangan: form.keterangan || "",

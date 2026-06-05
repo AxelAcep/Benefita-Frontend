@@ -1,9 +1,7 @@
 // hooks/use-create-perusahaan.ts
 import { useState } from "react";
-import {
-  createPerusahaan,
-  CreatePerusahaanPayload,
-} from "@/lib/services/perusahaan.service";
+import { createPerusahaan } from "@/lib/services/perusahaan.service";
+
 import { PerusahaanFormData } from "@/app/database/perusahaan/(form)/card-perusahaan";
 import { LokasiFormData } from "@/app/database/perusahaan/(form)/card-lokasi";
 import { SertifikasiFormData } from "@/app/database/perusahaan/(form)/card-sertifikasi";
@@ -13,7 +11,7 @@ import { InformasiLainnyaFormData } from "@/app/database/perusahaan/(form)/card-
 import { KontakFormData } from "@/app/database/perusahaan/(form)/card-kontak";
 
 // ─────────────────────────────────────────────
-// TYPES
+// FORM TYPE
 // ─────────────────────────────────────────────
 
 export interface CreatePerusahaanForm {
@@ -52,52 +50,53 @@ export function useCreatePerusahaan() {
     setForm((prev) => ({ ...prev, [key]: data }));
   }
 
-  async function submit() {
+  // ─────────────────────────────────────────────
+  // SUBMIT
+  // ─────────────────────────────────────────────
+
+  async function submit(jenisInstansi: string = "PERUSAHAAN") {
     setError(null);
     setSuccess(false);
 
-    // Validasi minimal
     if (!form.perusahaan?.kode || !form.perusahaan?.instansi) {
-      setError("Kode dan nama instansi/perusahaan wajib diisi.");
+      setError("Kode dan nama wajib diisi");
       return false;
     }
 
     setLoading(true);
+
     try {
-      // Mapping dari form ke payload API
-      const payload: CreatePerusahaanPayload = {
-        // Perusahaan
+      const payload = {
+        // CORE
         noInduk: form.perusahaan.kode,
         company: form.perusahaan.instansi,
         idSimpel: form.perusahaan.idSimpel,
+        jenisInstansi,
 
-        // Lokasi
+        // LOKASI
         alamat: form.lokasi?.alamatPusat,
         alamatWaktu: form.lokasi?.zonaWaktuPusat,
         alamatFactory: form.lokasi?.alamatFactory,
         alamatFactoryWaktu: form.lokasi?.zonaWaktuFactory,
 
-        // Sertifikasi
+        // SERTIFIKASI
         iso9000: form.sertifikasi?.iso9001,
         iso14000: form.sertifikasi?.iso14001,
         ohsas18001smk3: form.sertifikasi?.ohsas18001,
 
-        // Klasifikasi
+        // KLASIFIKASI
         kategoriCpn: form.klasifikasi?.kategoriCpn,
         lineOfBusiness: form.klasifikasi?.lineBisnis,
         lineBisnisSub: form.klasifikasi?.lineBisnisSub,
         permodalan: form.klasifikasi?.permodalan,
 
-        // Properti & Finansial
-        nilaiSubBidangProper: form.propertiFinansial?.subBidangNilai
-          ? Number(form.propertiFinansial.subBidangNilai)
-          : undefined,
-        batasEmas: form.propertiFinansial?.subBidangBatasEmas
-          ? Number(form.propertiFinansial.subBidangBatasEmas)
-          : undefined,
-        batasHijau: form.propertiFinansial?.subBidangBatasHijau
-          ? Number(form.propertiFinansial.subBidangBatasHijau)
-          : undefined,
+        // FINANSIAL
+        nilaiSubBidangProper: Number(
+          form.propertiFinansial?.subBidangNilai ?? 0,
+        ),
+        batasEmas: Number(form.propertiFinansial?.subBidangBatasEmas ?? 0),
+        batasHijau: Number(form.propertiFinansial?.subBidangBatasHijau ?? 0),
+
         fasilitas: form.propertiFinansial?.fasilitas,
         infoKeu: form.propertiFinansial?.infoKeuangan,
         ket: form.propertiFinansial?.keterangan,
@@ -107,22 +106,24 @@ export function useCreatePerusahaan() {
         prioritasAe: form.propertiFinansial?.prioritasAE,
         vendor: form.propertiFinansial?.vendor,
 
-        // Informasi Lainnya
+        // INFO LAIN
         cabangSite: form.informasiLainnya?.cabangSite,
         pesaing: form.informasiLainnya?.pesaing,
         butuhTraining: form.informasiLainnya?.kebutuhanTraining,
         prosedurPelatihan: form.informasiLainnya?.prosedurPelatihan,
 
+        // KONTAK
         telp: form.kontak?.telpon,
         fax: form.kontak?.fax,
         email: form.kontak?.email,
       };
 
       await createPerusahaan(payload);
+
       setSuccess(true);
       return true;
     } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan.");
+      setError(err.message || "Terjadi kesalahan");
       return false;
     } finally {
       setLoading(false);

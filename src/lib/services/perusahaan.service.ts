@@ -3,7 +3,7 @@ import { fetchWithAuth } from "@/lib/services/login.service";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface Perusahaan {
-  id: string;
+  id: number;
   nama: string;
   alamatPusat: string;
   noTelp: string | null;
@@ -20,7 +20,6 @@ export interface GetPerusahaanParams {
   search?: string;
   page?: number;
   pageSize?: number;
-  jenisInstansi?: string;
 }
 
 export interface GetPerusahaanResponse {
@@ -28,33 +27,30 @@ export interface GetPerusahaanResponse {
   meta: PaginationMeta;
 }
 
-export interface CreatePerusahaanPayload {
-  // Card Perusahaan
+export type CreatePerusahaanPayload = {
   noInduk: string;
   company: string;
   idSimpel?: string;
+  jenisInstansi?: string;
 
-  // Card Lokasi
   alamat?: string;
   alamatWaktu?: string;
   alamatFactory?: string;
   alamatFactoryWaktu?: string;
 
-  // Card Sertifikasi
   iso9000?: string;
   iso14000?: string;
   ohsas18001smk3?: string;
 
-  // Card Klasifikasi
   kategoriCpn?: string;
   lineOfBusiness?: string;
   lineBisnisSub?: string;
   permodalan?: string;
 
-  // Card Properti & Finansial
   nilaiSubBidangProper?: number;
   batasEmas?: number;
   batasHijau?: number;
+
   fasilitas?: string;
   infoKeu?: string;
   ket?: string;
@@ -64,33 +60,56 @@ export interface CreatePerusahaanPayload {
   prioritasAe?: string;
   vendor?: string;
 
-  // Card Informasi Lainnya
   cabangSite?: string;
   pesaing?: string;
   butuhTraining?: string;
   prosedurPelatihan?: string;
 
-  //card kontak
-
-  email?: string;
   telp?: string;
   fax?: string;
-}
+  email?: string;
 
-export interface CreatePerusahaanResponse {
+  kotaKabupaten?: string;
+  provinsi?: string;
+  instansi?: string;
+  sekilasLh?: string;
+
+  rsud?: number;
+  indPengolahan?: number;
+  pertambangan?: number;
+  listrikGasAirBersih?: number;
+  hotelResto?: number;
+  angkutTrans?: number;
+  bangunan?: number;
+  pertanian?: number;
+  keuangan?: number;
+  laut?: number;
+  jasa?: number;
+
+  kode?: string;
+  tender1?: string;
+  tender2?: string;
+  tender3?: string;
+  pelatihanDiikuti?: string;
+
+  pemilik?: string;
+  yayasan?: string;
+  subKategori?: string;
+  cpSekolah?: string;
+};
+
+export type CreatePerusahaanResponse = {
   message: string;
-  data: { noInduk: string };
-}
+  data: any;
+};
 
 export async function getPerusahaan(
   params: GetPerusahaanParams = {},
 ): Promise<GetPerusahaanResponse> {
   const query = new URLSearchParams();
-
   if (params.search) query.append("search", params.search);
   if (params.page) query.append("page", params.page.toString());
   if (params.pageSize) query.append("pageSize", params.pageSize.toString());
-  if (params.jenisInstansi) query.append("jenisInstansi", params.jenisInstansi);
 
   const url = `${API_URL}/api/database/perusahaan?${query.toString()}`;
 
