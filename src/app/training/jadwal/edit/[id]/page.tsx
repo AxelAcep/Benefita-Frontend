@@ -604,7 +604,7 @@ export default function EditJadwalTrainingPage() {
             </button>
 
             {/* Batal + Simpan */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => router.push("/training/jadwal")}
@@ -620,6 +620,16 @@ export default function EditJadwalTrainingPage() {
               >
                 <Save className="w-3.5 h-3.5" />
                 {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/input/${id}`)}
+                disabled={isSubmitting || isMutating}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 min-w-[110px] justify-center"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {isSubmitting ? "Menyimpan..." : "Input Data"}
               </button>
             </div>
           </div>
