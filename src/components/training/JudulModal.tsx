@@ -26,6 +26,7 @@ const pengajuanJudulSchema = z.object({
   namaKontak: z.string().optional(),
   kontak: z.string().optional(),
   jmlPeserta: z.string().optional(),
+  responMA: z.string().optional(),
 });
 
 export type PengajuanJudulFormValues = z.infer<typeof pengajuanJudulSchema>;
@@ -34,6 +35,7 @@ export interface PengajuanJudulParsed {
   judulTraining: string;
   jumlahHari: number;
   perusahaanId?: string;
+  responMA?: string;
   namaKontak?: string;
   kontak?: string;
   jumlahPeserta?: number | null;
@@ -50,6 +52,7 @@ export interface PengajuanJudulData {
   namaKontak?: string;
   kontak?: string;
   jumlahPeserta?: number | null;
+  responMA?: string | null;
 }
 
 interface PengajuanJudulModalProps {
@@ -117,6 +120,7 @@ export function PengajuanJudulModal({
       namaKontak: "",
       kontak: "",
       jmlPeserta: "",
+      responMA: "",
     },
   });
 
@@ -129,6 +133,7 @@ export function PengajuanJudulModal({
         perusahaanId: initialData?.perusahaan?.noInduk ?? "",
         namaKontak: initialData?.namaKontak ?? "",
         kontak: initialData?.kontak ?? "",
+        responMA: initialData?.responMA ?? "",
         jmlPeserta:
           initialData?.jumlahPeserta != null
             ? String(initialData.jumlahPeserta)
@@ -145,6 +150,7 @@ export function PengajuanJudulModal({
       namaKontak: data.namaKontak || undefined,
       kontak: data.kontak || undefined,
       jumlahPeserta: data.jmlPeserta ? Number(data.jmlPeserta) : null,
+      responMA: data.responMA || undefined,
     };
     await onSubmit(parsed);
   };
@@ -252,6 +258,16 @@ export function PengajuanJudulModal({
                 />
               </div>
             </div>
+            {isEdit && (
+              <div>
+                <FieldLabel optional>Respons MA</FieldLabel>
+                <input
+                  {...register("responMA")}
+                  placeholder="Masukkan respons MA..."
+                  className={inputCls}
+                />
+              </div>
+            )}
           </div>
 
           {/* Footer */}

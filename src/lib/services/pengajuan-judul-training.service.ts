@@ -35,7 +35,7 @@ export interface PengajuanListItem {
   jumlahPeserta: number | null;
   namaKontak: string | null;
   kontak: string | null;
-  responMA: "PENDING" | "DISETUJUI" | "DITOLAK";
+  responMA: string;
   tanggalPengajuan: string;
   perusahaan: {
     noInduk: string;
@@ -75,6 +75,7 @@ export interface UpdatePengajuanRequest {
   namaKontak?: string;
   kontak?: string;
   jumlahPeserta?: number;
+  responMA?: string;
 }
 
 // ─────────────────────────────────────────────

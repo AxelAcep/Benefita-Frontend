@@ -69,6 +69,7 @@ export default function PengajuanJudulTrainingPage() {
         namaKontak: detailData.namaKontak ?? undefined,
         kontak: detailData.kontak ?? undefined,
         jumlahPeserta: detailData.jumlahPeserta,
+        responMA: detailData.responMA,
       });
     }
   }, [detailData]);
@@ -88,6 +89,7 @@ export default function PengajuanJudulTrainingPage() {
       perusahaan: item.perusahaan,
       namaKontak: item.namaKontak ?? undefined,
       kontak: item.kontak ?? undefined,
+      responMA: item.responMA ?? undefined,
       jumlahPeserta: item.jumlahPeserta,
     });
     setModalOpen(true);
@@ -101,6 +103,7 @@ export default function PengajuanJudulTrainingPage() {
       namaKontak: data.namaKontak,
       kontak: data.kontak,
       jumlahPeserta: data.jumlahPeserta ?? undefined,
+      responMA: data.responMA,
     };
 
     if (selectedItem?.id) {
@@ -199,13 +202,13 @@ export default function PengajuanJudulTrainingPage() {
     {
       key: "responMA",
       label: "Respons MA",
-      render: (val) => {
-        const status = (val as keyof typeof responMALabel) ?? "PENDING";
+      render: (_val, row) => {
+        const status = (_val as keyof typeof responMALabel) ?? "PENDING";
         return (
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${responMAColor[status]}`}
           >
-            {responMALabel[status]}
+            {row.responMA}
           </span>
         );
       },
