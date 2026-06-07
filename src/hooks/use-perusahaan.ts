@@ -23,6 +23,7 @@ import {
   createPermohonanHakAkses,
   updateStatusPermohonan,
 } from "@/lib/services/perusahaan.service";
+import { useParams } from "next/navigation";
 
 const PAGE_SIZE = 4;
 
@@ -278,37 +279,53 @@ export function usePenawaran() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const params = useParams();
+  console.log("ROUTE PARAMS:", params);
+  const perusahaanId = params?.id as string;
+
   const fetch = useCallback(async () => {
+    if (!perusahaanId) return;
+
     setLoading(true);
     setError(null);
+
     try {
-      const result = await getPenawaran();
+      const result = await getPenawaran(perusahaanId);
       setData(result);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [perusahaanId]);
 
   useEffect(() => {
     fetch();
   }, [fetch]);
 
-  const create = useCallback(async (kodePelatihan: string[]) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const created = await createPenawaran({ kodePelatihan });
-      setData((prev) => [created, ...prev]);
-      return created;
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const create = useCallback(
+    async (kodePelatihan: string[]) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const created = await createPenawaran({
+          kodePelatihan,
+          perusahaanId, // dari useParams / state
+        });
+
+        setData((prev) => [created, ...prev]);
+
+        return created;
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [perusahaanId],
+  );
 
   const update = useCallback(
     async (id: string, payload: { kodePelatihan?: string[]; file?: File }) => {

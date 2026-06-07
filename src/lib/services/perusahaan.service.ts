@@ -973,29 +973,41 @@ export interface Penawaran {
   kodePelatihan: string[];
   tanggal: string;
   filePath: string | null;
+  perusahaanId?: string;
 }
 
 // ── CREATE ──
 export async function createPenawaran(data: {
   kodePelatihan: string[];
-}): Promise<Penawaran> {
+  perusahaanId: string;
+}): Promise<any> {
   const res = await fetchWithAuth(`${API_URL}/api/database/penawaran`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ kodePelatihan: data.kodePelatihan }),
+    body: JSON.stringify({
+      kodePelatihan: data.kodePelatihan,
+      perusahaanId: data.perusahaanId,
+    }),
   });
+
   if (!res.ok) {
     const errorData = await res.json();
     throw new Error(errorData.message || "Gagal membuat penawaran.");
   }
+
   return res.json();
 }
 
 // ── GET ALL ──
-export async function getPenawaran(): Promise<Penawaran[]> {
-  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran`, {
-    method: "GET",
-  });
+export async function getPenawaran(
+  perusahaanId?: string,
+): Promise<Penawaran[]> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/penawaran/${perusahaanId}`,
+    {
+      method: "GET",
+    },
+  );
   if (!res.ok) {
     const errorData = await res.json();
     throw new Error(errorData.message || "Gagal mengambil data penawaran.");
