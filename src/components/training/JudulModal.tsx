@@ -1,10 +1,13 @@
+// components/training/JudulModal.tsx
+
 "use client";
 
 import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Save, X } from "lucide-react";
+import { PerusahaanSelect } from "@/components/base/PerusahaanSelect";
 
 // ---------------------------------------------------------------------------
 // Schema & Types
@@ -15,8 +18,11 @@ const pengajuanJudulSchema = z.object({
   jmlHari: z
     .string()
     .min(1, "Jumlah hari wajib diisi")
-    .refine((v) => !isNaN(Number(v)) && Number(v) >= 0, "Jumlah hari tidak boleh negatif"),
-  perusahaan: z.string().optional(),
+    .refine(
+      (v) => !isNaN(Number(v)) && Number(v) >= 0,
+      "Jumlah hari tidak boleh negatif",
+    ),
+  perusahaanId: z.string().optional(),
   namaKontak: z.string().optional(),
   kontak: z.string().optional(),
   jmlPeserta: z.string().optional(),
@@ -24,24 +30,26 @@ const pengajuanJudulSchema = z.object({
 
 export type PengajuanJudulFormValues = z.infer<typeof pengajuanJudulSchema>;
 
-// Parsed output untuk dikirim ke API / parent
 export interface PengajuanJudulParsed {
   judulTraining: string;
-  jmlHari: number;
-  perusahaan?: string;
+  jumlahHari: number;
+  perusahaanId?: string;
   namaKontak?: string;
   kontak?: string;
-  jmlPeserta?: number | null;
+  jumlahPeserta?: number | null;
 }
 
 export interface PengajuanJudulData {
-  id?: number;
+  id?: string;
   judulTraining: string;
-  jmlHari: number;
-  perusahaan?: string;
+  jumlahHari: number;
+  perusahaan?: {
+    noInduk: string;
+    company: string | null;
+  };
   namaKontak?: string;
   kontak?: string;
-  jmlPeserta?: number | null;
+  jumlahPeserta?: number | null;
 }
 
 interface PengajuanJudulModalProps {
@@ -53,14 +61,22 @@ interface PengajuanJudulModalProps {
 }
 
 // ---------------------------------------------------------------------------
-// Small reusable field components (same as HotelModal)
+// Field helpers
 // ---------------------------------------------------------------------------
 
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
+function FieldLabel({
+  children,
+  optional,
+}: {
+  children: React.ReactNode;
+  optional?: boolean;
+}) {
   return (
     <label className="block text-[11px] font-semibold text-zinc-500 mb-1.5">
       {children}
-      {optional && <span className="ml-1 font-normal text-zinc-400">(opsional)</span>}
+      {optional && (
+        <span className="ml-1 font-normal text-zinc-400">(opsional)</span>
+      )}
     </label>
   );
 }
@@ -90,13 +106,14 @@ export function PengajuanJudulModal({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<PengajuanJudulFormValues>({
     resolver: zodResolver(pengajuanJudulSchema),
     defaultValues: {
       judulTraining: "",
       jmlHari: "",
-      perusahaan: "",
+      perusahaanId: "",
       namaKontak: "",
       kontak: "",
       jmlPeserta: "",
@@ -107,25 +124,27 @@ export function PengajuanJudulModal({
     if (open) {
       reset({
         judulTraining: initialData?.judulTraining ?? "",
-        jmlHari: initialData?.jmlHari != null ? String(initialData.jmlHari) : "",
-        perusahaan: initialData?.perusahaan ?? "",
+        jmlHari:
+          initialData?.jumlahHari != null ? String(initialData.jumlahHari) : "",
+        perusahaanId: initialData?.perusahaan?.noInduk ?? "",
         namaKontak: initialData?.namaKontak ?? "",
         kontak: initialData?.kontak ?? "",
-        jmlPeserta: initialData?.jmlPeserta != null ? String(initialData.jmlPeserta) : "",
+        jmlPeserta:
+          initialData?.jumlahPeserta != null
+            ? String(initialData.jumlahPeserta)
+            : "",
       });
     }
   }, [open, initialData, reset]);
 
-  // handleSubmit callback typed ke PengajuanJudulFormValues (raw string dari form),
-  // parse ke number di sini sebelum naik ke parent via onSubmit prop
   const onFormSubmit: Parameters<typeof handleSubmit>[0] = async (data) => {
     const parsed: PengajuanJudulParsed = {
       judulTraining: data.judulTraining,
-      jmlHari: Number(data.jmlHari),
-      perusahaan: data.perusahaan,
-      namaKontak: data.namaKontak,
-      kontak: data.kontak,
-      jmlPeserta: data.jmlPeserta ? Number(data.jmlPeserta) : null,
+      jumlahHari: Number(data.jmlHari),
+      perusahaanId: data.perusahaanId || undefined,
+      namaKontak: data.namaKontak || undefined,
+      kontak: data.kontak || undefined,
+      jumlahPeserta: data.jmlPeserta ? Number(data.jmlPeserta) : null,
     };
     await onSubmit(parsed);
   };
@@ -146,7 +165,9 @@ export function PengajuanJudulModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
           <div>
             <p className="font-bold text-zinc-800 text-sm">
-              {isEdit ? "Edit Pengajuan Judul Training" : "Tambah Pengajuan Judul Training"}
+              {isEdit
+                ? "Edit Pengajuan Judul Training"
+                : "Tambah Pengajuan Judul Training"}
             </p>
             <p className="text-[11px] text-zinc-400 mt-0.5">
               Lengkapi formulir di bawah ini untuk{" "}
@@ -164,8 +185,6 @@ export function PengajuanJudulModal({
         {/* Body */}
         <form onSubmit={handleSubmit(onFormSubmit)}>
           <div className="px-6 py-5 space-y-4">
-
-            {/* Judul Training */}
             <div>
               <FieldLabel>Judul Lengkap</FieldLabel>
               <input
@@ -176,7 +195,6 @@ export function PengajuanJudulModal({
               <FieldError message={errors.judulTraining?.message} />
             </div>
 
-            {/* Jumlah Hari + Perusahaan */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <FieldLabel>Jumlah Hari</FieldLabel>
@@ -190,16 +208,32 @@ export function PengajuanJudulModal({
                 <FieldError message={errors.jmlHari?.message} />
               </div>
               <div>
-                <FieldLabel optional>Perusahaan/Instansi</FieldLabel>
+                <FieldLabel optional>Jumlah Peserta</FieldLabel>
                 <input
-                  {...register("perusahaan")}
-                  placeholder="Nama perusahaan/instansi"
+                  {...register("jmlPeserta")}
+                  type="number"
+                  min={0}
+                  placeholder="Estimasi peserta"
                   className={inputCls}
                 />
               </div>
             </div>
 
-            {/* Nama Kontak + Kontak */}
+            <div>
+              <FieldLabel optional>Perusahaan/Instansi</FieldLabel>
+              <Controller
+                name="perusahaanId"
+                control={control}
+                render={({ field }) => (
+                  <PerusahaanSelect
+                    value={field.value}
+                    onChange={(noInduk) => field.onChange(noInduk)}
+                    error={errors.perusahaanId?.message}
+                  />
+                )}
+              />
+            </div>
+
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <FieldLabel optional>Nama Kontak</FieldLabel>
@@ -217,18 +251,6 @@ export function PengajuanJudulModal({
                   className={inputCls}
                 />
               </div>
-            </div>
-
-            {/* Jumlah Peserta */}
-            <div>
-              <FieldLabel optional>Jumlah Peserta</FieldLabel>
-              <input
-                {...register("jmlPeserta")}
-                type="number"
-                min={0}
-                placeholder="Estimasi peserta"
-                className={inputCls}
-              />
             </div>
           </div>
 
