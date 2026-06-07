@@ -23,6 +23,7 @@ const trainerFormSchema = z.object({
   referensi: z.string().optional(),
   subyekKhusus: z.string().optional(),
   keterangan: z.string().optional(),
+  tugas: z.string().optional(), // ← tambah ini
 });
 
 export type TrainerFormValues = z.infer<typeof trainerFormSchema>;
@@ -31,11 +32,19 @@ export type TrainerFormValues = z.infer<typeof trainerFormSchema>;
 // Shared field components — same pattern as HotelModal
 // ---------------------------------------------------------------------------
 
-function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
+function FieldLabel({
+  children,
+  optional,
+}: {
+  children: React.ReactNode;
+  optional?: boolean;
+}) {
   return (
     <label className="block text-[11px] font-semibold text-zinc-500 mb-1.5">
       {children}
-      {optional && <span className="ml-1 font-normal text-zinc-400">(opsional)</span>}
+      {optional && (
+        <span className="ml-1 font-normal text-zinc-400">(opsional)</span>
+      )}
     </label>
   );
 }
@@ -64,11 +73,19 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 // Detail field for view modal
 // ---------------------------------------------------------------------------
 
-function DetailField({ label, value }: { label: string; value?: React.ReactNode }) {
+function DetailField({
+  label,
+  value,
+}: {
+  label: string;
+  value?: React.ReactNode;
+}) {
   return (
     <div>
       <p className="text-[10px] text-zinc-400 mb-0.5">{label}</p>
-      <p className="text-xs text-zinc-700">{value ?? <span className="text-zinc-300">-</span>}</p>
+      <p className="text-xs text-zinc-700">
+        {value ?? <span className="text-zinc-300">-</span>}
+      </p>
     </div>
   );
 }
@@ -84,7 +101,12 @@ interface TrainerDetailModalProps {
   data: Trainer | null;
 }
 
-export function TrainerDetailModal({ open, onClose, onEdit, data }: TrainerDetailModalProps) {
+export function TrainerDetailModal({
+  open,
+  onClose,
+  onEdit,
+  data,
+}: TrainerDetailModalProps) {
   if (!open || !data) return null;
 
   return (
@@ -115,7 +137,10 @@ export function TrainerDetailModal({ open, onClose, onEdit, data }: TrainerDetai
             <SectionHeading>Identitas Diri</SectionHeading>
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
               <DetailField label="Nama" value={`${data.nama} - ${data.kode}`} />
-              <DetailField label="Referensi" value={data.referensi.join(", ") || "-"} />
+              <DetailField
+                label="Referensi"
+                value={data.referensi.join(", ") || "-"}
+              />
               <DetailField label="Alamat" value={data.alamat} />
               <DetailField label="Subyek Khusus" value={data.subyekKhusus} />
               <DetailField label="Hp/Telp" value={data.hp} />
@@ -196,6 +221,7 @@ export function TrainerFormModal({
       referensi: "",
       subyekKhusus: "",
       keterangan: "",
+      tugas: "", // ← sini
     },
   });
 
@@ -213,6 +239,7 @@ export function TrainerFormModal({
         referensi: initialData?.referensi?.join(", ") ?? "",
         subyekKhusus: initialData?.subyekKhusus ?? "",
         keterangan: initialData?.keterangan ?? "",
+        tugas: initialData?.tugas ?? "", // ← sini
       });
     }
   }, [open, initialData, reset]);
@@ -230,7 +257,7 @@ export function TrainerFormModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -255,36 +282,56 @@ export function TrainerFormModal({
         {/* Body */}
         <form onSubmit={handleSubmit(onFormSubmit)}>
           <div className="px-6 py-5 space-y-4">
-
             {/* Identitas Diri */}
             <SectionHeading>Identitas Diri</SectionHeading>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <FieldLabel>Nama</FieldLabel>
-                <input {...register("nama")} placeholder="Nama lengkap trainer" className={inputCls} />
+                <input
+                  {...register("nama")}
+                  placeholder="Nama lengkap trainer"
+                  className={inputCls}
+                />
                 <FieldError message={errors.nama?.message} />
               </div>
               <div>
                 <FieldLabel>Kode</FieldLabel>
-                <input {...register("kode")} placeholder="Kode trainer" className={inputCls} />
+                <input
+                  {...register("kode")}
+                  placeholder="Kode trainer"
+                  className={inputCls}
+                />
                 <FieldError message={errors.kode?.message} />
               </div>
             </div>
 
             <div>
               <FieldLabel optional>Alamat</FieldLabel>
-              <textarea {...register("alamat")} placeholder="Alamat lengkap" rows={3} className={`${inputCls} resize-none`} />
+              <textarea
+                {...register("alamat")}
+                placeholder="Alamat lengkap"
+                rows={3}
+                className={`${inputCls} resize-none`}
+              />
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <FieldLabel optional>Hp/Telp</FieldLabel>
-                <input {...register("hp")} placeholder="08XXXXXXXXXX" className={inputCls} />
+                <input
+                  {...register("hp")}
+                  placeholder="08XXXXXXXXXX"
+                  className={inputCls}
+                />
               </div>
               <div>
                 <FieldLabel optional>Email</FieldLabel>
-                <input {...register("email")} placeholder="email@example.com" className={inputCls} />
+                <input
+                  {...register("email")}
+                  placeholder="email@example.com"
+                  className={inputCls}
+                />
               </div>
             </div>
 
@@ -293,32 +340,63 @@ export function TrainerFormModal({
 
             <div>
               <FieldLabel optional>Kantor</FieldLabel>
-              <input {...register("kantor")} placeholder="Nama kantor / kota" className={inputCls} />
+              <input
+                {...register("kantor")}
+                placeholder="Nama kantor / kota"
+                className={inputCls}
+              />
             </div>
 
             <div>
               <FieldLabel optional>Alamat Kantor</FieldLabel>
-              <textarea {...register("alamatKantor")} placeholder="Alamat kantor" rows={2} className={`${inputCls} resize-none`} />
+              <textarea
+                {...register("alamatKantor")}
+                placeholder="Alamat kantor"
+                rows={2}
+                className={`${inputCls} resize-none`}
+              />
             </div>
 
             <div>
               <FieldLabel optional>No Telp Kantor</FieldLabel>
-              <input {...register("noTelpKantor")} placeholder="(021) XXXXXX" className={inputCls} />
+              <input
+                {...register("noTelpKantor")}
+                placeholder="(021) XXXXXX"
+                className={inputCls}
+              />
             </div>
 
             <div>
               <FieldLabel optional>Referensi</FieldLabel>
-              <input {...register("referensi")} placeholder="EP-19, EP-67" className={inputCls} />
+              <input
+                {...register("referensi")}
+                placeholder="EP-19, EP-67"
+                className={inputCls}
+              />
             </div>
 
             <div>
               <FieldLabel optional>Subyek Khusus</FieldLabel>
-              <input {...register("subyekKhusus")} placeholder="Masukkan subyek khusus" className={inputCls} />
+              <input
+                {...register("subyekKhusus")}
+                placeholder="Masukkan subyek khusus"
+                className={inputCls}
+              />
             </div>
 
             <div>
               <FieldLabel optional>Keterangan</FieldLabel>
-              <textarea {...register("keterangan")} placeholder="Masukkan subyek khusus" rows={3} className={`${inputCls} resize-none`} />
+              <textarea
+                {...register("keterangan")}
+                placeholder="Masukkan subyek khusus"
+                rows={3}
+                className={`${inputCls} resize-none`}
+              />
+            </div>
+
+            <div>
+              <FieldLabel optional>Tugas</FieldLabel>
+              <input type="date" {...register("tugas")} className={inputCls} />
             </div>
           </div>
 

@@ -1,61 +1,123 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { DataTable, ColumnDef } from "@/components/training/Table";
-import { TrainerDetailModal, TrainerFormModal, TrainerFormValues } from "@/components/training/TrainerModal";
-import { Trainer, dummyTrainers } from "@/lib/types/trainer-types";
-
-const PAGE_SIZE = 10;
+import {
+  TrainerDetailModal,
+  TrainerFormModal,
+  TrainerFormValues,
+} from "@/components/training/TrainerModal";
+import type { Trainer } from "@/lib/types/trainer-types";
+import {
+  useTrainers,
+  useTrainerById,
+  useCreateTrainer,
+  useUpdateTrainer,
+} from "@/hooks/use-trainer";
+import Notification from "@/components/base/notifications"; // ✅
 
 export default function ManajemenTrainerPage() {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const {
+    data,
+    pagination,
+    loading,
+    page,
+    search,
+    setPage,
+    handleSearch,
+    refresh,
+  } = useTrainers();
+
+  const { mutate: create, loading: creating } = useCreateTrainer();
+  const { mutate: update, loading: updating } = useUpdateTrainer();
+
   const [detailOpen, setDetailOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Trainer | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const filtered = dummyTrainers.filter(
-    (d) =>
-      d.nama.toLowerCase().includes(search.toLowerCase()) ||
-      d.kode.toLowerCase().includes(search.toLowerCase()) ||
-      d.kantor.toLowerCase().includes(search.toLowerCase())
-  );
+  const { data: detailData } = useTrainerById(selectedId);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const [notif, setNotif] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
-  const handleSearch = (val: string) => {
-    setSearch(val);
-    setCurrentPage(1);
-  };
+  useEffect(() => {
+    if (detailData) setSelectedItem(detailData);
+  }, [detailData]);
 
   const handleOpenAdd = () => {
+    setSelectedId(null);
     setSelectedItem(null);
     setFormOpen(true);
   };
 
   const handleOpenDetail = (item: Trainer) => {
-    setSelectedItem(item);
+    setSelectedItem(item); // sementara pakai list data
+    if (selectedId === item.id) {
+      // id sama, effect ga re-run → paksa pakai detailData yang sudah ada
+      if (detailData) setSelectedItem(detailData);
+    } else {
+      setSelectedId(item.id); // id beda → trigger fetch
+    }
     setDetailOpen(true);
   };
 
-  // From detail modal → switch to edit modal
   const handleDetailToEdit = () => {
     setDetailOpen(false);
     setFormOpen(true);
   };
 
   const handleOpenEdit = (item: Trainer) => {
+    setSelectedId(item.id);
     setSelectedItem(item);
     setFormOpen(true);
   };
 
   const handleSubmit = async (data: TrainerFormValues) => {
-    // TODO: replace with actual API call
-    console.log("submit", data);
-    setFormOpen(false);
+    const referensiStr = Array.isArray(data.referensi)
+      ? data.referensi.join(",")
+      : (data.referensi ?? "");
+
+    const payload = {
+      kode: data.kode,
+      nama: data.nama,
+      telp: data.hp,
+      email: data.email,
+      kantor: data.kantor,
+      alamat: data.alamat,
+      alamatKantor: data.alamatKantor,
+      noTelpKantor: data.noTelpKantor,
+      referensi: referensiStr,
+      subjekKhusus: data.subyekKhusus ?? undefined,
+      keterangan: data.keterangan ?? undefined,
+      tugas: data.tugas ?? undefined,
+    };
+
+    if (selectedItem) {
+      await update(selectedItem.id, payload, () => {
+        setFormOpen(false);
+        setSelectedId(null);
+        refresh();
+        setNotif({
+          message: "Data trainer berhasil diperbarui",
+          type: "success",
+        });
+      });
+    } else {
+      await create(payload, () => {
+        setFormOpen(false);
+        setSelectedId(null);
+        refresh();
+        setNotif({
+          message: "Data trainer berhasil ditambahkan",
+          type: "success",
+        });
+      });
+    }
   };
 
   const columns: ColumnDef<Trainer>[] = [
@@ -64,15 +126,11 @@ export default function ManajemenTrainerPage() {
       label: "No",
       render: (_val, _row, index) => (
         <span className="text-zinc-400 font-medium">
-          {(currentPage - 1) * PAGE_SIZE + index + 1}
+          {(page - 1) * 10 + index + 1}
         </span>
       ),
     },
-    {
-      key: "kode",
-      label: "Kode",
-      sortable: true,
-    },
+    { key: "kode", label: "Kode", sortable: true },
     {
       key: "nama",
       label: "Nama",
@@ -81,10 +139,7 @@ export default function ManajemenTrainerPage() {
         <span className="font-semibold text-zinc-700">{val as string}</span>
       ),
     },
-    {
-      key: "hp",
-      label: "HP",
-    },
+    { key: "hp", label: "HP" },
     {
       key: "email",
       label: "Email",
@@ -92,11 +147,7 @@ export default function ManajemenTrainerPage() {
         <span className="text-emerald-600">{val as string}</span>
       ),
     },
-    {
-      key: "kantor",
-      label: "Kantor",
-      sortable: true,
-    },
+    { key: "kantor", label: "Kantor", sortable: true },
     {
       key: "referensi",
       label: "Referensi",
@@ -112,7 +163,9 @@ export default function ManajemenTrainerPage() {
             </span>
           ))}
           {row.referensi.length > 8 && (
-            <span className="text-[9px] text-zinc-400">+{row.referensi.length - 8}</span>
+            <span className="text-[9px] text-zinc-400">
+              +{row.referensi.length - 8}
+            </span>
           )}
         </div>
       ),
@@ -150,26 +203,32 @@ export default function ManajemenTrainerPage() {
 
   return (
     <AppLayout
-      breadcrumbs={[
-        { label: "Training" },
-        { label: "Manajemen Trainer" },
-      ]}
+      breadcrumbs={[{ label: "Training" }, { label: "Manajemen Trainer" }]}
       subtitle="Hari Ini: Selasa, 3 Februari 2026"
       userName="Nanang"
       userRole="Super Admin"
     >
+      {notif && (
+        <Notification
+          message={notif.message}
+          type={notif.type}
+          onClose={() => setNotif(null)}
+        />
+      )}
+
       <div className="space-y-4">
         <DataTable
           columns={columns}
-          data={paginated}
-          totalData={filtered.length}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          pageSize={PAGE_SIZE}
-          onPageChange={setCurrentPage}
-          searchPlaceholder="Cari informasi..."
+          data={data}
+          totalData={pagination.total}
+          currentPage={page}
+          totalPages={pagination.totalPages}
+          pageSize={10}
+          onPageChange={setPage}
+          searchPlaceholder="Cari kode, nama, HP, kantor..."
           searchValue={search}
           onSearchChange={handleSearch}
+          isLoading={loading}
           actionSlot={
             <button
               onClick={handleOpenAdd}
@@ -181,20 +240,25 @@ export default function ManajemenTrainerPage() {
           }
         />
 
-        {/* Detail / View Modal */}
         <TrainerDetailModal
           open={detailOpen}
-          onClose={() => setDetailOpen(false)}
+          onClose={() => {
+            setDetailOpen(false);
+            setSelectedId(null); // ← tambah ini
+          }}
           onEdit={handleDetailToEdit}
           data={selectedItem}
         />
 
-        {/* Edit / Create Modal */}
         <TrainerFormModal
           open={formOpen}
-          onClose={() => setFormOpen(false)}
+          onClose={() => {
+            setFormOpen(false);
+            setSelectedId(null); // ← tambah ini
+          }}
           initialData={selectedItem}
           onSubmit={handleSubmit}
+          isLoading={creating || updating}
         />
       </div>
     </AppLayout>
