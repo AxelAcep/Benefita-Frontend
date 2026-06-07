@@ -2,85 +2,84 @@
 
 import React, { useState } from "react";
 import { Users, Plus } from "lucide-react";
+import { PesertaTrainingListItem } from "@/lib/services/input.service";
 
 // ─────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────
 
-export interface Peserta {
-  id: number;
-  nama: string;
-  perusahaan: string;
-  noTelp: string;
-  ae: string;
-  ovEnv: string;
-  status: string;
-  statusUji: string;
-  form: string;
-  konf: string;
-  biaya: string;
-  diskon: number;
-  total: string;
-  bayar: number;
-  cashback: number;
-  sisa: string;
-  infoBayar: string;
-  inputBy: string;
-  updBy: string;
-  catatan: string;
-}
-
 export interface PesertaAksiHandlers {
-  onEdit?: (peserta: Peserta) => void;
-  onKonfirmasi?: (peserta: Peserta) => void;
-  onCetakKwitansi?: (peserta: Peserta) => void;
-  onCetakInvoice?: (peserta: Peserta) => void;
-  onPesertaFinal?: (peserta: Peserta) => void;
+  onEdit?: (peserta: PesertaTrainingListItem) => void;
+  onKonfirmasi?: (peserta: PesertaTrainingListItem) => void;
+  onCetakKwitansi?: (peserta: PesertaTrainingListItem) => void;
+  onCetakInvoice?: (peserta: PesertaTrainingListItem) => void;
+  onPesertaFinal?: (peserta: PesertaTrainingListItem) => void;
 }
 
 interface TableListPesertaProps {
-  data: Peserta[];
+  data: PesertaTrainingListItem[];
+  totalData: number;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  onSearchChange: (val: string) => void;
+  searchValue: string;
+  isLoading?: boolean;
   onTambah?: () => void;
   aksiHandlers?: PesertaAksiHandlers;
 }
+
+const PAGE_SIZE = 10;
 
 // ─────────────────────────────────────────────
 // CELL HELPERS
 // ─────────────────────────────────────────────
 
 function Dash({ children }: { children: React.ReactNode }) {
-  if (!children || children === "-" || children === "")
+  if (!children && children !== 0)
     return <span className="text-zinc-300 select-none">–</span>;
   return <>{children}</>;
+}
+
+function formatRupiah(val: number | null | undefined) {
+  if (val === null || val === undefined)
+    return <span className="text-zinc-300">–</span>;
+  return <span>Rp{val.toLocaleString("id-ID")}</span>;
+}
+
+function StatusBadge({ status }: { status: string | null }) {
+  if (!status) return <span className="text-zinc-300">–</span>;
+  const color =
+    status === "FIX"
+      ? "bg-emerald-50 text-emerald-600"
+      : status === "Cancel"
+        ? "bg-red-50 text-red-500"
+        : "bg-zinc-100 text-zinc-500";
+  return (
+    <span
+      className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${color}`}
+    >
+      {status}
+    </span>
+  );
 }
 
 // ─────────────────────────────────────────────
 // COMPONENT
 // ─────────────────────────────────────────────
 
-const TOTAL_DATA = 28;
-const TOTAL_PAGES = 7;
-const PAGE_SIZE = 10;
-
 export default function TableListPeserta({
   data,
+  totalData,
+  currentPage,
+  totalPages,
+  onPageChange,
+  onSearchChange,
+  searchValue,
+  isLoading,
   onTambah,
   aksiHandlers = {},
 }: TableListPesertaProps) {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const filtered = data.filter(
-    (d) =>
-      d.nama.toLowerCase().includes(search.toLowerCase()) ||
-      d.perusahaan.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
       {/* Toolbar */}
@@ -93,7 +92,6 @@ export default function TableListPeserta({
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          {/* Search */}
           <div className="relative">
             <svg
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-300"
@@ -110,16 +108,12 @@ export default function TableListPeserta({
             <input
               type="text"
               placeholder="Cari informasi..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
+              value={searchValue}
+              onChange={(e) => onSearchChange(e.target.value)}
               className="w-48 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
             />
           </div>
 
-          {/* Tambah Peserta */}
           <button
             type="button"
             onClick={onTambah}
@@ -133,87 +127,61 @@ export default function TableListPeserta({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1600px]">
+        <table className="w-full min-w-[2000px]">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50/60">
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-10">
-                No ↕
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-32">
-                Nama
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">
-                Perusahaan/Instansi
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">
-                No. Telp
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-center w-12">
-                AE
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-center w-14">
-                Ov ENV
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-center w-16">
-                Status
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-center w-16">
-                Status Uji
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-center w-14">
-                Form
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-center w-14">
-                Konf
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-right w-28">
-                Biaya
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-right w-16">
-                Diskon
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-right w-28">
-                Total
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-right w-14">
-                Bayar
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-right w-16">
-                Cash back
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-right w-28">
-                Sisa
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
-                Info Bayar
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
-                Input By
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
-                Upd By
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
-                Catatan
-              </th>
-              <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-center w-28">
-                Aksi
-              </th>
+              {[
+                "No",
+                "Nama",
+                "Perusahaan",
+                "AE",
+                "Own Env",
+                "Status",
+                "Status Uji",
+                "Konf",
+                "Biaya",
+                "Diskon",
+                "Total",
+                "Bayar",
+                "Cashback",
+                "Sisa",
+                "Info Bayar",
+                "Input By",
+                "Upd By",
+                "Catatan",
+                "Aksi",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left whitespace-nowrap"
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
 
           <tbody>
-            {paginated.length === 0 ? (
+            {isLoading ? (
               <tr>
                 <td
-                  colSpan={20}
+                  colSpan={19}
+                  className="px-4 py-12 text-center text-xs text-zinc-400"
+                >
+                  Memuat data...
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={19}
                   className="px-4 py-12 text-center text-xs text-zinc-400"
                 >
                   Tidak ada data tersedia.
                 </td>
               </tr>
             ) : (
-              paginated.map((row, i) => (
+              data.map((row, i) => (
                 <tr
                   key={row.id}
                   className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors"
@@ -221,73 +189,75 @@ export default function TableListPeserta({
                   <td className="px-3 py-3 text-xs text-zinc-400 align-top">
                     {(currentPage - 1) * PAGE_SIZE + i + 1}
                   </td>
-                  <td className="px-3 py-3 text-xs text-zinc-700 font-medium align-top">
+                  <td className="px-3 py-3 text-xs text-zinc-700 font-medium align-top whitespace-nowrap">
                     {row.nama}
                   </td>
                   <td className="px-3 py-3 text-xs align-top">
                     <span className="text-emerald-600 font-semibold cursor-pointer hover:underline">
-                      {row.perusahaan}
+                      {row.perusahaan?.company ?? "-"}
                     </span>
+                  </td>
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top">
+                    <Dash>{row.accExecutive}</Dash>
+                  </td>
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top">
+                    <Dash>{row.ownEnv}</Dash>
+                  </td>
+                  <td className="px-3 py-3 align-top">
+                    <StatusBadge status={row.status} />
+                  </td>
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top">
+                    <Dash>{row.ujian ? "Ya" : null}</Dash>
+                  </td>
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top">
+                    <Dash>{row.pegawaiKonfirmasi?.nama}</Dash>
                   </td>
                   <td className="px-3 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
-                    <Dash>{row.noTelp}</Dash>
+                    {formatRupiah(row.hargaTotal)}
                   </td>
-                  <td className="px-3 py-3 text-center text-xs text-zinc-600 align-top">
-                    {row.ae}
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
+                    {formatRupiah(row.diskon)}
                   </td>
-                  <td className="px-3 py-3 text-center text-xs text-zinc-600 align-top">
-                    {row.ovEnv}
+                  <td className="px-3 py-3 text-xs text-zinc-600 font-medium align-top whitespace-nowrap">
+                    {formatRupiah(row.hargaTotal)}
                   </td>
-                  <td className="px-3 py-3 text-center text-xs align-top">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
-                        row.status === "FIX"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : row.status === "Cancel"
-                            ? "bg-red-50 text-red-500"
-                            : "bg-zinc-100 text-zinc-500"
-                      }`}
-                    >
-                      {row.status}
-                    </span>
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
+                    {formatRupiah(row.bayar)}
                   </td>
-                  <td className="px-3 py-3 text-center text-xs text-zinc-600 align-top">
-                    <Dash>{row.statusUji}</Dash>
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
+                    {formatRupiah(row.cashback)}
                   </td>
-                  <td className="px-3 py-3 text-center text-xs text-zinc-600 align-top">
-                    <Dash>{row.form}</Dash>
-                  </td>
-                  <td className="px-3 py-3 text-center text-xs text-zinc-600 align-top">
-                    <Dash>{row.konf}</Dash>
-                  </td>
-                  <td className="px-3 py-3 text-right text-xs text-zinc-600 align-top">
-                    {row.biaya}
-                  </td>
-                  <td className="px-3 py-3 text-right text-xs text-zinc-600 align-top">
-                    {row.diskon}
-                  </td>
-                  <td className="px-3 py-3 text-right text-xs text-zinc-600 font-medium align-top">
-                    {row.total}
-                  </td>
-                  <td className="px-3 py-3 text-right text-xs text-zinc-600 align-top">
-                    {row.bayar}
-                  </td>
-                  <td className="px-3 py-3 text-right text-xs text-zinc-600 align-top">
-                    {row.cashback}
-                  </td>
-                  <td className="px-3 py-3 text-right text-xs text-zinc-600 align-top">
-                    {row.sisa}
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
+                    {formatRupiah(row.sisa)}
                   </td>
                   <td className="px-3 py-3 text-xs text-zinc-500 align-top whitespace-pre-line">
-                    {row.infoBayar}
+                    <Dash>{row.infoPembayaran}</Dash>
                   </td>
-                  <td className="px-3 py-3 text-xs text-zinc-500 align-top whitespace-pre-line">
-                    {row.inputBy}
+                  <td className="px-3 py-3 align-top">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-zinc-600">
+                        {row.pegawaiInput?.nama ?? "-"}
+                      </span>
+                      <span className="text-[10px] text-zinc-400">
+                        {row.tglInput
+                          ? new Date(row.tglInput).toISOString().split("T")[0]
+                          : "-"}
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-3 py-3 text-xs text-zinc-500 align-top whitespace-pre-line">
-                    {row.updBy}
+                  <td className="px-3 py-3 align-top">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-zinc-600">
+                        {row.pegawaiUpdate?.nama ?? "-"}
+                      </span>
+                      <span className="text-[10px] text-zinc-400">
+                        {row.tglUpdate
+                          ? new Date(row.tglUpdate).toISOString().split("T")[0]
+                          : "-"}
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-3 py-3 text-xs text-zinc-600 align-top font-medium">
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top">
                     <Dash>{row.catatan}</Dash>
                   </td>
                   <td className="px-3 py-3 align-top">
@@ -336,52 +306,57 @@ export default function TableListPeserta({
         <p className="text-[11px] text-zinc-400">
           Menampilkan{" "}
           <span className="font-semibold text-zinc-600">
-            {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
-            {Math.min(currentPage * PAGE_SIZE, filtered.length)}
+            {totalData === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
+            {Math.min(currentPage * PAGE_SIZE, totalData)}
           </span>{" "}
-          dari <span className="font-semibold text-zinc-600">{TOTAL_DATA}</span>{" "}
+          dari <span className="font-semibold text-zinc-600">{totalData}</span>{" "}
           data
         </p>
 
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
             className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
           >
             ‹ Sebelumnya
           </button>
 
-          {[1, 2, 3].map((p) => (
-            <button
-              key={p}
-              onClick={() => setCurrentPage(p)}
-              className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                p === currentPage
-                  ? "bg-emerald-500 text-white"
-                  : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(
+            (p) => (
+              <button
+                key={p}
+                onClick={() => onPageChange(p)}
+                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
+                  p === currentPage
+                    ? "bg-emerald-500 text-white"
+                    : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                }`}
+              >
+                {p}
+              </button>
+            ),
+          )}
 
-          <span className="text-[11px] text-zinc-400 px-1">...</span>
+          {totalPages > 5 && (
+            <>
+              <span className="text-[11px] text-zinc-400 px-1">...</span>
+              <button
+                onClick={() => onPageChange(totalPages)}
+                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
+                  currentPage === totalPages
+                    ? "bg-emerald-500 text-white"
+                    : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                }`}
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
 
           <button
-            onClick={() => setCurrentPage(TOTAL_PAGES)}
-            className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-              currentPage === TOTAL_PAGES
-                ? "bg-emerald-500 text-white"
-                : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-            }`}
-          >
-            {TOTAL_PAGES}
-          </button>
-
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(TOTAL_PAGES, p + 1))}
-            disabled={currentPage === TOTAL_PAGES}
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
             className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
           >
             Selanjutnya ›

@@ -1,170 +1,242 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import { useParams, useRouter } from "next/navigation";
 
 import CardDetailKegiatan, {
   type DetailKegiatanFormData,
 } from "./card-detail-kegiatan";
 import CardDaftarMenu from "./card-daftar-menu";
-import TableListPeserta, { type Peserta } from "./table-list-peserta";
+import TableListPeserta from "./table-list-peserta";
 import ModalTambahPeserta, {
   type TambahPesertaFormData,
 } from "./modal-tambah-peserta";
 import PageKonfirmasi from "./konfirmasi/[idPeserta]/page";
 import PageKwitansi from "./kwitansi/[idPeserta]/page";
 import PageInvoice from "./invoice/[idPeserta]/page";
-import { useParams, useRouter } from "next/navigation";
+import Notification from "@/components/base/notifications"; // sesuaikan path
 
-// ─────────────────────────────────────────────
-// DUMMY DATA
-// ─────────────────────────────────────────────
-
-const INITIAL_DETAIL: DetailKegiatanFormData = {
-  noJadwal: "2026274",
-  kode: "EM-05",
-  tanggalMulai: "02 Apr 2026",
-  tanggalSelesai: "02 Apr 2026",
-  metode: "Offline",
-  lokasi: "LSP Benefita",
-  kota: "Bandung",
-  biayaOnline: "Online : 5,900,000",
-  biayaOffline: "Offline : 7,900,000",
-  biayaSertifikasi: "Sertifikasi: 4,600,000",
-  judul: "Penanggung Jawab Pengendalian Pencemaran Udara (PPPU)",
-  pesertaFIXOnline: "0",
-  pesertaFIXOffline: "0",
-  catatan: "",
-  statusJadwal: "UJI_Running",
-};
-
-const INITIAL_PESERTA: Peserta[] = [
-  {
-    id: 1,
-    nama: "Muhammad Habibie Musy",
-    perusahaan: "PT ABC",
-    noTelp: "-",
-    ae: "SL",
-    ovEnv: "SL",
-    status: "FIX",
-    statusUji: "R&U",
-    form: "Ada",
-    konf: "-",
-    biaya: "Rp5.900.000",
-    diskon: 0,
-    total: "Rp14.900.000",
-    bayar: 0,
-    cashback: 0,
-    sisa: "Rp14.900.000",
-    infoBayar: "sylva\n01apr 08:23",
-    inputBy: "Permata",
-    updBy: "zirah\n20apr 09:51",
-    catatan: "PROSES",
-  },
-  {
-    id: 2,
-    nama: "Arief Khan Djaelani",
-    perusahaan: "PT BCAA",
-    noTelp: "-",
-    ae: "SL",
-    ovEnv: "SL",
-    status: "FIX",
-    statusUji: "-",
-    form: "-",
-    konf: "-",
-    biaya: "Rp5.900.000",
-    diskon: 0,
-    total: "Rp7.500.000",
-    bayar: 0,
-    cashback: 0,
-    sisa: "Rp7.500.000",
-    infoBayar: "sylva\n01apr 08:23",
-    inputBy: "-",
-    updBy: "zirah\n20apr 09:51",
-    catatan: "PROSES",
-  },
-  {
-    id: 3,
-    nama: "Setiyo Rishandoko",
-    perusahaan: "PT ABCCC",
-    noTelp: "-",
-    ae: "SL",
-    ovEnv: "SL",
-    status: "FIX",
-    statusUji: "R&U",
-    form: "-",
-    konf: "-",
-    biaya: "Rp5.900.000",
-    diskon: 0,
-    total: "Rp14.900.000",
-    bayar: 0,
-    cashback: 0,
-    sisa: "Rp14.900.000",
-    infoBayar: "sylva\n01apr 08:23",
-    inputBy: "-",
-    updBy: "zirah\n20apr 09:51",
-    catatan: "PROSES",
-  },
-  {
-    id: 4,
-    nama: "Ahmad Sarminto",
-    perusahaan: "PT BCASO",
-    noTelp: "08113168985 / 08559997475",
-    ae: "NW",
-    ovEnv: "SL",
-    status: "Cancel",
-    statusUji: "R&U",
-    form: "-",
-    konf: "-",
-    biaya: "0",
-    diskon: 0,
-    total: "0",
-    bayar: 0,
-    cashback: 0,
-    sisa: "0",
-    infoBayar: "sylva\n01apr 08:23",
-    inputBy: "-",
-    updBy: "zirah\n20apr 09:51",
-    catatan: "PROSES",
-  },
-];
-
-// ─────────────────────────────────────────────
-// PAGE
-// ─────────────────────────────────────────────
+import {
+  usePesertaTrainingList,
+  usePesertaTrainingDetail,
+  usePesertaTrainingMutation,
+} from "@/hooks/use-input";
+import {
+  PesertaTrainingListItem,
+  JadwalSummary,
+} from "@/lib/services/input.service";
 
 export default function InputDataPage() {
   const router = useRouter();
   const params = useParams();
+  const noJadwal = params.id as string;
 
-  const [detailData, setDetailData] =
-    useState<DetailKegiatanFormData>(INITIAL_DETAIL);
-  const [pesertaData, setPesertaData] = useState<Peserta[]>(INITIAL_PESERTA);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [konfirmasiPeserta, setKonfirmasiPeserta] = useState<Peserta | null>(
+  const [detailData, setDetailData] = useState<DetailKegiatanFormData | null>(
     null,
   );
-  const [invoicePeserta, setInvoicePeserta] = useState<Peserta | null>(null);
-  const [kwitansiPeserta, setKwitansiPeserta] = useState<Peserta | null>(null);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPesertaId, setEditingPesertaId] = useState<string | null>(null);
+  const [konfirmasiPeserta, setKonfirmasiPeserta] =
+    useState<PesertaTrainingListItem | null>(null);
+  const [invoicePeserta, setInvoicePeserta] =
+    useState<PesertaTrainingListItem | null>(null);
+  const [kwitansiPeserta, setKwitansiPeserta] =
+    useState<PesertaTrainingListItem | null>(null);
 
-  function handleTambahPeserta() {
+  const {
+    data,
+    meta,
+    isLoading,
+    search,
+    currentPage,
+    jadwal,
+    fetch,
+    handleSearch,
+    handlePageChange,
+  } = usePesertaTrainingList(noJadwal);
+
+  const {
+    data: detailPeserta,
+    isLoading: isLoadingDetail,
+    fetch: fetchDetail,
+    reset: resetDetail,
+  } = usePesertaTrainingDetail();
+
+  const {
+    handleCreate,
+    handleUpdate,
+    isLoading: isSaving,
+  } = usePesertaTrainingMutation({
+    onSuccess: () => {
+      setIsModalOpen(false);
+      setEditingPesertaId(null);
+      resetDetail();
+      fetch();
+      // ✅ Tambah ini
+      setNotification({
+        message: editingPesertaId
+          ? "Data peserta berhasil diperbarui"
+          : "Peserta berhasil ditambahkan",
+        type: "success",
+      });
+    },
+    onError: (msg) => {
+      // ✅ Tambah ini juga biar error kecover
+      setNotification({ message: msg, type: "error" });
+    },
+  });
+
+  useEffect(() => {
+    fetch();
+  }, []);
+
+  useEffect(() => {
+    if (jadwal) {
+      setDetailData({
+        noJadwal: jadwal.noJadwal,
+        kode: jadwal.kodePelatihan,
+        tanggalMulai: jadwal.tglMulai
+          ? new Date(jadwal.tglMulai).toLocaleDateString("id-ID", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "-",
+        tanggalSelesai: jadwal.tglSelesai
+          ? new Date(jadwal.tglSelesai).toLocaleDateString("id-ID", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "-",
+        metode: jadwal.metode,
+        lokasi: jadwal.lokasiDetail ?? "-",
+        kota: jadwal.kota,
+        biayaOnline: "",
+        biayaOffline: `Rp${jadwal.biaya.toLocaleString("id-ID")}`,
+        biayaSertifikasi: "",
+        judul: jadwal.judulLengkap,
+        pesertaFIXOnline: String(jadwal.pesertaFixOnline),
+        pesertaFIXOffline: String(jadwal.pesertaFixOffline),
+        catatan: jadwal.catatan ?? "",
+        statusJadwal: jadwal.status,
+      });
+    }
+  }, [jadwal]);
+
+  useEffect(() => {
+    if (editingPesertaId) {
+      fetchDetail(editingPesertaId);
+    }
+  }, [editingPesertaId]);
+
+  function handleTambah() {
+    resetDetail();
+    setEditingPesertaId(null);
     setIsModalOpen(true);
   }
 
-  function handleSimpanPeserta(data: TambahPesertaFormData) {
-    console.log("Simpan peserta:", data);
-    setIsModalOpen(false);
+  function handleEdit(peserta: PesertaTrainingListItem) {
+    setEditingPesertaId(String(peserta.id));
+    setIsModalOpen(true);
   }
 
-  // Show konfirmasi page when a peserta is selected
+  function handleSimpan(formData: TambahPesertaFormData) {
+    const payload = {
+      nama: formData.nama,
+      jabatan: formData.jabatan,
+      noIndukPerusahaan: formData.noIndukPerusahaan,
+      alamat: formData.alamat,
+      noTelp: formData.noTelp,
+      noFax: formData.noFax,
+      email: formData.email,
+      alamatPengirimanSertifikat: formData.alamatPengirimanSertifikat,
+      catatan: formData.catatan,
+      accExecutive: formData.accExecutive,
+      status: formData.status,
+      metode: formData.metode,
+      ujian: formData.ujian,
+      industri: formData.industri,
+      ownEnv: formData.ownEnv,
+      diskon: formData.diskon ? parseInt(formData.diskon) : undefined,
+      ppn: formData.ppn ? parseInt(formData.ppn) : undefined,
+      cashback: formData.cashback ? parseInt(formData.cashback) : undefined,
+      hargaTotal: formData.hargaTotal
+        ? parseInt(formData.hargaTotal)
+        : undefined,
+      bayar: formData.bayar ? parseInt(formData.bayar) : undefined,
+      infoPembayaran: formData.infoPembayaran,
+      infoPenagihan: formData.infoPenagihan,
+      tglBayar: formData.tanggalBayar,
+      noInvoice: formData.noInvoice,
+      noKwitansi: formData.noKwitansi,
+      noInvUjian: formData.noInvUjian,
+      noKwtUjian: formData.noKwtUjian,
+      fileBuktiPembayaran: formData.fileBuktiPembayaran,
+      filePendaftaran: formData.filePendaftaran,
+    };
+
+    if (editingPesertaId) {
+      handleUpdate(editingPesertaId, payload);
+    } else {
+      handleCreate(noJadwal, payload);
+    }
+  }
+
+  const initialFormData: Partial<TambahPesertaFormData> | undefined =
+    detailPeserta
+      ? {
+          nama: detailPeserta.nama,
+          jabatan: detailPeserta.jabatan ?? "",
+          noIndukPerusahaan: detailPeserta.perusahaan.noInduk,
+          alamat: detailPeserta.alamat ?? "",
+          noTelp: detailPeserta.noTelp ?? "",
+          noFax: detailPeserta.noFax ?? "",
+          email: detailPeserta.email ?? "",
+          alamatPengirimanSertifikat:
+            detailPeserta.alamatPengirimanSertifikat ?? "",
+          catatan: detailPeserta.catatan ?? "",
+          accExecutive: detailPeserta.accExecutive ?? "",
+          status: detailPeserta.status ?? "",
+          metode: detailPeserta.metode ?? "",
+          ujian: detailPeserta.ujian ?? "",
+          konfirmasiOleh: detailPeserta.konfirmasiOleh ?? "",
+          industri: detailPeserta.industri ?? "",
+          ownEnv: detailPeserta.ownEnv ?? "",
+          diskon: detailPeserta.diskon ? String(detailPeserta.diskon) : "",
+          ppn: detailPeserta.ppn ? String(detailPeserta.ppn) : "",
+          cashback: detailPeserta.cashback
+            ? String(detailPeserta.cashback)
+            : "",
+          hargaTotal: detailPeserta.hargaTotal
+            ? String(detailPeserta.hargaTotal)
+            : "",
+          bayar: detailPeserta.bayar ? String(detailPeserta.bayar) : "",
+          infoPembayaran: detailPeserta.infoPembayaran ?? "",
+          infoPenagihan: detailPeserta.infoPenagihan ?? "",
+          tanggalBayar: detailPeserta.tglBayar
+            ? detailPeserta.tglBayar.split("T")[0]
+            : "",
+          noInvoice: detailPeserta.noInvoice ?? "",
+          noKwitansi: detailPeserta.noKwitansi ?? "",
+          noInvUjian: detailPeserta.noInvUjian ?? "",
+          noKwtUjian: detailPeserta.noKwtUjian ?? "",
+        }
+      : undefined;
+
   if (konfirmasiPeserta) {
     return (
       <PageKonfirmasi
         initialData={{
           namaPeserta: konfirmasiPeserta.nama,
-          instansi: konfirmasiPeserta.perusahaan,
+          instansi: konfirmasiPeserta.perusahaan?.company ?? "",
         }}
         onBack={() => setKonfirmasiPeserta(null)}
         onSimpan={(data) => {
@@ -176,13 +248,8 @@ export default function InputDataPage() {
     );
   }
 
-  if (invoicePeserta) {
-    return <PageInvoice />;
-  }
-
-  if (kwitansiPeserta) {
-    return <PageKwitansi />;
-  }
+  if (invoicePeserta) return <PageInvoice />;
+  if (kwitansiPeserta) return <PageKwitansi />;
 
   return (
     <AppLayout
@@ -194,8 +261,15 @@ export default function InputDataPage() {
       userName="Nanang"
       userRole="Super Admin"
     >
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
       <div className="flex flex-col gap-4">
-        {/* Back button */}
         <div>
           <button
             type="button"
@@ -207,16 +281,16 @@ export default function InputDataPage() {
           </button>
         </div>
 
-        {/* Card Detail Kegiatan */}
-        <CardDetailKegiatan
-          initialData={detailData}
-          onChange={(updated) => setDetailData(updated)}
-          disabled={!isEditMode}
-          isEdit={!isEditMode}
-          onEdit={() => setIsEditMode(true)}
-        />
+        {detailData && (
+          <CardDetailKegiatan
+            initialData={detailData}
+            onChange={(updated) => setDetailData(updated)}
+            disabled={!isEditMode}
+            isEdit={!isEditMode}
+            onEdit={() => setIsEditMode(true)}
+          />
+        )}
 
-        {/* Card Daftar Menu */}
         <CardDaftarMenu
           handlers={{
             onEvaluasiKegiatan: () => alert("Evaluasi Kegiatan"),
@@ -236,12 +310,18 @@ export default function InputDataPage() {
           }}
         />
 
-        {/* Table List Peserta */}
         <TableListPeserta
-          data={pesertaData}
-          onTambah={handleTambahPeserta}
+          data={data}
+          totalData={meta.total}
+          currentPage={currentPage}
+          totalPages={meta.totalPages}
+          onPageChange={handlePageChange}
+          onSearchChange={handleSearch}
+          searchValue={search}
+          isLoading={isLoading}
+          onTambah={handleTambah}
           aksiHandlers={{
-            onEdit: (p) => console.log("Edit", p),
+            onEdit: handleEdit,
             onKonfirmasi: (p) => setKonfirmasiPeserta(p),
             onCetakKwitansi: (p) => setKwitansiPeserta(p),
             onCetakInvoice: (p) => setInvoicePeserta(p),
@@ -252,8 +332,27 @@ export default function InputDataPage() {
 
       <ModalTambahPeserta
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSimpan={handleSimpanPeserta}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingPesertaId(null);
+          resetDetail();
+        }}
+        onSimpan={handleSimpan}
+        isLoading={isLoadingDetail || isSaving}
+        isEditMode={!!editingPesertaId}
+        initialData={initialFormData}
+        inputOleh={detailPeserta?.pegawaiInput?.nama}
+        tanggalInput={
+          detailPeserta?.tglInput
+            ? detailPeserta.tglInput.split("T")[0]
+            : undefined
+        }
+        updateOleh={detailPeserta?.pegawaiUpdate?.nama}
+        tanggalUpdate={
+          detailPeserta?.tglUpdate
+            ? detailPeserta.tglUpdate.split("T")[0]
+            : undefined
+        }
       />
     </AppLayout>
   );

@@ -149,14 +149,7 @@ export default function CardDetailKegiatan({
         </span>
 
         {isEdit ? (
-          <button
-            type="button"
-            onClick={onEdit}
-            className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-            Edit
-          </button>
+          <></>
         ) : (
           <button
             type="button"
@@ -193,25 +186,12 @@ export default function CardDetailKegiatan({
             />
             <FieldRow
               label="Biaya"
-              value={form.biayaOnline}
-              onChange={(v) => setField("biayaOnline", v)}
-              disabled={isLocked}
-              placeholder="Online: 0"
-            />
-            <FieldRow
-              label=""
               value={form.biayaOffline}
-              onChange={(v) => setField("biayaOffline", v)}
+              onChange={(v) => setField("noJadwal", v)}
               disabled={isLocked}
-              placeholder="Offline: 0"
+              placeholder="2026274"
             />
-            <FieldRow
-              label=""
-              value={form.biayaSertifikasi}
-              onChange={(v) => setField("biayaSertifikasi", v)}
-              disabled={isLocked}
-              placeholder="Sertifikasi: 0"
-            />
+
             <FieldRow
               label="Status Jadwal"
               value={form.statusJadwal}
