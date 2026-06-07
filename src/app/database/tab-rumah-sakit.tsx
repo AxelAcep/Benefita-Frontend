@@ -27,7 +27,7 @@ export default function TabPerusahaan({ jenisInstansi = "RUMAH_SAKIT" }) {
       <div className="px-5 py-4 border-b border-zinc-100 flex flex-wrap items-center justify-between gap-3">
         <span className="font-bold text-zinc-800 text-sm flex items-center gap-2">
           <Building2 className="w-4 h-4 text-emerald-500" />
-          List Rumah Sakit
+          List Perusahaan
         </span>
         <div className="flex items-center gap-2">
           <SearchInput
@@ -109,7 +109,7 @@ export default function TabPerusahaan({ jenisInstansi = "RUMAH_SAKIT" }) {
                   <td className="px-4 py-3 text-xs text-zinc-600">
                     <Anchor
                       name="Lihat Detail"
-                      route={`/database/rumah-sakit/${row.id}`}
+                      route={`/database/perusahaan/${row.id}`}
                     />
                   </td>
                 </tr>

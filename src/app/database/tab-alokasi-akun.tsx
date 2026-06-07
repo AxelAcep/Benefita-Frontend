@@ -141,8 +141,12 @@ export default function TabAlokasiAkun() {
 
                   {/* Posisi Acc */}
                   <td className="px-4 py-3 text-xs text-zinc-600">
-                    {row.pegawaiAssigned.length > 0 ? (
-                      row.pegawaiAssigned.map((p) => p.nama).join(", ")
+                    {(row.pegawaiAssigned ?? []).filter((p) => p != null)
+                      .length > 0 ? (
+                      (row.pegawaiAssigned ?? [])
+                        .filter((p) => p != null)
+                        .map((p) => p.nama)
+                        .join(", ")
                     ) : (
                       <span className="text-zinc-300">—</span>
                     )}

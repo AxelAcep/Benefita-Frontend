@@ -20,6 +20,7 @@ export interface GetPerusahaanParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  jenisInstansi?: string;
 }
 
 export interface GetPerusahaanResponse {
@@ -110,6 +111,7 @@ export async function getPerusahaan(
   if (params.search) query.append("search", params.search);
   if (params.page) query.append("page", params.page.toString());
   if (params.pageSize) query.append("pageSize", params.pageSize.toString());
+  if (params.jenisInstansi) query.append("jenisInstansi", params.jenisInstansi);
 
   const url = `${API_URL}/api/database/perusahaan?${query.toString()}`;
 
