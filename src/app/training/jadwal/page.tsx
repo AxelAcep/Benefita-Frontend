@@ -1,63 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { DataTable, ColumnDef } from "@/components/training/Table";
-
-// ---------------------------------------------------------------------------
-// Types & Dummy Data
-// ---------------------------------------------------------------------------
-
-export interface JadwalTraining {
-  id: number;
-  noJadwal: string;
-  tglMulai: string;
-  kode: string;
-  jenis: string;
-  judulTraining: string;
-  biaya: number;
-  lokasi: string;
-  status: string;
-  trainer: string[];
-  updOleh: string;
-  catatan: string | null;
-}
-
-const dummyData: JadwalTraining[] = [
-  { id: 1, noJadwal: "2026410", tglMulai: "13 Jul 2026", kode: "WM-01", jenis: "REG", judulTraining: "PPPA", biaya: 5900000, lokasi: "Jakarta/Jakarta", status: "R", trainer: ["HSL", "HSL", "AR"], updOleh: "NANANG", catatan: null },
-  { id: 2, noJadwal: "2026410", tglMulai: "13 Jul 2026", kode: "WM-01", jenis: "REG", judulTraining: "PPPA", biaya: 5900000, lokasi: "Jakarta/Jakarta", status: "R", trainer: ["HSL", "HSL", "AR"], updOleh: "NANANG", catatan: null },
-  { id: 3, noJadwal: "2026410", tglMulai: "13 Jul 2026", kode: "WM-01", jenis: "REG", judulTraining: "PPPA", biaya: 5900000, lokasi: "Jakarta/Jakarta", status: "R", trainer: ["HSL", "HSL", "AR"], updOleh: "NANANG", catatan: null },
-  { id: 4, noJadwal: "2026410", tglMulai: "13 Jul 2026", kode: "WM-01", jenis: "REG", judulTraining: "PPPA", biaya: 5900000, lokasi: "Jakarta/Jakarta", status: "R", trainer: ["HSL", "HSL", "AR"], updOleh: "NANANG", catatan: null },
-  { id: 5, noJadwal: "2026411", tglMulai: "20 Jul 2026", kode: "K3-01", jenis: "REG", judulTraining: "Ahli K3 Umum", biaya: 6500000, lokasi: "Bandung/Bandung", status: "R", trainer: ["BW", "SR"], updOleh: "NANANG", catatan: "Peserta min 10" },
-  { id: 6, noJadwal: "2026412", tglMulai: "25 Jul 2026", kode: "ENV-01", jenis: "IHT", judulTraining: "ISO 14001:2015", biaya: 4000000, lokasi: "Surabaya/Surabaya", status: "C", trainer: ["DK"], updOleh: "ADMIN", catatan: null },
-  { id: 7, noJadwal: "2026413", tglMulai: "01 Agu 2026", kode: "HR-05", jenis: "REG", judulTraining: "Effective Leadership", biaya: 3500000, lokasi: "Jakarta/Jakarta", status: "R", trainer: ["AS", "RN"], updOleh: "NANANG", catatan: null },
-];
+import { useJadwalTrainingList } from "@/hooks/use-jadwal-training";
+import { JadwalTrainingListItem } from "@/lib/services/jadwal-training.service";
 
 const PAGE_SIZE = 10;
 
 export default function ManajemenJadwalTrainingPage() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = dummyData.filter(
-    (d) =>
-      d.judulTraining.toLowerCase().includes(search.toLowerCase()) ||
-      d.noJadwal.includes(search) ||
-      d.kode.toLowerCase().includes(search.toLowerCase())
-  );
+  const {
+    data,
+    meta,
+    isLoading,
+    search,
+    currentPage,
+    filterStatus,
+    setFilterStatus,
+    filterJenis,
+    setFilterJenis,
+    filterMetode,
+    setFilterMetode,
+    fetch,
+    handleSearch,
+    handleTerapkan,
+    handlePageChange,
+  } = useJadwalTrainingList({ initialLimit: PAGE_SIZE });
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  useEffect(() => {
+    fetch();
+  }, []);
 
-  const handleSearch = (val: string) => {
-    setSearch(val);
-    setCurrentPage(1);
-  };
-
-  const columns: ColumnDef<JadwalTraining>[] = [
+  const columns: ColumnDef<JadwalTrainingListItem>[] = [
     {
       key: "no",
       label: "No",
@@ -69,19 +47,29 @@ export default function ManajemenJadwalTrainingPage() {
       ),
     },
     { key: "noJadwal", label: "No. Jadwal", sortable: true },
-    { key: "tglMulai", label: "Tgl. Mulai", sortable: true },
-    { key: "kode", label: "Kode", sortable: true },
-    { key: "jenis", label: "Jenis", sortable: true },
-    { key: "judulTraining", label: "Judul Training", sortable: true },
+    {
+      key: "tglMulai",
+      label: "Tgl. Mulai",
+      sortable: true,
+      render: (val) =>
+        val
+          ? new Date(val as string).toLocaleDateString("id-ID", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "-",
+    },
+    { key: "kodePelatihan", label: "Kode", sortable: true },
+    { key: "jenisTraining", label: "Jenis", sortable: true },
+    { key: "judulLengkap", label: "Judul Training", sortable: true },
     {
       key: "biaya",
       label: "Biaya (Rupiah)",
       sortable: true,
-      render: (val) => (
-        <span>{(val as number).toLocaleString("id-ID")}</span>
-      ),
+      render: (val) => <span>{(val as number).toLocaleString("id-ID")}</span>,
     },
-    { key: "lokasi", label: "Lokasi", sortable: true },
+    { key: "lokasiDetail", label: "Lokasi", sortable: true },
     {
       key: "status",
       label: "Status",
@@ -93,23 +81,45 @@ export default function ManajemenJadwalTrainingPage() {
       ),
     },
     {
-      key: "trainer",
+      key: "trainers",
       label: "Trainer",
       render: (_val, row) => (
         <div className="flex flex-wrap gap-1">
-          {row.trainer.map((t, i) => (
-            <span key={i} className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-600">
-              {t}
+          {row.trainers?.map((t, i) => (
+            <span
+              key={i}
+              className="inline-block px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-600"
+            >
+              {t.trainer.kode}
             </span>
           ))}
         </div>
       ),
     },
-    { key: "updOleh", label: "Upd. Oleh", sortable: true },
+    {
+      key: "pegawai",
+      label: "Upd. Oleh",
+      sortable: true,
+      render: (_val, row) => (
+        <div className="flex flex-col">
+          <span>{row.pegawai?.nama ?? "-"}</span>
+          <span className="text-[10px] text-zinc-400">
+            {row.lastUpdate
+              ? new Date(row.lastUpdate).toISOString().split("T")[0]
+              : "-"}
+          </span>
+        </div>
+      ),
+    },
     {
       key: "catatan",
       label: "Catatan",
-      render: (val) => val ? <span>{val as string}</span> : <span className="text-zinc-300">-</span>,
+      render: (val) =>
+        val ? (
+          <span>{val as string}</span>
+        ) : (
+          <span className="text-zinc-300">-</span>
+        ),
     },
     {
       key: "edit",
@@ -118,7 +128,7 @@ export default function ManajemenJadwalTrainingPage() {
       className: "text-center",
       render: (_val, row) => (
         <button
-          onClick={() => router.push(`/training/jadwal/edit/${row.id}`)}
+          onClick={() => router.push(`/training/jadwal/edit/${row.noJadwal}`)}
           className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-500 transition-colors"
         >
           <Pencil className="w-3.5 h-3.5" />
@@ -140,18 +150,19 @@ export default function ManajemenJadwalTrainingPage() {
       <div className="space-y-4">
         <DataTable
           columns={columns}
-          data={paginated}
-          totalData={filtered.length}
+          data={data}
+          totalData={meta.total}
           currentPage={currentPage}
-          totalPages={totalPages}
+          totalPages={meta.totalPages}
           pageSize={PAGE_SIZE}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
           searchPlaceholder="Cari informasi..."
           searchValue={search}
           onSearchChange={handleSearch}
+          isLoading={isLoading}
           actionSlot={
             <button
-              onClick={() => router.push("/training//jadwal/tambah")}
+              onClick={() => router.push("/training/jadwal/tambah")}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
