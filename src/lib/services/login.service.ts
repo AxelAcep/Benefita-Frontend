@@ -239,3 +239,39 @@ export async function getPegawaiMarketingSales(): Promise<
   const data = await res.json();
   return data.data; // asumsikan response { data: PegawaiDropdownItem[] }
 }
+
+export interface PegawaiDetail {
+  id: string;
+  nama: string;
+  nip: string | null;
+  prefix: string | null;
+  kode: string | null;
+  jabatan: string | null;
+  departemen: string | null;
+  fotoUrl: string | null;
+  fotoKey: string | null;
+}
+
+export interface UserDetail {
+  id: string;
+  pegawaiId: string;
+  phone: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  pegawai: PegawaiDetail; // Relasi data pegawai lengkap
+}
+
+export async function getUserDetail(id: string): Promise<UserDetail> {
+  // Menggunakan fetchWithAuth karena endpoint ini membutuhkan validasi token
+  const res = await fetchWithAuth(`${API_URL}/api/user/detail/${id}`, {
+    method: "GET",
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data detail user");
+  }
+
+  return data.data; // Mengembalikan object UserDetail yang berisi gabungan User & Pegawai
+}
