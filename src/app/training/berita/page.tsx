@@ -5,76 +5,22 @@ import { useRouter } from "next/navigation";
 import { Newspaper, Plus, Pencil } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { DataTable, ColumnDef } from "@/components/training/Table";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface Berita {
-  id: number;
-  periode: string;
-  isi: string;
-  status: "Aktif" | "Tidak Aktif";
-}
-
-// ---------------------------------------------------------------------------
-// Dummy data
-// ---------------------------------------------------------------------------
-
-const DUMMY_DATA: Berita[] = [
-  {
-    id: 1,
-    periode: "13 Jul 2026",
-    isi: "Saya ingin mengingatkan bahwa besok kita akan kembali masuk kerja setelah libur. Pastikan untuk mempersiapkan segala sesuatunya agar bisa me...",
-    status: "Aktif",
-  },
-  {
-    id: 2,
-    periode: "13 Jul 2026",
-    isi: "Mengingatkan besok event tahunan",
-    status: "Tidak Aktif",
-  },
-  {
-    id: 3,
-    periode: "13 Jul 2026",
-    isi: "Besok cuti bersama",
-    status: "Tidak Aktif",
-  },
-  {
-    id: 4,
-    periode: "13 Jul 2026",
-    isi: "Pelatihan dengan kode WM-08 segera dilaksanakan",
-    status: "Tidak Aktif",
-  },
-  {
-    id: 5,
-    periode: "20 Agu 2026",
-    isi: "Reminder pengisian form kebutuhan training Q3 2026 sebelum tanggal 25 Agustus",
-    status: "Aktif",
-  },
-  {
-    id: 6,
-    periode: "01 Sep 2026",
-    isi: "Jadwal sertifikasi K3 Umum periode September sudah dibuka",
-    status: "Tidak Aktif",
-  },
-];
+import { useRiwayatBerita } from "@/hooks/use-berita"; // Sesuaikan path hook kamu
+import { Berita } from "@/lib/services/berita.service"; // Sesuaikan path service kamu
 
 // ---------------------------------------------------------------------------
 // Status badge
 // ---------------------------------------------------------------------------
 
 function StatusBadge({ status }: { status: Berita["status"] }) {
-  const isAktif = status === "Aktif";
+  const isAktif = status === "aktif";
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
-        isAktif
-          ? "bg-emerald-50 text-emerald-600"
-          : "bg-red-50 text-red-500"
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold capitalize ${
+        isAktif ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
       }`}
     >
-      {status}
+      {isAktif ? "Aktif" : "Tidak Aktif"}
     </span>
   );
 }
@@ -89,16 +35,33 @@ export default function ManajemenBeritaPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 10;
 
-  const filtered = DUMMY_DATA.filter(
+  // Menggunakan hook riwayat berita untuk mendapatkan seluruh data berita backend (GET ALL)
+  const { data: beritaList, loading, error } = useRiwayatBerita();
+
+  // Memformat tampilan tanggal agar konsisten (atau menggunakan string mentah dari backend)
+  const formatDate = (dateStr: string) => {
+    try {
+      const options: Intl.DateTimeFormatOptions = {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      };
+      return new Date(dateStr).toLocaleDateString("id-ID", options);
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const filtered = beritaList.filter(
     (d) =>
       d.isi.toLowerCase().includes(search.toLowerCase()) ||
-      d.periode.toLowerCase().includes(search.toLowerCase())
+      formatDate(d.periode).toLowerCase().includes(search.toLowerCase()),
   );
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice(
     (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    currentPage * PAGE_SIZE,
   );
 
   const columns: ColumnDef<Berita>[] = [
@@ -117,12 +80,15 @@ export default function ManajemenBeritaPage() {
       label: "Periode / Batas",
       sortable: true,
       headerClassName: "w-36",
+      render: (val) => <span>{formatDate(val as string)}</span>,
     },
     {
       key: "isi",
       label: "Isi",
       render: (val) => (
-        <span className="text-zinc-600 max-w-xl block truncate">{val as string}</span>
+        <span className="text-zinc-600 max-w-xl block truncate">
+          {val as string}
+        </span>
       ),
     },
     {
@@ -138,7 +104,9 @@ export default function ManajemenBeritaPage() {
       className: "text-right",
       render: (_val, row) => (
         <button
-          onClick={() => router.push(`/training/berita/edit/${(row as Berita).id}`)}
+          onClick={() =>
+            router.push(`/training/berita/edit/${(row as Berita).id}`)
+          }
           className="p-1.5 rounded-lg hover:bg-zinc-100 text-emerald-500 transition-colors"
         >
           <Pencil className="w-3.5 h-3.5" />
@@ -157,12 +125,18 @@ export default function ManajemenBeritaPage() {
       userName="Nanang"
       userRole="Super Admin"
     >
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-500 rounded-xl text-xs font-semibold">
+          {error}
+        </div>
+      )}
+
       <DataTable
         columns={columns}
         data={paginated}
         totalData={filtered.length}
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={totalPages || 1}
         pageSize={PAGE_SIZE}
         onPageChange={(p) => setCurrentPage(p)}
         searchValue={search}
@@ -170,7 +144,7 @@ export default function ManajemenBeritaPage() {
           setSearch(v);
           setCurrentPage(1);
         }}
-        searchPlaceholder="Cari informasi..."
+        searchPlaceholder={loading ? "Memuat data..." : "Cari informasi..."}
         actionSlot={
           <button
             onClick={() => router.push("/training/berita/tambah")}
@@ -185,7 +159,9 @@ export default function ManajemenBeritaPage() {
             <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center">
               <Newspaper className="w-3.5 h-3.5 text-emerald-500" />
             </div>
-            <span className="font-bold text-zinc-800 text-sm">Manajemen Berita</span>
+            <span className="font-bold text-zinc-800 text-sm">
+              Manajemen Berita
+            </span>
           </div>
         }
       />
