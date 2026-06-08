@@ -1169,3 +1169,55 @@ export async function updateStatusPermohonan(
   }
   return res.json();
 }
+
+// ── TYPES ──
+export interface LogPerubahanItem {
+  id: string;
+  diubahOleh: string;
+  tanggal: string;
+  field: string;
+  perusahaan: {
+    company: string;
+  };
+}
+
+export interface LogPerubahanMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface LogPerubahanResponse {
+  data: LogPerubahanItem[];
+  meta: LogPerubahanMeta;
+}
+
+// ── SERVICE ──
+export async function getLogPerubahan(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}): Promise<LogPerubahanResponse> {
+  const { page = 1, limit = 10, search = "" } = params;
+
+  const query = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    search,
+  });
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perubahan-summary?${query}`,
+    {
+      method: "GET",
+    },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil log perubahan.");
+  }
+
+  return { data: data.data, meta: data.meta };
+}
