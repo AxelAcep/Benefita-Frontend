@@ -3,168 +3,158 @@
 import React, { useState } from "react";
 import { Users, Plus, UserCircle2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Notification from "@/components/base/notifications";
+import ModalPegawai from "./modal-pegawai";
+import {
+  Pegawai,
+  CreatePegawaiRequest,
+  UpdatePegawaiRequest,
+} from "@/lib/services/pegawai.service";
+import { usePegawaiList, usePegawaiActions } from "@/hooks/use-pegawai";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────
+// AVATAR
+// ─────────────────────────────────────────────
 
-interface Pegawai {
-  id: number;
-  fotoUrl: string | null; // null = belum ada foto, string = URL dari API
-  nip: string;
-  nama: string;
-  jabatan: string;
+// ─────────────────────────────────────────────
+// NOTIF STATE
+// ─────────────────────────────────────────────
+
+interface NotifState {
+  message: string;
+  type: "success" | "error";
 }
 
-// ---------------------------------------------------------------------------
-// Dummy data
-// ---------------------------------------------------------------------------
-
-const DUMMY_DATA: Pegawai[] = [
-  {
-    id: 1,
-    fotoUrl: null,
-    nip: "19901215 202001 1 001",
-    nama: "Agus Kurniawan",
-    jabatan: "Trainer Senior",
-  },
-  {
-    id: 2,
-    fotoUrl: null,
-    nip: "19920308 202101 1 002",
-    nama: "Firza Muldani",
-    jabatan: "Business Development Officer",
-  },
-  {
-    id: 3,
-    fotoUrl: null,
-    nip: "19951122 202201 1 003",
-    nama: "Gihon Andre Asmitra Harahap",
-    jabatan: "Trainer Junior",
-  },
-  {
-    id: 4,
-    fotoUrl: null,
-    nip: "19880520 201901 2 004",
-    nama: "Murra Candra Wicaksana",
-    jabatan: "Koordinator Training",
-  },
-  {
-    id: 5,
-    fotoUrl: null,
-    nip: "19930714 202001 2 005",
-    nama: "Siti Rahmawati",
-    jabatan: "Admin Keuangan",
-  },
-  {
-    id: 6,
-    fotoUrl: null,
-    nip: "19870301 201801 1 006",
-    nama: "Rudi Hartono",
-    jabatan: "Manajer Operasional",
-  },
-  {
-    id: 7,
-    fotoUrl: null,
-    nip: "19961010 202301 1 007",
-    nama: "Anita Kusuma Dewi",
-    jabatan: "Marketing Executive",
-  },
-  {
-    id: 8,
-    fotoUrl: null,
-    nip: "19940217 202101 2 008",
-    nama: "Budi Santoso",
-    jabatan: "Trainer Senior",
-  },
-  {
-    id: 9,
-    fotoUrl: null,
-    nip: "19911130 202001 2 009",
-    nama: "Mega Lestari",
-    jabatan: "Admin Umum",
-  },
-  {
-    id: 10,
-    fotoUrl: null,
-    nip: "19890425 201901 1 010",
-    nama: "Farhan Maulana",
-    jabatan: "Koordinator Sertifikasi",
-  },
-  {
-    id: 11,
-    fotoUrl: null,
-    nip: "19970612 202301 1 011",
-    nama: "Taufik Hidayat",
-    jabatan: "Business Development Officer",
-  },
-  {
-    id: 12,
-    fotoUrl: null,
-    nip: "19920801 202101 2 012",
-    nama: "Nurul Hidayah",
-    jabatan: "Trainer Junior",
-  },
-];
-
-const PAGE_SIZE = 10;
-
-// ---------------------------------------------------------------------------
-// Avatar component — shows photo from API or placeholder
-// ---------------------------------------------------------------------------
-
-function Avatar({ fotoUrl, nama }: { fotoUrl: string | null; nama: string }) {
-  if (fotoUrl) {
-    return (
-      <img
-        src={fotoUrl}
-        alt={nama}
-        className="w-14 h-16 object-cover rounded-md border border-zinc-200"
-      />
-    );
-  }
-
-  return (
-    <div className="w-14 h-16 rounded-md border border-zinc-200 bg-zinc-50 flex items-center justify-center">
-      <UserCircle2 className="w-8 h-8 text-zinc-300" />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────
+// PAGE
+// ─────────────────────────────────────────────
 
 export default function DataPegawaiPage() {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const {
+    data,
+    isLoading,
+    currentPage,
+    totalPages,
+    totalData,
+    pageSize,
+    onPageChange,
+    search,
+    onSearchChange,
+    refetch,
+  } = usePegawaiList();
 
-  const filtered = DUMMY_DATA.filter(
-    (d) =>
-      d.nama.toLowerCase().includes(search.toLowerCase()) ||
-      d.nip.toLowerCase().includes(search.toLowerCase()) ||
-      d.jabatan.toLowerCase().includes(search.toLowerCase()),
-  );
+  const {
+    isSaving,
+    onGetDetail,
+    onCreatePegawai,
+    onUpdatePegawai,
+    onResetPassword,
+    onResetDevice,
+    onDeleteDokumen,
+  } = usePegawaiActions(refetch);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPegawai, setSelectedPegawai] = useState<Pegawai | null>(null);
+  const [notif, setNotif] = useState<NotifState | null>(null);
 
-  function pageNumbers() {
-    const total = totalPages;
-    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+  function showNotif(message: string, type: "success" | "error" = "success") {
+    setNotif({ message, type });
+  }
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  function toFullUrl(path: string) {
+    return `${API_URL}/${path.replace(/^\/+/, "")}`;
+  }
+
+  function Avatar({ fotoUrl, nama }: { fotoUrl: string | null; nama: string }) {
+    if (fotoUrl) {
+      return (
+        <img
+          src={toFullUrl(fotoUrl)}
+          alt={nama}
+          className="w-14 h-16 object-cover rounded-md border border-zinc-200"
+        />
+      );
+    }
+  }
+
+  // ── Handlers ──
+  function handleTambah() {
+    setSelectedPegawai(null);
+    setModalOpen(true);
+  }
+
+  async function handleLihatDetail(id: string) {
+    try {
+      const detail = await onGetDetail(id);
+      setSelectedPegawai(detail);
+      setModalOpen(true);
+    } catch {
+      showNotif("Gagal memuat detail pegawai", "error");
+    }
+  }
+
+  async function handleSubmitModal(
+    payload: CreatePegawaiRequest | UpdatePegawaiRequest,
+  ) {
+    try {
+      if (selectedPegawai) {
+        await onUpdatePegawai(
+          selectedPegawai.id,
+          payload as UpdatePegawaiRequest,
+        );
+        showNotif("Data pegawai berhasil diperbarui");
+      } else {
+        await onCreatePegawai(payload as CreatePegawaiRequest);
+        showNotif("Pegawai berhasil ditambahkan");
+      }
+      setModalOpen(false);
+    } catch (e: any) {
+      showNotif(e.message ?? "Terjadi kesalahan", "error");
+    }
+  }
+
+  async function handleResetPassword(id: string, newPassword: string) {
+    try {
+      await onResetPassword(id, newPassword);
+      showNotif("Password berhasil direset");
+    } catch (e: any) {
+      showNotif(e.message ?? "Gagal mereset password", "error");
+    }
+  }
+
+  async function handleResetDevice(id: string) {
+    try {
+      await onResetDevice(id);
+      showNotif("Device berhasil direset");
+    } catch (e: any) {
+      showNotif(e.message ?? "Gagal mereset device", "error");
+    }
+  }
+
+  async function handleDeleteDokumen(dokumenId: string) {
+    try {
+      await onDeleteDokumen(dokumenId);
+      showNotif("Dokumen berhasil dihapus");
+    } catch (e: any) {
+      showNotif(e.message ?? "Gagal menghapus dokumen", "error");
+    }
+  }
+
+  // ── Pagination ──
+  function pageNumbers(): (number | "...")[] {
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     const pages: (number | "...")[] = [1];
     if (currentPage > 3) pages.push("...");
     for (
       let p = Math.max(2, currentPage - 1);
-      p <= Math.min(total - 1, currentPage + 1);
+      p <= Math.min(totalPages - 1, currentPage + 1);
       p++
     )
       pages.push(p);
-    if (currentPage < total - 2) pages.push("...");
-    pages.push(total);
+    if (currentPage < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
     return pages;
   }
 
@@ -178,11 +168,19 @@ export default function DataPegawaiPage() {
       userName="Nanang"
       userRole="Super Admin"
     >
+      {/* Notifikasi */}
+      {notif && (
+        <Notification
+          message={notif.message}
+          type={notif.type}
+          onClose={() => setNotif(null)}
+        />
+      )}
+
       <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="px-5 py-3 border-b border-zinc-100">
           <div className="flex flex-wrap items-center gap-2">
-            {/* Title */}
             <div className="flex items-center gap-2 mr-2">
               <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center">
                 <Users className="w-3.5 h-3.5 text-emerald-500" />
@@ -191,8 +189,6 @@ export default function DataPegawaiPage() {
                 Data Pegawai
               </span>
             </div>
-
-            {/* Search */}
             <div className="relative ml-auto">
               <svg
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-300"
@@ -210,18 +206,15 @@ export default function DataPegawaiPage() {
                 type="text"
                 placeholder="Cari informasi..."
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => onSearchChange(e.target.value)}
                 className="w-full sm:w-52 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
               />
             </div>
-
-            {/* Tambah Data */}
-            <button className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-semibold rounded-lg transition-colors">
-              <Plus className="w-3.5 h-3.5" />
-              Tambah Data
+            <button
+              onClick={handleTambah}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-semibold rounded-lg transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Tambah Data
             </button>
           </div>
         </div>
@@ -232,7 +225,7 @@ export default function DataPegawaiPage() {
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50/60">
                 <th className="px-5 py-2.5 text-[10px] font-semibold text-zinc-400 text-left w-12">
-                  No ↕
+                  No
                 </th>
                 <th className="px-4 py-2.5 text-[10px] font-semibold text-zinc-400 text-left w-24">
                   Foto
@@ -251,9 +244,18 @@ export default function DataPegawaiPage() {
                 </th>
               </tr>
             </thead>
-
             <tbody>
-              {paginated.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-b border-zinc-50">
+                    {Array.from({ length: 6 }).map((_, j) => (
+                      <td key={j} className="px-4 py-4">
+                        <div className="h-3.5 w-full animate-pulse rounded bg-zinc-100" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : data.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -263,36 +265,39 @@ export default function DataPegawaiPage() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((row, i) => (
+                data.map((row, i) => (
                   <tr
                     key={row.id}
                     className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors align-middle"
                   >
                     <td className="px-5 py-4 text-xs text-zinc-400">
-                      {(currentPage - 1) * PAGE_SIZE + i + 1}
+                      {(currentPage - 1) * pageSize + i + 1}
                     </td>
                     <td className="px-4 py-4">
                       <Avatar fotoUrl={row.fotoUrl} nama={row.nama} />
                     </td>
                     <td className="px-4 py-4 text-xs text-zinc-600 font-mono tracking-wide">
-                      {row.nip}
+                      {row.nip ?? "-"}
                     </td>
                     <td className="px-4 py-4 text-xs text-zinc-700 font-medium">
                       {row.nama}
                     </td>
                     <td className="px-4 py-4 text-xs text-zinc-600">
-                      {row.jabatan}
+                      {row.jabatan ?? "-"}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <button className="text-xs text-emerald-600 font-semibold hover:underline whitespace-nowrap">
+                        <button
+                          onClick={() => handleLihatDetail(row.id)}
+                          className="text-xs text-emerald-600 font-semibold hover:underline whitespace-nowrap"
+                        >
                           Lihat Detail
                         </button>
-                        <button className="text-xs text-emerald-600 font-semibold hover:underline whitespace-nowrap">
+                        <button
+                          onClick={() => handleResetDevice(row.id)}
+                          className="text-xs text-zinc-500 font-semibold hover:underline whitespace-nowrap"
+                        >
                           Reset Device
-                        </button>
-                        <button className="text-xs text-emerald-600 font-semibold hover:underline whitespace-nowrap">
-                          Reset Password
                         </button>
                       </div>
                     </td>
@@ -308,29 +313,25 @@ export default function DataPegawaiPage() {
           <p className="text-[11px] text-zinc-400">
             Menampilkan{" "}
             <span className="font-semibold text-zinc-600">
-              {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
-              {Math.min(currentPage * PAGE_SIZE, filtered.length)}
+              {totalData === 0 ? 0 : (currentPage - 1) * pageSize + 1}–
+              {Math.min(currentPage * pageSize, totalData)}
             </span>{" "}
             dari{" "}
-            <span className="font-semibold text-zinc-600">
-              {filtered.length}
-            </span>{" "}
+            <span className="font-semibold text-zinc-600">{totalData}</span>{" "}
             data
           </p>
-
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage((p) => p - 1)}
+              onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               ‹ Sebelumnya
             </button>
-
             {pageNumbers().map((p, idx) =>
               p === "..." ? (
                 <span
-                  key={`ellipsis-${idx}`}
+                  key={`e-${idx}`}
                   className="w-7 h-7 flex items-center justify-center text-[11px] text-zinc-400"
                 >
                   ...
@@ -338,7 +339,7 @@ export default function DataPegawaiPage() {
               ) : (
                 <button
                   key={p}
-                  onClick={() => setCurrentPage(p as number)}
+                  onClick={() => onPageChange(p as number)}
                   className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
                     p === currentPage
                       ? "bg-emerald-500 text-white"
@@ -349,9 +350,8 @@ export default function DataPegawaiPage() {
                 </button>
               ),
             )}
-
             <button
-              onClick={() => setCurrentPage((p) => p + 1)}
+              onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
@@ -360,6 +360,17 @@ export default function DataPegawaiPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal */}
+      <ModalPegawai
+        isOpen={modalOpen}
+        isSaving={isSaving}
+        initialData={selectedPegawai}
+        onClose={() => !isSaving && setModalOpen(false)}
+        onSubmit={handleSubmitModal}
+        onResetPassword={handleResetPassword}
+        onDeleteDokumen={handleDeleteDokumen}
+      />
     </AppLayout>
   );
 }
