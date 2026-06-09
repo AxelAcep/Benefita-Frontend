@@ -12,6 +12,12 @@ import type {
 import { getJadwalFix } from "@/lib/services/dashboard.service";
 import type { MonthRow } from "@/lib/services/dashboard.service";
 
+import { getKalenderTraining } from "@/lib/services/dashboard.service";
+import type {
+  TrainingRow,
+  KalenderParams,
+} from "@/lib/services/dashboard.service";
+
 export function useMarketingActivity() {
   const [data, setData] = useState<AERow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,4 +66,24 @@ export function useJadwalFix(quarter: string) {
   }, [quarter]);
 
   return { data, loading, error };
+}
+
+export function useKalenderTraining(params: KalenderParams) {
+  const [data, setData] = useState<TrainingRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    getKalenderTraining(params)
+      .then((r) => {
+        setData(r.data);
+        setTotal(r.total);
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [params.bulan, params.tahun, params.search]);
+
+  return { data, total, loading, error };
 }
