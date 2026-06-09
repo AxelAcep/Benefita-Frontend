@@ -6,23 +6,23 @@ const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN"];
 const FINANCE_ROLES = ["SUPER_ADMIN", "ADMIN", "FINANCE"];
 
 // Halaman yang butuh role ADMIN
+// Hanya ADMIN
 const ADMIN_ONLY_ROUTES = [
   "/karyawan/list-cuti",
   "/karyawan/riwayat-cuti",
   "/training/judul",
   "/training/berita",
-  "/accounting",
-  "/accounting/karyawan",
+  "/keuangan/karyawan",
 ];
 
-// Halaman yang butuh minimal FINANCE
+// ADMIN + FINANCE
 const FINANCE_ROUTES = ["/keuangan", "/accounting"];
 
 // Halaman yang semua role boleh akses (asal login)
-const AUTHENTICATED_ROUTES = ["/"];
+const AUTHENTICATED_ROUTES = ["/login", "/"];
 
 // Public routes (ga perlu login)
-const PUBLIC_ROUTES = ["/login"];
+const PUBLIC_ROUTES = ["/login", ""];
 
 export function middleware(request: NextRequest) {
   console.log("MIDDLEWARE HIT:", request.nextUrl.pathname);
