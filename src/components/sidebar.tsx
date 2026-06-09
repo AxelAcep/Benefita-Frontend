@@ -148,11 +148,11 @@ const navItems: NavItem[] = [
       },
     ],
   },
-  {
-    label: "INPUT",
-    icon: TextCursorInput,
-    href: "/input/PELCLGJOGF",
-  },
+  // {
+  //   label: "INPUT",
+  //   icon: TextCursorInput,
+  //   href: "/input/PELCLGJOGF",
+  // },
   {
     label: "Accounting",
     icon: ChartColumnIncreasing,

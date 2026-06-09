@@ -150,7 +150,7 @@ export default function PageCetakInvoice({
 
   useEffect(() => {
     setForm({ ...DEFAULT_DATA, ...initialData });
-  }, [initialData]);
+  }, []);
 
   function set(field: keyof CetakInvoiceData, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));

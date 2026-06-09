@@ -323,8 +323,10 @@ export default function InputDataPage() {
           aksiHandlers={{
             onEdit: handleEdit,
             onKonfirmasi: (p) => setKonfirmasiPeserta(p),
-            onCetakKwitansi: (p) => setKwitansiPeserta(p),
-            onCetakInvoice: (p) => setInvoicePeserta(p),
+            onCetakKwitansi: (p) =>
+              router.push(`/input/${noJadwal}/kwitansi/${p.id}`),
+            onCetakInvoice: (p) =>
+              router.push(`/input/${noJadwal}/invoice/${p.id}`),
             onPesertaFinal: (p) => console.log("Peserta Final", p),
           }}
         />

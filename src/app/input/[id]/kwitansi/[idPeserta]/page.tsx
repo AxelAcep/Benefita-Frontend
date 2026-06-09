@@ -153,7 +153,7 @@ export default function PageCetakKwitansi({
 
   useEffect(() => {
     setForm({ ...DEFAULT_DATA, ...initialData });
-  }, [initialData]);
+  }, []);
 
   function set(field: keyof CetakKwitansiData, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
