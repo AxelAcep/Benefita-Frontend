@@ -9,11 +9,12 @@ import { fetchWithAuth } from "./login.service";
 export type RoleStatus =
   | "ADMIN"
   | "USER"
-  | "SUPERADMIN"
+  | "SUPER_ADMIN"
   | "FINANCE"
   | "DAILY_ADMIN"
   | "MARKETING_STAFF"
-  | "MARKETING_SEMENTARA"; // sesuaikan enum prisma
+  | "MARKETING_SEMENTARA" // sesuaikan enum prisma
+  | "TEKNIS";
 
 export interface DokumenPegawai {
   id: string;

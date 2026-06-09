@@ -25,11 +25,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 // ─────────────────────────────────────────────
 
 const ROLE_OPTIONS: { value: RoleStatus; label: string }[] = [
-  { value: "SUPERADMIN", label: "Super Admin" },
+  { value: "SUPER_ADMIN", label: "Super Admin" },
   { value: "FINANCE", label: "Finance" },
   { value: "DAILY_ADMIN", label: "Daily Admin" },
   { value: "MARKETING_STAFF", label: "Marketing Staff" },
   { value: "MARKETING_SEMENTARA", label: "Marketing Sementara" },
+  { value: "TEKNIS", label: "Teknis" },
+  { value: "ADMIN", label: "Admin" },
 ];
 
 // ─────────────────────────────────────────────
