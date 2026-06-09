@@ -10,6 +10,7 @@ import TabInstansiDaerah from "./tab-instansi-daerah";
 import TabSekolah from "./tab-sekolah";
 import TabDaily from "./tab-daily";
 import TabAlokasiAkun from "./tab-alokasi-akun";
+import { useRole } from "@/hooks/use-role";
 
 type TabKey =
   | "perusahaan"
@@ -32,6 +33,7 @@ const TABS: { key: TabKey; label: string }[] = [
 
 export default function InstansiPerusahaanPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("perusahaan");
+  const { isAdmin } = useRole();
 
   return (
     <AppLayout
@@ -66,8 +68,22 @@ export default function InstansiPerusahaanPage() {
       {activeTab === "pemda" && <TabPemda />}
       {activeTab === "instansi-daerah" && <TabInstansiDaerah />}
       {activeTab === "sekolah" && <TabSekolah />}
-      {activeTab === "daily" && <TabDaily id="daily" />}
-      {activeTab === "alokasi-akun" && <TabAlokasiAkun />}
+      {activeTab === "daily" &&
+        (isAdmin ? (
+          <TabDaily id="daily" />
+        ) : (
+          <div className="flex items-center justify-center py-12 text-xs text-zinc-400">
+            🚫 Anda tidak memiliki akses ke tab ini.
+          </div>
+        ))}
+      {activeTab === "alokasi-akun" &&
+        (isAdmin ? (
+          <TabAlokasiAkun />
+        ) : (
+          <div className="flex items-center justify-center py-12 text-xs text-zinc-400">
+            🚫 Anda tidak memiliki akses ke tab ini.
+          </div>
+        ))}
     </AppLayout>
   );
 }

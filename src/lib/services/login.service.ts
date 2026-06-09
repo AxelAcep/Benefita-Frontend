@@ -1,5 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
+import Cookies from "js-cookie";
 // ─────────────────────────────────────────────
 // TYPES — tidak berubah
 // ─────────────────────────────────────────────
@@ -110,6 +110,8 @@ export async function loginUser(payload: LoginRequest): Promise<LoginResponse> {
   // Kalau device trusted, langsung simpan ke memory
   if (!data.requireOtp && data.token && data.user) {
     setSession(data.token, data.user);
+    Cookies.set("token", data.token, { expires: 1 });
+    Cookies.set("role", data.user.role, { expires: 1 });
   }
 
   return data;
@@ -130,6 +132,8 @@ export async function verifyOtp(
 
   // Simpan ke memory setelah OTP sukses
   setSession(data.token, data.user);
+  Cookies.set("token", data.token, { expires: 1 });
+  Cookies.set("role", data.user.role, { expires: 1 });
 
   return data;
 }
@@ -156,14 +160,20 @@ export async function silentRefresh(): Promise<boolean> {
 
     if (!res.ok) {
       clearSession();
+      Cookies.remove("token");
+      Cookies.remove("role");
       return false;
     }
 
     const data = await res.json();
     setSession(data.token, data.user);
+    Cookies.set("token", data.token, { expires: 1 });
+    Cookies.set("role", data.user.role, { expires: 1 });
     return true;
   } catch {
     clearSession();
+    Cookies.remove("token");
+    Cookies.remove("role");
     return false;
   } finally {
     isRefreshing = false; // Reset lock
@@ -181,6 +191,8 @@ export async function logout(): Promise<void> {
     });
   } finally {
     clearSession();
+    Cookies.remove("token");
+    Cookies.remove("role");
   }
 }
 
