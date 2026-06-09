@@ -58,3 +58,19 @@ export async function getKehadiran(): Promise<KehadiranData> {
     throw new Error(data.message || "Gagal mengambil data kehadiran");
   return data.data;
 }
+
+export interface MonthRow {
+  bulan: string;
+  values: (number | null)[];
+  totalFix: number;
+}
+
+export async function getJadwalFix(quarter: string): Promise<MonthRow[]> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/dashboard/jadwal-fix?quarter=${quarter}`,
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Gagal mengambil data jadwal fix");
+  return data.data;
+}

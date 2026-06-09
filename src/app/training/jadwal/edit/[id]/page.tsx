@@ -52,10 +52,10 @@ const JENIS_OPTIONS = [
   "Konsultasi",
 ];
 const STATUS_JADWAL_OPTIONS = [
-  "R - Rencana",
-  "C - Confirmed",
-  "D - Done",
-  "X - Cancel",
+  "TENTATIVE",
+  "TERKONFIRMASI",
+  "SELESAI",
+  "BATAL",
 ];
 
 // ─────────────────────────────────────────────
