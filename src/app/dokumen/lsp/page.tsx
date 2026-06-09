@@ -1,109 +1,187 @@
-// app/perusahaan/permintaan-nomor-surat/page.tsx
+// app/perusahaan/permintaan-nomor-surat-lsp/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AppLayout from "@/components/app-layout";
 import ModalPengajuanSurat from "@/components/dokumen/modal-pengajuan-surat";
+import { usePermintaanSurat } from "@/hooks/use-surat";
+import { PermintaanNomorSurat } from "@/lib/services/surat.service";
+import { getSession } from "@/lib/services/login.service";
+import { getUserDetail } from "@/lib/services/login.service";
+import NotificationComponent from "@/components/base/notifications";
+import ConfirmModal from "@/components/base/confirm-modal";
 
-interface PermintaanNomorSurat {
-  id: number;
-  noSurat: string;
-  keterangan: string;
-  tujuan: string;
-  tglPelatihan: string;
-  pengirim: string;
-}
-
-const DUMMY_DATA: PermintaanNomorSurat[] = [
-  {
-    id: 1,
-    noSurat: "0045/BNFT-IV/2026",
-    keterangan: "BAST GRK (15-17 April 2026)",
-    tujuan: "PT Indoporlen Refractories",
-    tglPelatihan: "2026-04-13",
-    pengirim: "Zirah",
-  },
-  {
-    id: 2,
-    noSurat: "0044/BNFT-IV/2026",
-    keterangan: "BAST 3R Sampah (13-15 April 2026)",
-    tujuan: "PT Sucofindo Balikpapan",
-    tglPelatihan: "2026-04-13",
-    pengirim: "Zirah",
-  },
-  {
-    id: 3,
-    noSurat: "0043/BNFT-IV/2026",
-    keterangan: "BAST PPPU (30 Maret - 01 April 2026)",
-    tujuan: "PT Krakatau Chandra Energi",
-    tglPelatihan: "2026-04-13",
-    pengirim: "Zirah",
-  },
-  {
-    id: 4,
-    noSurat: "0042/BNFT-IV/2026",
-    keterangan: "Praktek Auditor Energi",
-    tujuan: "Park Hotel Cawang Jakarta",
-    tglPelatihan: "2026-04-13",
-    pengirim: "Dian",
-  },
-  ...Array.from({ length: 24 }, (_, i) => ({
-    id: i + 5,
-    noSurat: `00${String(41 - i).padStart(2, "0")}/BNFT-IV/2026`,
-    keterangan: `BAST Program ${i + 5}`,
-    tujuan: `PT Contoh Perusahaan ${i + 5}`,
-    tglPelatihan: "2026-04-13",
-    pengirim: i % 2 === 0 ? "Zirah" : "Dian",
-  })),
-];
-
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 10;
 
 function getPageNumbers(currentPage: number, totalPages: number) {
   const pages: (number | string)[] = [];
   if (totalPages <= 5) {
     for (let i = 1; i <= totalPages; i++) pages.push(i);
   } else {
-    pages.push(1, 2, 3, "...ellipsis", totalPages);
+    if (currentPage <= 3) {
+      pages.push(1, 2, 3, 4, "...ellipsis", totalPages);
+    } else if (currentPage >= totalPages - 2) {
+      pages.push(
+        1,
+        "...ellipsis",
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      );
+    } else {
+      pages.push(
+        1,
+        "...ellipsis",
+        currentPage - 1,
+        currentPage,
+        currentPage + 1,
+        "...ellipsis",
+        totalPages,
+      );
+    }
   }
   return pages;
 }
 
-export default function PermintaanNomorSuratPage() {
+export default function PermintaanNomorSuratLSPPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"buat" | "edit">("buat");
-  const [modalData, setModalData] = useState<{
-    keterangan?: string;
-    tujuan?: string;
-  }>({});
+  const [selectedData, setSelectedData] = useState<PermintaanNomorSurat | null>(
+    null,
+  );
+  const [pengirimId, setPengirimId] = useState<string>("");
+  const [notif, setNotif] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const session = getSession();
+      if (session?.user?.id) {
+        try {
+          const userDetail = await getUserDetail(session.user.id);
+          setPengirimId(userDetail.pegawaiId);
+        } catch (error) {
+          console.error("Gagal load user detail:", error);
+        }
+      }
+    };
+    loadUser();
+  }, []);
+
+  const {
+    data,
+    loading,
+    pagination,
+    create,
+    update,
+    remove,
+    refetch,
+    setPage,
+  } = usePermintaanSurat({
+    page: currentPage,
+    limit: PAGE_SIZE,
+    tipe: "lsp",
+    search: search || undefined,
+  });
+
+  useEffect(() => {
+    setPage(currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setPage(1);
+  }, [search]);
 
   const openBuat = () => {
-    setModalMode("buat");
-    setModalData({});
+    setSelectedData(null);
     setModalOpen(true);
   };
 
   const openEdit = (row: PermintaanNomorSurat) => {
-    setModalMode("edit");
-    setModalData({ keterangan: row.keterangan, tujuan: row.tujuan });
+    setSelectedData(row);
     setModalOpen(true);
   };
 
-  const filtered = DUMMY_DATA.filter(
-    (d) =>
-      d.noSurat.toLowerCase().includes(search.toLowerCase()) ||
-      d.keterangan.toLowerCase().includes(search.toLowerCase()) ||
-      d.tujuan.toLowerCase().includes(search.toLowerCase()),
-  );
+  const handleSubmit = async (form: {
+    keterangan: string;
+    tujuanNoInduk: string;
+  }) => {
+    if (!pengirimId) {
+      setNotif({ message: "Data pengirim tidak ditemukan", type: "error" });
+      setTimeout(() => setNotif(null), 3000);
+      return;
+    }
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+    try {
+      if (selectedData) {
+        await update(selectedData.id, {
+          keterangan: form.keterangan,
+          tujuanNoInduk: form.tujuanNoInduk,
+        });
+        setNotif({
+          message: "Berhasil mengupdate permintaan surat",
+          type: "success",
+        });
+      } else {
+        await create({
+          keterangan: form.keterangan,
+          tujuanNoInduk: form.tujuanNoInduk,
+          pengirimId: pengirimId,
+          tipe: "lsp",
+        });
+        setNotif({
+          message: "Berhasil membuat permintaan surat",
+          type: "success",
+        });
+      }
+      setTimeout(() => setNotif(null), 3000);
+      refetch();
+      setModalOpen(false);
+    } catch (error: any) {
+      setNotif({
+        message: error.message || "Terjadi kesalahan",
+        type: "error",
+      });
+      setTimeout(() => setNotif(null), 3000);
+    }
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await remove(deleteId);
+      setNotif({
+        message: "Berhasil menghapus permintaan surat",
+        type: "success",
+      });
+      setTimeout(() => setNotif(null), 3000);
+      refetch();
+    } catch (error: any) {
+      setNotif({
+        message: error.message || "Gagal menghapus data",
+        type: "error",
+      });
+      setTimeout(() => setNotif(null), 3000);
+    } finally {
+      setDeleting(false);
+      setConfirmOpen(false);
+      setDeleteId(null);
+    }
+  };
 
   return (
     <AppLayout
@@ -111,24 +189,45 @@ export default function PermintaanNomorSuratPage() {
         { label: "Perusahaan", href: "/perusahaan" },
         { label: "Permintaan Nomor Surat (LSP)" },
       ]}
-      subtitle="Hari ini: Selasa, 3 Februari 2026"
+      subtitle={`Hari ini: ${new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`}
       userName="Nanang"
       userRole="Super Admin"
     >
+      {notif && (
+        <NotificationComponent
+          message={notif.message}
+          type={notif.type}
+          onClose={() => setNotif(null)}
+        />
+      )}
+      <ConfirmModal
+        isOpen={confirmOpen}
+        message="Apakah Anda yakin ingin menghapus data ini?"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+        loading={deleting}
+      />
       <ModalPengajuanSurat
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        mode={modalMode}
-        data={modalData}
+        mode={selectedData ? "edit" : "buat"}
+        data={
+          selectedData
+            ? {
+                keterangan: selectedData.keterangan || "",
+                tujuanNoInduk: selectedData.tujuanNoInduk,
+                tujuanNama: selectedData.tujuan?.company || "",
+              }
+            : undefined
+        }
+        onSubmit={handleSubmit}
       />
 
       <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
-        {/* Toolbar */}
         <div className="px-5 py-4 border-b border-zinc-100 flex flex-wrap items-center justify-between gap-3">
           <span className="font-bold text-zinc-800 text-sm flex items-center gap-2">
-            🗓️ Permintaan Nomor Surat (LSP)
+            📋 Permintaan Nomor Surat (LSP)
           </span>
-
           <div className="flex items-center gap-2">
             <div className="relative">
               <svg
@@ -145,13 +244,10 @@ export default function PermintaanNomorSuratPage() {
               </svg>
               <input
                 type="text"
-                placeholder="Cari informasi..."
+                placeholder="Cari no surat, pengirim, perusahaan..."
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-52 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-64 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
               />
             </div>
             <button
@@ -169,41 +265,49 @@ export default function PermintaanNomorSuratPage() {
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Buat Permintaan Nomor Surat
+              Buat Permintaan
             </button>
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[900px]">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50/60">
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-10">
-                  No ↕
+                <th className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left w-12">
+                  No
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-40">
+                <th className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left w-44">
                   No. Surat
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">
+                <th className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left">
                   Keterangan
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">
+                <th className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left">
                   Tujuan
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">
-                  Tgl. Pelatihan
+                <th className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left w-28">
+                  Tgl. Kirim
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
+                <th className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left w-28">
                   Pengirim
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-16">
+                <th className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left w-24">
                   Aksi
                 </th>
               </tr>
             </thead>
             <tbody>
-              {paginated.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-4 py-12 text-center text-xs text-zinc-400"
+                  >
+                    Loading...
+                  </td>
+                </tr>
+              ) : data.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
@@ -213,35 +317,41 @@ export default function PermintaanNomorSuratPage() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((row, i) => (
+                data.map((row, i) => (
                   <tr
                     key={row.id}
                     className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-xs text-zinc-400">
-                      {(currentPage - 1) * PAGE_SIZE + i + 1}
+                      {(pagination.page - 1) * PAGE_SIZE + i + 1}
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-600">
+                    <td className="px-4 py-3 text-xs text-zinc-700 font-medium">
                       {row.noSurat}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
                       {row.keterangan}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.tujuan}
+                      {row.tujuan?.company || row.tujuanNoInduk}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.tglPelatihan}
+                      {new Date(row.tanggalKirim).toLocaleDateString("id-ID")}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.pengirim}
+                      {row.pengirim?.nama}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 flex gap-2">
                       <button
                         onClick={() => openEdit(row)}
                         className="text-xs text-emerald-600 font-semibold hover:underline"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(row.id)}
+                        className="text-xs text-red-500 font-semibold hover:underline"
+                      >
+                        Hapus
                       </button>
                     </td>
                   </tr>
@@ -251,60 +361,57 @@ export default function PermintaanNomorSuratPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3 border-t border-zinc-100">
-          <p className="text-[11px] text-zinc-400">
-            Menampilkan{" "}
-            <span className="font-semibold text-zinc-600">
-              {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
-              {Math.min(currentPage * PAGE_SIZE, filtered.length)}
-            </span>{" "}
-            dari{" "}
-            <span className="font-semibold text-zinc-600">
-              {filtered.length}
-            </span>{" "}
-            data
-          </p>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => p - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              ‹ Sebelumnya
-            </button>
-            {getPageNumbers(currentPage, totalPages).map((p) =>
-              typeof p === "string" ? (
-                <span
-                  key={p}
-                  className="w-7 h-7 flex items-center justify-center text-[11px] text-zinc-400"
-                >
-                  ...
-                </span>
-              ) : (
-                <button
-                  key={p}
-                  onClick={() => setCurrentPage(p)}
-                  className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                    p === currentPage
-                      ? "bg-emerald-500 text-white"
-                      : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                  }`}
-                >
-                  {p}
-                </button>
-              ),
-            )}
-            <button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              Selanjutnya ›
-            </button>
+        {!loading && data.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3 border-t border-zinc-100">
+            <p className="text-[11px] text-zinc-400">
+              Menampilkan{" "}
+              <span className="font-semibold text-zinc-600">
+                {(pagination.page - 1) * PAGE_SIZE + 1}–
+                {Math.min(pagination.page * PAGE_SIZE, pagination.total)}
+              </span>{" "}
+              dari{" "}
+              <span className="font-semibold text-zinc-600">
+                {pagination.total}
+              </span>{" "}
+              data
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage((p) => p - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                ‹ Sebelumnya
+              </button>
+              {getPageNumbers(currentPage, pagination.totalPages).map(
+                (p, idx) =>
+                  typeof p === "string" ? (
+                    <span
+                      key={idx}
+                      className="w-7 h-7 flex items-center justify-center text-[11px] text-zinc-400"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${p === currentPage ? "bg-emerald-500 text-white" : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                    >
+                      {p}
+                    </button>
+                  ),
+              )}
+              <button
+                onClick={() => setCurrentPage((p) => p + 1)}
+                disabled={currentPage === pagination.totalPages}
+                className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                Selanjutnya ›
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </AppLayout>
   );

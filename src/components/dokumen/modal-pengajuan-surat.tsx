@@ -1,7 +1,8 @@
-// components/modal-pengajuan-surat.tsx
+// components/dokumen/modal-pengajuan-surat.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { PerusahaanSelect } from "@/components/base/PerusahaanSelect";
 
 interface ModalPengajuanSuratProps {
   isOpen: boolean;
@@ -9,8 +10,13 @@ interface ModalPengajuanSuratProps {
   mode: "buat" | "edit";
   data?: {
     keterangan?: string;
-    tujuan?: string;
+    tujuanNoInduk?: string;
+    tujuanNama?: string;
   };
+  onSubmit?: (form: {
+    keterangan: string;
+    tujuanNoInduk: string;
+  }) => Promise<void>;
 }
 
 export default function ModalPengajuanSurat({
@@ -18,33 +24,61 @@ export default function ModalPengajuanSurat({
   onClose,
   mode,
   data = {},
+  onSubmit,
 }: ModalPengajuanSuratProps) {
   const [form, setForm] = useState({
-    keterangan: data.keterangan ?? "",
-    tujuan: data.tujuan ?? "",
+    keterangan: "",
+    tujuanNoInduk: "",
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setForm({
-      keterangan: data.keterangan ?? "",
-      tujuan: data.tujuan ?? "",
-    });
-  }, [data.keterangan, data.tujuan, isOpen]);
+    if (isOpen) {
+      setForm({
+        keterangan: data.keterangan ?? "",
+        tujuanNoInduk: data.tujuanNoInduk ?? "",
+      });
+    }
+  }, [data.keterangan, data.tujuanNoInduk, isOpen]);
 
   if (!isOpen) return null;
 
-  const title = mode === "buat" ? "Buat Pengajuan" : "Edit Pengajuan";
+  const title =
+    mode === "buat"
+      ? "Buat Permintaan Nomor Surat"
+      : "Edit Permintaan Nomor Surat";
   const subtitle =
     "Lengkapi formulir di bawah ini untuk mengajukan nomor surat.";
-  const isValid = form.keterangan.trim() !== "" && form.tujuan.trim() !== "";
+  const isValid =
+    form.keterangan.trim() !== "" && form.tujuanNoInduk.trim() !== "";
 
-  const inputClass =
-    "w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all bg-white resize-none";
-  const labelClass = "block text-sm font-medium text-zinc-700 mb-2";
+  const handleSubmit = async () => {
+    if (!isValid || !onSubmit) return;
+    setLoading(true);
+    try {
+      await onSubmit({
+        keterangan: form.keterangan,
+        tujuanNoInduk: form.tujuanNoInduk,
+      });
+      onClose();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const labelClass = "block text-xs font-medium text-zinc-700 mb-1.5";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4">
           <div>
@@ -72,9 +106,9 @@ export default function ModalPengajuanSurat({
         {/* Form */}
         <div className="px-6 pb-4 space-y-4">
           <div>
-            <label className={labelClass}>Keterangan</label>
+            <label className={labelClass}>Keterangan *</label>
             <textarea
-              className={inputClass}
+              className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all bg-white resize-none"
               rows={4}
               placeholder="Masukkan keterangan"
               value={form.keterangan}
@@ -83,13 +117,13 @@ export default function ModalPengajuanSurat({
           </div>
 
           <div>
-            <label className={labelClass}>Tajuan</label>
-            <textarea
-              className={inputClass}
-              rows={4}
-              placeholder="Masukkan tujuan"
-              value={form.tujuan}
-              onChange={(e) => setForm({ ...form, tujuan: e.target.value })}
+            <label className={labelClass}>Perusahaan Tujuan *</label>
+            <PerusahaanSelect
+              value={form.tujuanNoInduk}
+              onChange={(noInduk) => {
+                setForm({ ...form, tujuanNoInduk: noInduk });
+              }}
+              placeholder="Pilih perusahaan tujuan..."
             />
           </div>
         </div>
@@ -103,18 +137,15 @@ export default function ModalPengajuanSurat({
             Batal
           </button>
           <button
-            onClick={() => {
-              if (!isValid) return;
-              onClose();
-            }}
-            disabled={!isValid}
+            onClick={handleSubmit}
+            disabled={!isValid || loading}
             className={`px-5 py-2 text-xs font-medium rounded-lg transition-colors ${
-              isValid
+              isValid && !loading
                 ? "bg-emerald-500 text-white hover:bg-emerald-700"
                 : "bg-zinc-200 text-zinc-400 cursor-not-allowed"
             }`}
           >
-            Ajukan
+            {loading ? "Menyimpan..." : mode === "buat" ? "Ajukan" : "Simpan"}
           </button>
         </div>
       </div>
