@@ -60,11 +60,12 @@ export function getAccessToken(): string | null {
   if (_session?.token) return _session.token;
 
   const cookieToken = Cookies.get("token");
-  const cookieRole = Cookies.get("role");
-  if (cookieToken && cookieRole) {
+  const cookieUser = Cookies.get("user");
+
+  if (cookieToken && cookieUser) {
     _session = {
       token: cookieToken,
-      user: { id: "", nama: "", email: "", role: cookieRole },
+      user: JSON.parse(cookieUser),
     };
     return cookieToken;
   }
