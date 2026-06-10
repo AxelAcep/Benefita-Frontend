@@ -57,7 +57,19 @@ export function getSession(): Session | null {
 }
 
 export function getAccessToken(): string | null {
-  return _session?.token ?? null;
+  if (_session?.token) return _session.token;
+
+  const cookieToken = Cookies.get("token");
+  const cookieRole = Cookies.get("role");
+  if (cookieToken && cookieRole) {
+    _session = {
+      token: cookieToken,
+      user: { id: "", nama: "", email: "", role: cookieRole },
+    };
+    return cookieToken;
+  }
+
+  return null;
 }
 
 function setSession(token: string, user: User) {
@@ -206,31 +218,28 @@ export async function fetchWithAuth(
   input: RequestInfo,
   init: RequestInit = {},
 ): Promise<Response> {
-  let token = getAccessToken();
-
-  // Token hilang (habis refresh halaman) → coba silent refresh dulu
-  if (!token) {
-    const refreshed = await silentRefresh();
-    if (!refreshed) throw new Error("Sesi berakhir. Silakan login ulang.");
-    token = getAccessToken()!;
-  }
-
-  const doFetch = (t: string) =>
+  const doFetch = (token: string) =>
     fetch(input, {
       ...init,
       credentials: "include",
       headers: {
         ...init.headers,
-        Authorization: `Bearer ${t}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
+  const token = getAccessToken();
+  if (!token) throw new Error("Tidak ada sesi aktif.");
+
   const res = await doFetch(token);
 
+  // Access token expired → coba silent refresh sekali
   if (res.status === 401) {
     const refreshed = await silentRefresh();
     if (!refreshed) throw new Error("Sesi berakhir. Silakan login ulang.");
-    return doFetch(getAccessToken()!);
+
+    const newToken = getAccessToken()!;
+    return doFetch(newToken);
   }
 
   return res;
