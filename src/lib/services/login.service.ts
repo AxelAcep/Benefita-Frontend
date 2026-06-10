@@ -160,8 +160,8 @@ export async function silentRefresh(): Promise<boolean> {
 
     if (!res.ok) {
       clearSession();
-      Cookies.remove("token");
-      Cookies.remove("role");
+      // Cookies.remove("token");
+      // Cookies.remove("role");
       return false;
     }
 
@@ -172,8 +172,8 @@ export async function silentRefresh(): Promise<boolean> {
     return true;
   } catch {
     clearSession();
-    Cookies.remove("token");
-    Cookies.remove("role");
+    // Cookies.remove("token");
+    // Cookies.remove("role");
     return false;
   } finally {
     isRefreshing = false; // Reset lock
