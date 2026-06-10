@@ -206,28 +206,31 @@ export async function fetchWithAuth(
   input: RequestInfo,
   init: RequestInit = {},
 ): Promise<Response> {
-  const doFetch = (token: string) =>
+  let token = getAccessToken();
+
+  // Token hilang (habis refresh halaman) → coba silent refresh dulu
+  if (!token) {
+    const refreshed = await silentRefresh();
+    if (!refreshed) throw new Error("Sesi berakhir. Silakan login ulang.");
+    token = getAccessToken()!;
+  }
+
+  const doFetch = (t: string) =>
     fetch(input, {
       ...init,
       credentials: "include",
       headers: {
         ...init.headers,
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${t}`,
       },
     });
 
-  const token = getAccessToken();
-  if (!token) throw new Error("Tidak ada sesi aktif.");
-
   const res = await doFetch(token);
 
-  // Access token expired → coba silent refresh sekali
   if (res.status === 401) {
     const refreshed = await silentRefresh();
     if (!refreshed) throw new Error("Sesi berakhir. Silakan login ulang.");
-
-    const newToken = getAccessToken()!;
-    return doFetch(newToken);
+    return doFetch(getAccessToken()!);
   }
 
   return res;
