@@ -125,6 +125,7 @@ export async function loginUser(payload: LoginRequest): Promise<LoginResponse> {
     setSession(data.token, data.user);
     Cookies.set("token", data.token, { expires: 1 });
     Cookies.set("role", data.user.role, { expires: 1 });
+    Cookies.set("user", JSON.stringify(data.user), { expires: 1 });
   }
 
   return data;
@@ -147,6 +148,7 @@ export async function verifyOtp(
   setSession(data.token, data.user);
   Cookies.set("token", data.token, { expires: 1 });
   Cookies.set("role", data.user.role, { expires: 1 });
+  Cookies.set("user", JSON.stringify(data.user), { expires: 1 });
 
   return data;
 }
@@ -206,6 +208,7 @@ export async function logout(): Promise<void> {
     clearSession();
     Cookies.remove("token");
     Cookies.remove("role");
+    Cookies.remove("user");
   }
 }
 

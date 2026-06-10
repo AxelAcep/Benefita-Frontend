@@ -12,6 +12,7 @@ import {
   silentRefresh,
   logout as authLogout,
   getSession,
+  getAccessToken,
   User,
 } from "@/lib/services/login.service";
 
@@ -75,12 +76,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setStatus("authenticated");
       } else {
-        setUser(null);
-        setStatus("unauthenticated");
+        const token = getAccessToken();
+        const session = getSession();
 
-        // Gunakan pathname.startsWith jika ada sub-route
-        if (!PUBLIC_ROUTES.includes(pathname)) {
-          router.replace("/"); // Sesuaikan route login kamu
+        if (token && session) {
+          setUser(session.user);
+          setStatus("authenticated");
+        } else {
+          setUser(null);
+          setStatus("unauthenticated");
+          // Gunakan pathname.startsWith jika ada sub-route
+          if (!PUBLIC_ROUTES.includes(pathname)) {
+            router.replace("/"); // Sesuaikan route login kamu
+          }
         }
       }
     }
