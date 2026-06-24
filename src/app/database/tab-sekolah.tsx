@@ -8,6 +8,32 @@ import { usePerusahaan } from "@/hooks/use-perusahaan";
 import { useRouter } from "next/navigation";
 import Anchor from "@/components/base/anchor";
 
+function getPageNumbers(
+  currentPage: number,
+  totalPages: number,
+  siblings = 2,
+): (number | "...")[] {
+  if (totalPages <= 1) return totalPages === 1 ? [1] : [];
+
+  const pages: (number | "...")[] = [];
+  const start = Math.max(2, currentPage - siblings);
+  const end = Math.min(totalPages - 1, currentPage + siblings);
+
+  pages.push(1);
+
+  if (start > 2) pages.push("...");
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (end < totalPages - 1) pages.push("...");
+
+  pages.push(totalPages);
+
+  return pages;
+}
+
 export default function TabPerusahaan({ jenisInstansi = "SEKOLAH" }) {
   const {
     data,
@@ -137,8 +163,15 @@ export default function TabPerusahaan({ jenisInstansi = "SEKOLAH" }) {
           </button>
 
           {/* Page number buttons */}
-          {Array.from({ length: meta.totalPages }, (_, i) => i + 1).map(
-            (page) => (
+          {getPageNumbers(currentPage, meta.totalPages).map((page, idx) =>
+            page === "..." ? (
+              <span
+                key={`ellipsis-${idx}`}
+                className="px-2 text-[11px] text-zinc-400"
+              >
+                ...
+              </span>
+            ) : (
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}

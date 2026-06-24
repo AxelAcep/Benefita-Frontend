@@ -26,6 +26,32 @@ function formatDate(dateStr: string) {
   });
 }
 
+function getPageNumbers(
+  currentPage: number,
+  totalPages: number,
+  siblings = 2,
+): (number | "...")[] {
+  if (totalPages <= 1) return totalPages === 1 ? [1] : [];
+
+  const pages: (number | "...")[] = [];
+  const start = Math.max(2, currentPage - siblings);
+  const end = Math.min(totalPages - 1, currentPage + siblings);
+
+  pages.push(1);
+
+  if (start > 2) pages.push("...");
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (end < totalPages - 1) pages.push("...");
+
+  pages.push(totalPages);
+
+  return pages;
+}
+
 type ActiveTab = "riwayat" | "karyawan";
 
 function SortIcon() {
@@ -284,15 +310,24 @@ function RiwayatTab() {
             >
               ‹ Sebelumnya
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${p === page ? "bg-emerald-500 text-white" : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-              >
-                {p}
-              </button>
-            ))}
+            {getPageNumbers(page, totalPages).map((p, idx) =>
+              p === "..." ? (
+                <span
+                  key={`ellipsis-${idx}`}
+                  className="w-7 h-7 flex items-center justify-center text-[11px] text-zinc-400"
+                >
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${p === page ? "bg-emerald-500 text-white" : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                >
+                  {p}
+                </button>
+              ),
+            )}
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
@@ -536,15 +571,24 @@ function KaryawanTab() {
           >
             ‹ Sebelumnya
           </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${p === page ? "bg-emerald-500 text-white" : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-            >
-              {p}
-            </button>
-          ))}
+          {getPageNumbers(page, totalPages).map((p, idx) =>
+            p === "..." ? (
+              <span
+                key={`ellipsis-${idx}`}
+                className="w-7 h-7 flex items-center justify-center text-[11px] text-zinc-400"
+              >
+                ...
+              </span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${p === page ? "bg-emerald-500 text-white" : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+              >
+                {p}
+              </button>
+            ),
+          )}
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}

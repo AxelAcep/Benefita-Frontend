@@ -175,8 +175,8 @@ export async function silentRefresh(): Promise<boolean> {
 
     if (!res.ok) {
       clearSession();
-      // Cookies.remove("token");
-      // Cookies.remove("role");
+      Cookies.remove("token");
+      Cookies.remove("role");
       return false;
     }
 
