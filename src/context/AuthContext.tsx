@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   ReactNode,
 } from "react";
@@ -59,23 +60,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     "loading" | "authenticated" | "unauthenticated"
   >("loading");
 
+  // Pastikan init hanya jalan SEKALI, tidak terpengaruh re-render
+  const initialized = useRef(false);
+
+  // ── 1. Init session — hanya sekali saat mount ──────────────────────────────
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     async function init() {
-      const existing = getSession();
-      if (existing) {
-        setUser(existing.user);
-        setStatus("authenticated");
-        return;
-      }
+      try {
+        // Cek session di memory dulu
+        const existing = getSession();
+        if (existing) {
+          setUser(existing.user);
+          setStatus("authenticated");
+          return;
+        }
 
-      // Refresh terjadi -> memory kosong -> panggil silentRefresh
-      const ok = await silentRefresh();
+        // Memory kosong (misal habis refresh) → coba silent refresh via cookie
+        const ok = await silentRefresh();
 
-      if (ok) {
-        const session = getSession(); // Ambil session yang baru di-set oleh silentRefresh
-        setUser(session?.user ?? null);
-        setStatus("authenticated");
-      } else {
+        if (ok) {
+          const session = getSession();
+          setUser(session?.user ?? null);
+          setStatus("authenticated");
+          return;
+        }
+
+        // Silent refresh gagal → fallback cek token & session sekali lagi
+        const token = getAccessToken();
+        const session = getSession();
+
+        if (token && session) {
+          setUser(session.user);
+          setStatus("authenticated");
+          return;
+        }
+
+        // Benar-benar tidak ada sesi yang valid
+        setUser(null);
+        setStatus("unauthenticated");
+      } catch {
+        // Jangan sampai error apapun (network, dll) menyebabkan logout paksa
+        // Cek manual apakah masih ada session/token sebelum putuskan unauthenticated
         const token = getAccessToken();
         const session = getSession();
 
@@ -85,34 +113,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setUser(null);
           setStatus("unauthenticated");
-          // Gunakan pathname.startsWith jika ada sub-route
-          if (!PUBLIC_ROUTES.includes(pathname)) {
-            router.replace("/"); // Sesuaikan route login kamu
-          }
         }
       }
     }
 
     init();
-  }, [pathname]); // Tambahkan pathname agar jika user paksa pindah route saat unauthenticated, dia dicek lagi
+  }, []); // ← KOSONG, hanya jalan sekali saat mount
 
-  // Guard: kalau sudah resolved, jangan biarkan user authenticated masuk ke /login
+  // ── 2. Route guard — jalan setiap pathname berubah, tapi TUNGGU status resolved ──
   useEffect(() => {
-    if (status === "authenticated" && PUBLIC_ROUTES.includes(pathname)) {
-      router.replace("/dashboard");
-    }
-  }, [status, pathname]);
+    // Belum selesai init, jangan redirect dulu
+    if (status === "loading") return;
 
+    const isPublic = PUBLIC_ROUTES.includes(pathname);
+
+    if (status === "unauthenticated" && !isPublic) {
+      router.replace("/");
+      return;
+    }
+
+    if (status === "authenticated" && isPublic) {
+      router.replace("/dashboard");
+      return;
+    }
+  }, [status, pathname]); // ← pathname di sini aman karena ada guard status === "loading"
+
+  // ── 3. Logout ──────────────────────────────────────────────────────────────
   async function logout() {
-    await authLogout();
-    setUser(null);
-    setStatus("unauthenticated");
-    router.replace("/");
+    try {
+      await authLogout();
+    } catch {
+      // Tetap lanjut logout di sisi client meski API gagal
+    } finally {
+      setUser(null);
+      setStatus("unauthenticated");
+      router.replace("/");
+    }
   }
 
   return (
     <AuthContext.Provider value={{ user, status, logout }}>
-      {/* Tampilkan loading screen selama cek sesi, hindari flash konten */}
       {status === "loading" ? <AuthLoadingScreen /> : children}
     </AuthContext.Provider>
   );

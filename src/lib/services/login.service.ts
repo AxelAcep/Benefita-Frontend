@@ -123,9 +123,9 @@ export async function loginUser(payload: LoginRequest): Promise<LoginResponse> {
   // Kalau device trusted, langsung simpan ke memory
   if (!data.requireOtp && data.token && data.user) {
     setSession(data.token, data.user);
-    Cookies.set("token", data.token, { expires: 1 });
-    Cookies.set("role", data.user.role, { expires: 1 });
-    Cookies.set("user", JSON.stringify(data.user), { expires: 1 });
+    Cookies.set("token", data.token, { expires: 7 });
+    Cookies.set("role", data.user.role, { expires: 7 });
+    Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
   }
 
   return data;
@@ -146,9 +146,9 @@ export async function verifyOtp(
 
   // Simpan ke memory setelah OTP sukses
   setSession(data.token, data.user);
-  Cookies.set("token", data.token, { expires: 1 });
-  Cookies.set("role", data.user.role, { expires: 1 });
-  Cookies.set("user", JSON.stringify(data.user), { expires: 1 });
+  Cookies.set("token", data.token, { expires: 7 });
+  Cookies.set("role", data.user.role, { expires: 7 });
+  Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
 
   return data;
 }
@@ -182,8 +182,8 @@ export async function silentRefresh(): Promise<boolean> {
 
     const data = await res.json();
     setSession(data.token, data.user);
-    Cookies.set("token", data.token, { expires: 1 });
-    Cookies.set("role", data.user.role, { expires: 1 });
+    Cookies.set("token", data.token, { expires: 7 });
+    Cookies.set("role", data.user.role, { expires: 7 });
     return true;
   } catch {
     clearSession();
