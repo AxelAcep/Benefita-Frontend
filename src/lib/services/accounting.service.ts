@@ -454,3 +454,150 @@ export async function getLaporanHasilUsaha(
     throw new Error(data.message || "Gagal mengambil laporan hasil usaha");
   return data;
 }
+
+// ─── UMK Types ──────────────────────────────────────────────────────────
+
+export interface UmkItem {
+  id: number;
+  tglInput: string;
+  noUmk: string;
+  jumlahUmk: number;
+  picId: string | null;
+  pic: {
+    id: string;
+    nama: string;
+  } | null;
+  tujuanUmk: string;
+  tglPenyerahanUang: string | null;
+  realisasiUmk: number;
+  tglPutmKmk: string | null;
+  sisaUangUmk: number;
+  ketUmk: string | null;
+  periodeUmk: string;
+  inputterId: string;
+  inputter: {
+    id: string;
+    nama: string;
+  };
+}
+
+export interface UmkResponse {
+  data: UmkItem[];
+  pagination: Pagination;
+  grandTotal: {
+    totalJumlah: number;
+    totalRealisasi: number;
+    totalSisa: number;
+  };
+}
+
+export interface UmkDetailResponse {
+  data: UmkItem;
+}
+
+// ─── UMK API Calls ─────────────────────────────────────────────────────
+
+export async function getUmk(
+  params: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    order?: "asc" | "desc";
+    startMonth?: number;
+    startYear?: number;
+    endMonth?: number;
+    endYear?: number;
+    picId?: string;
+    search?: string;
+  } = {},
+): Promise<UmkResponse> {
+  const {
+    page = 1,
+    limit = 10,
+    sortBy = "tglInput",
+    order = "desc",
+    startMonth,
+    startYear,
+    endMonth,
+    endYear,
+    picId,
+    search,
+  } = params;
+
+  const queryParams = new URLSearchParams();
+  queryParams.append("page", String(page));
+  queryParams.append("limit", String(limit));
+  queryParams.append("sortBy", sortBy);
+  queryParams.append("order", order);
+
+  if (startMonth !== undefined && startYear !== undefined) {
+    queryParams.append("startMonth", String(startMonth));
+    queryParams.append("startYear", String(startYear));
+  }
+  if (endMonth !== undefined && endYear !== undefined) {
+    queryParams.append("endMonth", String(endMonth));
+    queryParams.append("endYear", String(endYear));
+  }
+  if (picId) {
+    queryParams.append("picId", picId);
+  }
+  if (search) {
+    queryParams.append("search", search);
+  }
+
+  const url = `${API_URL}/api/accounting/umk?${queryParams.toString()}`;
+  const res = await fetchWithAuth(url, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengambil data UMK");
+  return data;
+}
+
+export async function createUmk(payload: {
+  noUmk: string;
+  tujuanUmk: string;
+  picId: string;
+  jumlahUmk: number;
+  tglPenyerahanUang?: string;
+  realisasiUmk?: number;
+  ketUmk?: string;
+}): Promise<{ message: string; data: UmkItem }> {
+  const url = `${API_URL}/api/accounting/umk`;
+  const res = await fetchWithAuth(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal membuat UMK");
+  return data;
+}
+
+export async function updateUmk(
+  id: number,
+  payload: {
+    tujuanUmk?: string;
+    picId?: string;
+    jumlahUmk?: number;
+    tglPenyerahanUang?: string;
+    realisasiUmk?: number;
+    ketUmk?: string;
+  },
+): Promise<{ message: string; data: UmkItem }> {
+  const url = `${API_URL}/api/accounting/umk/${id}`;
+  const res = await fetchWithAuth(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal memperbarui UMK");
+  return data;
+}
+
+export async function getUmkById(id: number): Promise<UmkDetailResponse> {
+  const url = `${API_URL}/api/accounting/umk/${id}`;
+  const res = await fetchWithAuth(url, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengambil detail UMK");
+  return data;
+}

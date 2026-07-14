@@ -1,518 +1,628 @@
 "use client";
 
-import React, { useState } from "react";
-import { FileText } from "lucide-react";
-import AppLayout from "@/components/app-layout";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import Sidebar from "@/components/sidebar";
+import { generatePastelBg, generatePastelText } from "@/lib/pastelColor";
+import { useUmk } from "@/hooks/use-umk";
+import { usePegawai } from "@/hooks/use-pegawai-list";
+import ModalUmk from "./ModalUmk";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+type SortBy =
+  | "noUmk"
+  | "tujuanUmk"
+  | "jumlahUmk"
+  | "realisasiUmk"
+  | "sisaUangUmk"
+  | "tglInput";
 
-interface InvoicePengirimanItem {
-  id: number;
-  instansi: string;
-  noInvoice: string;
-  kodePelTgl: string;
-  harga: string;
-  bayar: number;
-  pengiriman: {
-    berkas: string | null;
-    ditujukan: string | null;
-    penerima: string | null;
-    bupot: "Belum" | "Sudah" | null;
-  };
-}
+export default function UmkPage() {
+  const router = useRouter();
 
-// ---------------------------------------------------------------------------
-// Dummy data
-// ---------------------------------------------------------------------------
-
-const DUMMY_DATA: InvoicePengirimanItem[] = [
-  {
-    id: 1,
-    instansi: "PT Sucofindo Cabang Semarang",
-    noInvoice: "0200/INV/REG-WM-01/V/26",
-    kodePelTgl: "WM-01 /\n04-06 Mei 2026",
-    harga: "Rp20.000.000",
-    bayar: 0,
-    pengiriman: {
-      berkas: null,
-      ditujukan: null,
-      penerima: null,
-      bupot: "Belum",
-    },
-  },
-  {
-    id: 2,
-    instansi: "Institut Teknologi Kalimantan",
-    noInvoice: "0199/INV/REG-EP-14/VI/26",
-    kodePelTgl: "EP-14 /\n22-25 Juni 2026",
-    harga: "Rp15.650.000",
-    bayar: 0,
-    pengiriman: {
-      berkas: null,
-      ditujukan: null,
-      penerima: null,
-      bupot: "Belum",
-    },
-  },
-  {
-    id: 3,
-    instansi: "PT Indo Raya Tenaga",
-    noInvoice: "0198/INV/REG-WM-07/VI/26",
-    kodePelTgl: "WM-07 /\n08-10 Juni 2026",
-    harga: "Rp15.000.000",
-    bayar: 15000000,
-    pengiriman: {
-      berkas: "Ada",
-      ditujukan: "Direktur",
-      penerima: "Budi S.",
-      bupot: "Sudah",
-    },
-  },
-  {
-    id: 4,
-    instansi: "PT Indonesia Asahan Aluminium",
-    noInvoice: "0196/INV/KON-EP-07/II/26",
-    kodePelTgl: "EP-07 /\n18-18 Februari 2026",
-    harga: "Rp12.000.000",
-    bayar: 0,
-    pengiriman: {
-      berkas: null,
-      ditujukan: null,
-      penerima: null,
-      bupot: "Belum",
-    },
-  },
-  {
-    id: 5,
-    instansi: "PT Pertamina EP",
-    noInvoice: "0195/INV/REG-WM-03/IV/26",
-    kodePelTgl: "WM-03 /\n15-17 April 2026",
-    harga: "Rp18.500.000",
-    bayar: 18500000,
-    pengiriman: {
-      berkas: "Ada",
-      ditujukan: "HRD Manager",
-      penerima: "Siti R.",
-      bupot: "Sudah",
-    },
-  },
-  {
-    id: 6,
-    instansi: "PT PLN (Persero) UIP JBT",
-    noInvoice: "0194/INV/REG-EP-11/IV/26",
-    kodePelTgl: "EP-11 /\n22-24 April 2026",
-    harga: "Rp22.000.000",
-    bayar: 0,
-    pengiriman: {
-      berkas: null,
-      ditujukan: null,
-      penerima: null,
-      bupot: "Belum",
-    },
-  },
-  {
-    id: 7,
-    instansi: "PT Freeport Indonesia",
-    noInvoice: "0193/INV/REG-WM-05/III/26",
-    kodePelTgl: "WM-05 /\n10-12 Maret 2026",
-    harga: "Rp25.000.000",
-    bayar: 25000000,
-    pengiriman: {
-      berkas: "Ada",
-      ditujukan: "Finance Dept.",
-      penerima: "Anita K.",
-      bupot: "Sudah",
-    },
-  },
-  {
-    id: 8,
-    instansi: "PT Chevron Pacific Indonesia",
-    noInvoice: "0192/INV/KON-EP-03/III/26",
-    kodePelTgl: "EP-03 /\n17-19 Maret 2026",
-    harga: "Rp14.000.000",
-    bayar: 0,
-    pengiriman: {
-      berkas: null,
-      ditujukan: null,
-      penerima: null,
-      bupot: "Belum",
-    },
-  },
-  {
-    id: 9,
-    instansi: "PT Bukit Asam Tbk",
-    noInvoice: "0191/INV/REG-WM-02/II/26",
-    kodePelTgl: "WM-02 /\n03-05 Februari 2026",
-    harga: "Rp16.500.000",
-    bayar: 16500000,
-    pengiriman: {
-      berkas: "Ada",
-      ditujukan: "GM Operasi",
-      penerima: "Mega L.",
-      bupot: "Sudah",
-    },
-  },
-  {
-    id: 10,
-    instansi: "PT Medco Energi Internasional",
-    noInvoice: "0190/INV/REG-EP-09/II/26",
-    kodePelTgl: "EP-09 /\n10-12 Februari 2026",
-    harga: "Rp13.750.000",
-    bayar: 0,
-    pengiriman: {
-      berkas: null,
-      ditujukan: null,
-      penerima: null,
-      bupot: "Belum",
-    },
-  },
-  {
-    id: 11,
-    instansi: "PT Krakatau Steel Tbk",
-    noInvoice: "0189/INV/KON-WM-08/I/26",
-    kodePelTgl: "WM-08 /\n20-22 Januari 2026",
-    harga: "Rp19.000.000",
-    bayar: 0,
-    pengiriman: {
-      berkas: null,
-      ditujukan: null,
-      penerima: null,
-      bupot: "Belum",
-    },
-  },
-  {
-    id: 12,
-    instansi: "PT Holcim Indonesia Tbk",
-    noInvoice: "0188/INV/REG-EP-06/I/26",
-    kodePelTgl: "EP-06 /\n27-29 Januari 2026",
-    harga: "Rp17.250.000",
-    bayar: 17250000,
-    pengiriman: {
-      berkas: "Ada",
-      ditujukan: "Procurement",
-      penerima: "Nurul H.",
-      bupot: "Sudah",
-    },
-  },
-];
-
-const PAGE_SIZE = 10;
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
-export default function DaftarInvoicePengirimanPage() {
-  const [tanggal, setTanggal] = useState("");
+  // ─── State ──────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  const filtered = DUMMY_DATA.filter(
-    (d) =>
-      d.instansi.toLowerCase().includes(search.toLowerCase()) ||
-      d.noInvoice.toLowerCase().includes(search.toLowerCase()) ||
-      d.kodePelTgl.toLowerCase().includes(search.toLowerCase()),
+  // Filter bulan
+  const [currentMonth, setCurrentMonth] = useState<number>(
+    new Date().getMonth() + 1,
   );
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+  const [currentYear, setCurrentYear] = useState<number>(
+    new Date().getFullYear(),
   );
+  const [isCustomRange, setIsCustomRange] = useState(false);
+  const [customStartMonth, setCustomStartMonth] =
+    useState<number>(currentMonth);
+  const [customStartYear, setCustomStartYear] = useState<number>(currentYear);
+  const [customEndMonth, setCustomEndMonth] = useState<number>(currentMonth);
+  const [customEndYear, setCustomEndYear] = useState<number>(currentYear);
 
-  function pageNumbers() {
-    const total = totalPages;
-    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-    const pages: (number | "...")[] = [1];
-    if (currentPage > 3) pages.push("...");
-    for (
-      let p = Math.max(2, currentPage - 1);
-      p <= Math.min(total - 1, currentPage + 1);
-      p++
-    )
-      pages.push(p);
-    if (currentPage < total - 2) pages.push("...");
-    pages.push(total);
-    return pages;
-  }
+  // Filter PIC
+  const [filterPicId, setFilterPicId] = useState<string>("");
 
-  function Dash() {
-    return <span className="text-zinc-300 select-none">–</span>;
-  }
+  // Sorting
+  const [sortBy, setSortBy] = useState<SortBy>("tglInput");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // ─── Data Pegawai (untuk dropdown filter PIC) ────────────────
+  const { data: pegawaiList } = usePegawai();
+
+  // ─── API params ────────────────────────────────────────────────
+  const getApiParams = useCallback(() => {
+    const params: any = {
+      page,
+      limit,
+      sortBy,
+      order: sortOrder,
+    };
+    if (search) params.search = search;
+    if (filterPicId) params.picId = filterPicId;
+    if (isCustomRange) {
+      params.startMonth = customStartMonth;
+      params.startYear = customStartYear;
+      params.endMonth = customEndMonth;
+      params.endYear = customEndYear;
+    } else {
+      params.startMonth = currentMonth;
+      params.startYear = currentYear;
+    }
+    return params;
+  }, [
+    page,
+    limit,
+    sortBy,
+    sortOrder,
+    search,
+    filterPicId,
+    isCustomRange,
+    customStartMonth,
+    customStartYear,
+    customEndMonth,
+    customEndYear,
+    currentMonth,
+    currentYear,
+  ]);
+
+  const { data, pagination, grandTotal, loading, error, refetch } =
+    useUmk(getApiParams());
+
+  // ─── Refresh saat filter berubah ──────────────────────────────
+  useEffect(() => {
+    refetch(getApiParams());
+  }, [
+    sortBy,
+    sortOrder,
+    search,
+    filterPicId,
+    currentMonth,
+    currentYear,
+    isCustomRange,
+    customStartMonth,
+    customStartYear,
+    customEndMonth,
+    customEndYear,
+  ]);
+
+  // ─── Navigasi bulan ────────────────────────────────────────────
+  const goToPrevMonth = () => {
+    if (currentMonth === 1) {
+      setCurrentMonth(12);
+      setCurrentYear((y) => y - 1);
+    } else {
+      setCurrentMonth((m) => m - 1);
+    }
+    setPage(1);
+  };
+  const goToNextMonth = () => {
+    if (currentMonth === 12) {
+      setCurrentMonth(1);
+      setCurrentYear((y) => y + 1);
+    } else {
+      setCurrentMonth((m) => m + 1);
+    }
+    setPage(1);
+  };
+  const goToCurrentMonth = () => {
+    const now = new Date();
+    setCurrentMonth(now.getMonth() + 1);
+    setCurrentYear(now.getFullYear());
+    setIsCustomRange(false);
+    setPage(1);
+  };
+  const handleApplyCustomRange = () => {
+    setIsCustomRange(true);
+    setPage(1);
+  };
+  const handleUseCurrentMonth = () => {
+    setIsCustomRange(false);
+    setPage(1);
+  };
+
+  // ─── Modal handlers ────────────────────────────────────────────
+  const handleOpenCreate = () => {
+    setEditingId(null);
+    setIsModalOpen(true);
+  };
+  const handleOpenEdit = (id: number) => {
+    setEditingId(id);
+    setIsModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+  };
+  const handleSuccess = () => {
+    refetch(getApiParams());
+  };
+
+  // ─── Format Rupiah ─────────────────────────────────────────────
+  const formatRupiah = (num: number) =>
+    new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(num);
+
+  // ─── Format tanggal (manual untuk DD.MM.YYYY atau ISO) ──────
+  const formatTanggal = (dateStr: string | null) => {
+    if (!dateStr) return "-";
+    // coba parse DD.MM.YYYY
+    const parts = dateStr.split(".");
+    if (parts.length === 3) {
+      const day = parseInt(parts[0]);
+      const month = parseInt(parts[1]);
+      const year = parseInt(parts[2]);
+      if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+        return `${day} ${new Date(year, month - 1).toLocaleString("id-ID", { month: "short" })} ${year}`;
+      }
+    }
+    // fallback ke ISO
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // ─── Table columns ─────────────────────────────────────────────
+  const cols = [
+    "No",
+    "No. UMK",
+    "Tujuan",
+    "PIC",
+    "Jumlah",
+    "Realisasi",
+    "Sisa",
+    "Tgl Penyerahan",
+    "Aksi",
+  ];
+
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (error) return <div className="p-6">Error: {error.message}</div>;
 
   return (
-    <AppLayout
-      breadcrumbs={[
-        { label: "Keuangan", href: "/keuangan" },
-        { label: "Beranda" },
-      ]}
-      subtitle="Hari ini: Selasa, 3 Februari 2026"
-      userName="Nanang"
-      userRole="Super Admin"
-    >
-      <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
-        {/* Toolbar */}
-        <div className="px-5 py-3 border-b border-zinc-100">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Title */}
-            <div className="flex items-center gap-2 mr-2">
-              <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <FileText className="w-3.5 h-3.5 text-emerald-500" />
-              </div>
-              <span className="font-bold text-zinc-800 text-sm">List UMK</span>
+    <div className="flex min-h-screen bg-zinc-100 overflow-hidden">
+      <Sidebar />
+      <div className="flex flex-col flex-1 md:ml-[250px] min-w-0 overflow-x-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 bg-white border-b border-zinc-100 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-zinc-400">
+              Perusahaan &rsaquo;{" "}
+              <span className="font-semibold text-zinc-700">List UMK</span>
+            </p>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Hari ini:{" "}
+              {new Date().toLocaleDateString("id-ID", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <p className="text-xs font-semibold text-zinc-800">Nanang</p>
+              <p className="text-[10px] text-zinc-400">Super Admin</p>
             </div>
-
-            {/* Tanggal */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-zinc-500 font-medium">
-                Tanggal
-              </span>
-              <input
-                type="date"
-                value={tanggal}
-                onChange={(e) => setTanggal(e.target.value)}
-                className="pl-2.5 pr-2 py-1.5 border border-zinc-200 rounded-lg text-[11px] text-zinc-600 outline-none focus:border-emerald-300 transition-all bg-white cursor-pointer"
-              />
-            </div>
-
-            {/* Terapkan */}
-            <button
-              onClick={() => setCurrentPage(1)}
-              className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-semibold rounded-lg transition-colors"
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{
+                backgroundColor: generatePastelBg("Nanang"),
+                color: generatePastelText("Nanang"),
+              }}
             >
-              Terapkan
-            </button>
+              N
+            </div>
+          </div>
+        </div>
 
-            {/* Search */}
-            <div className="relative ml-auto">
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          {/* Back & Tombol Tambah */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-800 transition-colors font-medium"
+            >
               <svg
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-300"
-                width="11"
-                height="11"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
               >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
               </svg>
+              Kembali
+            </button>
+            <button
+              onClick={handleOpenCreate}
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              + Tambah UMK
+            </button>
+          </div>
+
+          {/* Filter Bulan & Sorting */}
+          <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-xl border border-zinc-200 shadow-sm">
+            {/* Navigasi Bulan */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={goToPrevMonth}
+                disabled={isCustomRange}
+                className={`p-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-50 transition-colors ${
+                  isCustomRange ? "opacity-40 cursor-not-allowed" : ""
+                }`}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
               <input
-                type="text"
-                placeholder="Cari informasi..."
-                value={search}
+                type="month"
+                value={`${currentYear}-${String(currentMonth).padStart(2, "0")}`}
                 onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
+                  const [year, month] = e.target.value.split("-").map(Number);
+                  setCurrentYear(year);
+                  setCurrentMonth(month);
+                  setPage(1);
                 }}
-                className="w-full sm:w-52 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
+                disabled={isCustomRange}
+                className={`border border-zinc-200 rounded-lg px-2 py-1 text-sm font-medium text-zinc-700 focus:border-emerald-300 outline-none ${
+                  isCustomRange
+                    ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
+                    : ""
+                }`}
               />
+              <button
+                onClick={goToNextMonth}
+                disabled={isCustomRange}
+                className={`p-1.5 rounded-lg border border-zinc-200 hover:bg-zinc-50 transition-colors ${
+                  isCustomRange ? "opacity-40 cursor-not-allowed" : ""
+                }`}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+              <button
+                onClick={goToCurrentMonth}
+                className="px-3 py-1 text-xs font-medium text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors"
+              >
+                Bulan Ini
+              </button>
+            </div>
+
+            <div className="w-px h-6 bg-zinc-200" />
+
+            {/* Filter Rentang */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">Rentang:</span>
+              <input
+                type="month"
+                value={`${customStartYear}-${String(customStartMonth).padStart(2, "0")}`}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split("-").map(Number);
+                  setCustomStartYear(year);
+                  setCustomStartMonth(month);
+                }}
+                className="border border-zinc-200 rounded-lg px-2 py-1 text-xs"
+              />
+              <span className="text-xs text-zinc-400">sampai</span>
+              <input
+                type="month"
+                value={`${customEndYear}-${String(customEndMonth).padStart(2, "0")}`}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split("-").map(Number);
+                  setCustomEndYear(year);
+                  setCustomEndMonth(month);
+                }}
+                className="border border-zinc-200 rounded-lg px-2 py-1 text-xs"
+              />
+              <button
+                onClick={handleApplyCustomRange}
+                className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors"
+              >
+                Terapkan
+              </button>
+              {isCustomRange && (
+                <button
+                  onClick={handleUseCurrentMonth}
+                  className="px-3 py-1 text-xs text-zinc-500 hover:text-zinc-700 underline"
+                >
+                  Kembali ke bulan ini
+                </button>
+              )}
+            </div>
+
+            <div className="w-px h-6 bg-zinc-200" />
+
+            {/* Sorting */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">Urutkan:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortBy)}
+                className="border border-zinc-200 rounded-lg px-2 py-1 text-xs"
+              >
+                <option value="noUmk">No. UMK</option>
+                <option value="tujuanUmk">Tujuan</option>
+                <option value="jumlahUmk">Jumlah</option>
+                <option value="realisasiUmk">Realisasi</option>
+                <option value="sisaUangUmk">Sisa</option>
+                <option value="tglInput">Tanggal Input</option>
+              </select>
+              <button
+                onClick={() =>
+                  setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+                }
+                className="p-1 rounded border border-zinc-200 hover:bg-zinc-50 text-xs"
+              >
+                {sortOrder === "desc" ? "↓" : "↑"}
+              </button>
+            </div>
+          </div>
+
+          {/* Table Card */}
+          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-zinc-100">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-emerald-50 rounded-lg flex items-center justify-center">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2"
+                  >
+                    <rect x="2" y="7" width="20" height="14" rx="2" />
+                    <path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                    <line x1="8" y1="16" x2="12" y2="16" />
+                  </svg>
+                </div>
+                <p className="font-bold text-zinc-800 text-sm">List UMK</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Filter PIC */}
+                <select
+                  value={filterPicId}
+                  onChange={(e) => {
+                    setFilterPicId(e.target.value);
+                    setPage(1);
+                  }}
+                  className="border border-zinc-200 rounded-lg px-2 py-1 text-xs"
+                >
+                  <option value="">Semua PIC</option>
+                  {pegawaiList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nama}
+                    </option>
+                  ))}
+                </select>
+                {/* Search */}
+                <div className="relative">
+                  <svg
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-300"
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Cari no. UMK / tujuan..."
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                    className="pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 w-48"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-zinc-100">
+                    {cols.map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map((row, i) => (
+                    <tr
+                      key={row.id}
+                      className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors"
+                    >
+                      <td className="px-4 py-3 text-xs text-zinc-500">
+                        {(page - 1) * limit + i + 1}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-medium text-emerald-600">
+                        {row.noUmk}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-700 max-w-xs truncate">
+                        {row.tujuanUmk}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-600">
+                        {row.pic?.nama || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-700">
+                        {formatRupiah(row.jumlahUmk)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-600">
+                        {formatRupiah(row.realisasiUmk)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-700 font-medium">
+                        {formatRupiah(row.sisaUangUmk)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-600">
+                        {formatTanggal(row.tglPenyerahanUang)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => handleOpenEdit(row.id)}
+                          className="text-xs text-emerald-600 font-semibold hover:underline"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {data.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={9}
+                        className="px-4 py-8 text-center text-xs text-zinc-400"
+                      >
+                        Tidak ada data ditemukan
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination - PAKAI DARI API */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3 border-t border-zinc-100">
+              <p className="text-[11px] text-zinc-400">
+                Menampilkan{" "}
+                <span className="font-semibold text-zinc-600">
+                  {data.length}
+                </span>{" "}
+                dari{" "}
+                <span className="font-semibold text-zinc-600">
+                  {pagination.total}
+                </span>{" "}
+                data
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (page > 1) {
+                      setPage(page - 1);
+                      refetch({ ...getApiParams(), page: page - 1 });
+                    }
+                  }}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  ‹ Sebelumnya
+                </button>
+                <span className="text-xs text-zinc-500 px-2">
+                  {page} / {pagination.totalPages || 1}
+                </span>
+                <button
+                  onClick={() => {
+                    if (page < pagination.totalPages) {
+                      setPage(page + 1);
+                      refetch({ ...getApiParams(), page: page + 1 });
+                    }
+                  }}
+                  disabled={
+                    page === pagination.totalPages ||
+                    pagination.totalPages === 0
+                  }
+                  className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  Selanjutnya ›
+                </button>
+              </div>
+            </div>
+
+            {/* Grand Total */}
+            <div className="flex flex-wrap items-center justify-end gap-6 px-5 py-3 bg-zinc-50 border-t border-zinc-100">
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-zinc-500">Total Jumlah:</span>
+                <span className="font-bold text-zinc-800">
+                  {formatRupiah(grandTotal.totalJumlah)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-zinc-500">Total Realisasi:</span>
+                <span className="font-bold text-emerald-600">
+                  {formatRupiah(grandTotal.totalRealisasi)}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-zinc-500">Total Sisa:</span>
+                <span className="font-bold text-red-500">
+                  {formatRupiah(grandTotal.totalSisa)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px]">
-            <thead>
-              {/* Row 1 — group headers */}
-              <tr className="bg-zinc-50/60">
-                <th
-                  className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-10"
-                  rowSpan={2}
-                >
-                  No ↕
-                </th>
-                <th
-                  className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-40"
-                  rowSpan={2}
-                >
-                  Instansi
-                </th>
-                <th
-                  className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-40"
-                  rowSpan={2}
-                >
-                  No. Invoice
-                </th>
-                <th
-                  className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-32"
-                  rowSpan={2}
-                >
-                  Kode. Pel/Tgl
-                </th>
-                <th
-                  className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28"
-                  rowSpan={2}
-                >
-                  Harga
-                </th>
-                <th
-                  className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-16"
-                  rowSpan={2}
-                >
-                  Bayar
-                </th>
-                {/* Pengiriman group */}
-                <th
-                  colSpan={4}
-                  className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 text-center border-b border-zinc-100"
-                >
-                  Pengiriman
-                </th>
-                <th
-                  className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-14"
-                  rowSpan={2}
-                >
-                  Aksi
-                </th>
-              </tr>
-
-              {/* Row 2 — sub-headers for Pengiriman */}
-              <tr className="bg-zinc-50/60 border-b border-zinc-100">
-                <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-20">
-                  Berkas
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">
-                  Ditujukan
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
-                  Penerima
-                </th>
-                <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-20">
-                  Bupot
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={11}
-                    className="px-4 py-12 text-center text-xs text-zinc-400"
-                  >
-                    Tidak ada data tersedia.
-                  </td>
-                </tr>
-              ) : (
-                paginated.map((row, i) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors align-top"
-                  >
-                    <td className="px-4 py-3 text-xs text-zinc-400">
-                      {(currentPage - 1) * PAGE_SIZE + i + 1}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-zinc-700 leading-relaxed">
-                      {row.instansi}
-                    </td>
-                    <td className="px-3 py-3 text-xs text-zinc-600">
-                      {row.noInvoice}
-                    </td>
-                    <td className="px-3 py-3 text-xs text-zinc-600 whitespace-pre-line leading-relaxed">
-                      {row.kodePelTgl}
-                    </td>
-                    <td className="px-3 py-3 text-xs text-zinc-700 font-medium whitespace-nowrap">
-                      {row.harga}
-                    </td>
-                    <td className="px-3 py-3 text-xs text-zinc-600">
-                      {row.bayar === 0
-                        ? "0"
-                        : `Rp${row.bayar.toLocaleString("id-ID")}`}
-                    </td>
-                    {/* Pengiriman cols */}
-                    <td className="px-3 py-3 text-xs text-zinc-600">
-                      {row.pengiriman.berkas ?? <Dash />}
-                    </td>
-                    <td className="px-3 py-3 text-xs text-zinc-600">
-                      {row.pengiriman.ditujukan ?? <Dash />}
-                    </td>
-                    <td className="px-3 py-3 text-xs text-zinc-600">
-                      {row.pengiriman.penerima ?? <Dash />}
-                    </td>
-                    <td className="px-3 py-3 text-xs">
-                      {row.pengiriman.bupot === "Sudah" ? (
-                        <span className="text-emerald-600 font-semibold">
-                          Sudah
-                        </span>
-                      ) : row.pengiriman.bupot === "Belum" ? (
-                        <span className="text-zinc-500">Belum</span>
-                      ) : (
-                        <Dash />
-                      )}
-                    </td>
-                    <td className="px-3 py-3">
-                      <button className="text-xs text-emerald-600 font-semibold hover:underline cursor-pointer">
-                        Lihat
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3 border-t border-zinc-100">
-          <p className="text-[11px] text-zinc-400">
-            Menampilkan{" "}
-            <span className="font-semibold text-zinc-600">
-              {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
-              {Math.min(currentPage * PAGE_SIZE, filtered.length)}
-            </span>{" "}
-            dari{" "}
-            <span className="font-semibold text-zinc-600">
-              {filtered.length}
-            </span>{" "}
-            data
-          </p>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => p - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              ‹ Sebelumnya
-            </button>
-
-            {pageNumbers().map((p, idx) =>
-              p === "..." ? (
-                <span
-                  key={`ellipsis-${idx}`}
-                  className="w-7 h-7 flex items-center justify-center text-[11px] text-zinc-400"
-                >
-                  ...
-                </span>
-              ) : (
-                <button
-                  key={p}
-                  onClick={() => setCurrentPage(p as number)}
-                  className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                    p === currentPage
-                      ? "bg-emerald-500 text-white"
-                      : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                  }`}
-                >
-                  {p}
-                </button>
-              ),
-            )}
-
-            <button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-            >
-              Selanjutnya ›
-            </button>
-          </div>
-        </div>
       </div>
-    </AppLayout>
+
+      {/* Modal Create/Edit */}
+      <ModalUmk
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        editId={editingId}
+        onSuccess={handleSuccess}
+      />
+    </div>
   );
 }
