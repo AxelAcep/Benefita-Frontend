@@ -1,370 +1,178 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import { generatePastelBg, generatePastelText } from "@/lib/pastelColor";
+import { usePendapatan } from "@/hooks/use-pendapatan";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface RekapItem {
-  id: number;
-  kode: string;
-  harga: string;
-  peserta: string;
-  pendapatan: string;
-  isStrikethrough?: boolean;
-}
+type JenisTab = "ALL" | "REG" | "INH" | "KON";
 
-type ActiveTab = "reguler" | "inhouse";
-
-// ─── Dummy Data (replace with API fetch) ──────────────────────────────────────
-const regulerData: RekapItem[] = [
-  {
-    id: 1,
-    kode: "ENG-01",
-    harga: "Rp5.900.000",
-    peserta: "Agus Kurniawan",
-    pendapatan: "Rp95.900.000",
-  },
-  {
-    id: 2,
-    kode: "ENG-01",
-    harga: "Rp5.900.000",
-    peserta: "Firza Muldani",
-    pendapatan: "0",
-  },
-  {
-    id: 3,
-    kode: "ENG-01",
-    harga: "Rp5.900.000",
-    peserta: "Gihon Andre Asmitra Harahap",
-    pendapatan: "0",
-  },
-  {
-    id: 4,
-    kode: "ENG-01",
-    harga: "Rp5.900.000",
-    peserta: "Murra Candra Wicaksana",
-    pendapatan: "0",
-    isStrikethrough: true,
-  },
-  {
-    id: 5,
-    kode: "ENG-02",
-    harga: "Rp6.500.000",
-    peserta: "Budi Santoso",
-    pendapatan: "Rp13.000.000",
-  },
-  {
-    id: 6,
-    kode: "ENG-02",
-    harga: "Rp6.500.000",
-    peserta: "Dewi Rahayu",
-    pendapatan: "0",
-  },
-  {
-    id: 7,
-    kode: "ENG-03",
-    harga: "Rp7.200.000",
-    peserta: "Hendra Wijaya",
-    pendapatan: "Rp21.600.000",
-  },
-  {
-    id: 8,
-    kode: "ENG-03",
-    harga: "Rp7.200.000",
-    peserta: "Indah Permata Sari",
-    pendapatan: "0",
-  },
-  {
-    id: 9,
-    kode: "EM-05",
-    harga: "Rp5.900.000",
-    peserta: "Joko Priyono",
-    pendapatan: "Rp5.900.000",
-  },
-  {
-    id: 10,
-    kode: "EM-05",
-    harga: "Rp5.900.000",
-    peserta: "Kartika Dewi",
-    pendapatan: "0",
-  },
-  {
-    id: 11,
-    kode: "EM-06",
-    harga: "Rp8.000.000",
-    peserta: "Lutfi Hakim",
-    pendapatan: "Rp8.000.000",
-  },
-  {
-    id: 12,
-    kode: "EM-06",
-    harga: "Rp8.000.000",
-    peserta: "Maya Sari",
-    pendapatan: "0",
-  },
-  {
-    id: 13,
-    kode: "ENV-01",
-    harga: "Rp4.750.000",
-    peserta: "Nanda Pratama",
-    pendapatan: "Rp9.500.000",
-  },
-  {
-    id: 14,
-    kode: "ENV-01",
-    harga: "Rp4.750.000",
-    peserta: "Oka Setiawan",
-    pendapatan: "0",
-  },
-  {
-    id: 15,
-    kode: "ENV-02",
-    harga: "Rp5.200.000",
-    peserta: "Putri Handayani",
-    pendapatan: "Rp5.200.000",
-  },
-  {
-    id: 16,
-    kode: "ENV-02",
-    harga: "Rp5.200.000",
-    peserta: "Qori Amalia",
-    pendapatan: "0",
-  },
-  {
-    id: 17,
-    kode: "HSE-01",
-    harga: "Rp3.900.000",
-    peserta: "Rizki Ramadhan",
-    pendapatan: "Rp7.800.000",
-  },
-  {
-    id: 18,
-    kode: "HSE-01",
-    harga: "Rp3.900.000",
-    peserta: "Sari Mulyani",
-    pendapatan: "0",
-  },
-  {
-    id: 19,
-    kode: "HSE-02",
-    harga: "Rp4.200.000",
-    peserta: "Tono Subekti",
-    pendapatan: "Rp4.200.000",
-  },
-  {
-    id: 20,
-    kode: "HSE-02",
-    harga: "Rp4.200.000",
-    peserta: "Umar Faruq",
-    pendapatan: "0",
-  },
-  {
-    id: 21,
-    kode: "K3-01",
-    harga: "Rp3.500.000",
-    peserta: "Vera Susanti",
-    pendapatan: "Rp3.500.000",
-  },
-  {
-    id: 22,
-    kode: "K3-01",
-    harga: "Rp3.500.000",
-    peserta: "Wawan Hermawan",
-    pendapatan: "0",
-  },
-  {
-    id: 23,
-    kode: "K3-02",
-    harga: "Rp3.800.000",
-    peserta: "Xenia Claudia",
-    pendapatan: "Rp3.800.000",
-  },
-  {
-    id: 24,
-    kode: "K3-02",
-    harga: "Rp3.800.000",
-    peserta: "Yudi Prasetyo",
-    pendapatan: "0",
-  },
-  {
-    id: 25,
-    kode: "K3-03",
-    harga: "Rp4.100.000",
-    peserta: "Zahra Nabila",
-    pendapatan: "Rp4.100.000",
-  },
-  {
-    id: 26,
-    kode: "K3-03",
-    harga: "Rp4.100.000",
-    peserta: "Ahmad Fauzi",
-    pendapatan: "0",
-  },
-  {
-    id: 27,
-    kode: "PPPU-01",
-    harga: "Rp5.900.000",
-    peserta: "Bela Cantika",
-    pendapatan: "Rp5.900.000",
-  },
-  {
-    id: 28,
-    kode: "PPPU-01",
-    harga: "Rp5.900.000",
-    peserta: "Cahya Nugraha",
-    pendapatan: "0",
-  },
-];
-
-const inhouseData: RekapItem[] = [
-  {
-    id: 1,
-    kode: "IH-01",
-    harga: "Rp45.000.000",
-    peserta: "PT Sumber Energi Tbk",
-    pendapatan: "Rp45.000.000",
-  },
-  {
-    id: 2,
-    kode: "IH-01",
-    harga: "Rp45.000.000",
-    peserta: "PT Maju Bersama",
-    pendapatan: "0",
-  },
-  {
-    id: 3,
-    kode: "IH-02",
-    harga: "Rp38.500.000",
-    peserta: "PT Karya Mandiri",
-    pendapatan: "Rp38.500.000",
-  },
-  {
-    id: 4,
-    kode: "IH-02",
-    harga: "Rp38.500.000",
-    peserta: "PT Nusantara Jaya",
-    pendapatan: "0",
-  },
-  {
-    id: 5,
-    kode: "IH-03",
-    harga: "Rp52.000.000",
-    peserta: "PT Indo Energi",
-    pendapatan: "Rp52.000.000",
-  },
-  {
-    id: 6,
-    kode: "IH-03",
-    harga: "Rp52.000.000",
-    peserta: "PT Global Konstruksi",
-    pendapatan: "0",
-  },
-  {
-    id: 7,
-    kode: "IH-04",
-    harga: "Rp29.750.000",
-    peserta: "PT Alam Raya",
-    pendapatan: "Rp29.750.000",
-  },
-  {
-    id: 8,
-    kode: "IH-04",
-    harga: "Rp29.750.000",
-    peserta: "PT Bumi Pertiwi",
-    pendapatan: "0",
-  },
-  {
-    id: 9,
-    kode: "IH-05",
-    harga: "Rp61.000.000",
-    peserta: "PT Cipta Karya Utama",
-    pendapatan: "Rp61.000.000",
-  },
-  {
-    id: 10,
-    kode: "IH-05",
-    harga: "Rp61.000.000",
-    peserta: "PT Delta Solusi",
-    pendapatan: "0",
-  },
-  {
-    id: 11,
-    kode: "IH-06",
-    harga: "Rp33.000.000",
-    peserta: "PT Ekuator Indonesia",
-    pendapatan: "Rp33.000.000",
-  },
-  {
-    id: 12,
-    kode: "IH-06",
-    harga: "Rp33.000.000",
-    peserta: "PT Fajar Terang",
-    pendapatan: "0",
-  },
-];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function SortIcon() {
-  return (
-    <svg
-      width="8"
-      height="8"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path d="M7 15l5 5 5-5" />
-      <path d="M7 9l5-5 5 5" />
-    </svg>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function RekapPotensiPendapatanPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("reguler");
-  const [search, setSearch] = useState("");
-  const [tanggal, setTanggal] = useState("");
-  const [appliedTanggal, setAppliedTanggal] = useState("");
-  const [page, setPage] = useState(1);
   const router = useRouter();
-  const perPage = 4;
+  const [activeTab, setActiveTab] = useState<JenisTab>("ALL");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const limit = 1000; // Ambil semua data agar search client-side berfungsi
 
-  // Data sudah ditarik — tinggal ganti dengan hasil fetch API
-  const rawData = activeTab === "reguler" ? regulerData : inhouseData;
+  // State untuk filter bulan
+  const [currentMonth, setCurrentMonth] = useState<number>(
+    new Date().getMonth() + 1,
+  );
+  const [currentYear, setCurrentYear] = useState<number>(
+    new Date().getFullYear(),
+  );
+  const [isCustomRange, setIsCustomRange] = useState(false);
+  const [customStartMonth, setCustomStartMonth] =
+    useState<number>(currentMonth);
+  const [customStartYear, setCustomStartYear] = useState<number>(currentYear);
+  const [customEndMonth, setCustomEndMonth] = useState<number>(currentMonth);
+  const [customEndYear, setCustomEndYear] = useState<number>(currentYear);
 
-  const filtered = rawData.filter(
-    (d) =>
-      d.kode.toLowerCase().includes(search.toLowerCase()) ||
-      d.peserta.toLowerCase().includes(search.toLowerCase()) ||
-      d.harga.toLowerCase().includes(search.toLowerCase()),
+  // State sorting
+  const [sortBy, setSortBy] = useState<
+    "totalPeserta" | "pendapatan" | "tglSelesai"
+  >("pendapatan");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Parameter API
+  const getApiParams = useCallback(() => {
+    const params: any = {
+      page: 1, // Selalu halaman 1 karena kita ambil semua data
+      limit,
+      sortBy,
+      order: sortOrder,
+    };
+    if (activeTab !== "ALL") {
+      params.jenis = activeTab;
+    }
+    if (isCustomRange) {
+      params.startMonth = customStartMonth;
+      params.startYear = customStartYear;
+      params.endMonth = customEndMonth;
+      params.endYear = customEndYear;
+    } else {
+      params.startMonth = currentMonth;
+      params.startYear = currentYear;
+    }
+    return params;
+  }, [
+    activeTab,
+    limit,
+    sortBy,
+    sortOrder,
+    isCustomRange,
+    customStartMonth,
+    customStartYear,
+    customEndMonth,
+    customEndYear,
+    currentMonth,
+    currentYear,
+  ]);
+
+  const { data, grandTotal, loading, error, refetch } =
+    usePendapatan(getApiParams());
+
+  // Refresh ketika filter berubah (kecuali page dan search)
+  useEffect(() => {
+    refetch(getApiParams());
+    setPage(1); // Reset ke halaman 1 saat filter berubah
+  }, [
+    activeTab,
+    sortBy,
+    sortOrder,
+    currentMonth,
+    currentYear,
+    isCustomRange,
+    customStartMonth,
+    customStartYear,
+    customEndMonth,
+    customEndYear,
+  ]);
+
+  // Filter data client-side (search)
+  const filteredData = useMemo(() => {
+    if (!search.trim()) return data;
+    return data.filter(
+      (item) =>
+        item.kodePelatihan.toLowerCase().includes(search.toLowerCase()) ||
+        item.judulLengkap.toLowerCase().includes(search.toLowerCase()) ||
+        item.judulTraining.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [data, search]);
+
+  // Reset page ketika search berubah
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  // Pagination manual setelah filter client-side
+  const itemsPerPage = 10;
+  const totalFiltered = filteredData.length;
+  const totalPages = Math.ceil(totalFiltered / itemsPerPage) || 1;
+  const startIndex = (page - 1) * itemsPerPage;
+  const paginatedData = filteredData.slice(
+    startIndex,
+    startIndex + itemsPerPage,
   );
 
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
-
-  const handleTabChange = (tab: ActiveTab) => {
-    setActiveTab(tab);
-    setPage(1);
-    setSearch("");
-  };
-
-  const pageNumbers = (): (number | string)[] => {
-    if (totalPages <= 5)
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const pages: (number | string)[] = [1, 2, 3];
-    if (page > 4 && page < totalPages - 1) {
-      pages.push("...");
-      pages.push(page);
+  // Navigasi bulan
+  const goToPrevMonth = () => {
+    if (currentMonth === 1) {
+      setCurrentMonth(12);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
     }
-    pages.push("...");
-    pages.push(totalPages);
-    return [...new Set(pages)];
   };
 
-  const cols = ["No", "Kode", "Harga", "Peserta", "Pendapatan"];
+  const goToNextMonth = () => {
+    if (currentMonth === 12) {
+      setCurrentMonth(1);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+  const goToCurrentMonth = () => {
+    const now = new Date();
+    setCurrentMonth(now.getMonth() + 1);
+    setCurrentYear(now.getFullYear());
+    setIsCustomRange(false);
+  };
+
+  const handleTabChange = (tab: JenisTab) => {
+    setActiveTab(tab);
+  };
+
+  const handleApplyCustomRange = () => {
+    setIsCustomRange(true);
+  };
+  const handleUseCurrentMonth = () => {
+    setIsCustomRange(false);
+  };
+
+  // Format Rupiah
+  const formatRupiah = (num: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(num);
+  };
+
+  const cols = [
+    "No",
+    "Kode",
+    "Judul",
+    "Tanggal",
+    "Harga",
+    "Total Peserta",
+    "Pendapatan",
+  ];
+
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (error) return <div className="p-6">Error: {error.message}</div>;
 
   return (
     <div className="flex min-h-screen bg-zinc-100 overflow-hidden">
@@ -376,10 +184,18 @@ export default function RekapPotensiPendapatanPage() {
           <div>
             <p className="text-xs text-zinc-400">
               Perusahaan &rsaquo;{" "}
-              <span className="font-semibold text-zinc-700">Input Data</span>
+              <span className="font-semibold text-zinc-700">
+                Rekap Pendapatan
+              </span>
             </p>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Hari ini: Selasa, 3 Februari 2026
+              Hari ini:{" "}
+              {new Date().toLocaleDateString("id-ID", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -422,7 +238,7 @@ export default function RekapPotensiPendapatanPage() {
 
           {/* Tabs */}
           <div className="flex items-center gap-0 border-b border-zinc-200">
-            {(["reguler", "inhouse"] as ActiveTab[]).map((tab) => (
+            {(["ALL", "REG", "INH", "KON"] as JenisTab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleTabChange(tab)}
@@ -432,9 +248,181 @@ export default function RekapPotensiPendapatanPage() {
                     : "border-transparent text-zinc-400 hover:text-zinc-600"
                 }`}
               >
-                {tab === "reguler" ? "Reguler" : "In House"}
+                {tab === "ALL"
+                  ? "Semua"
+                  : tab === "REG"
+                    ? "Reguler"
+                    : tab === "INH"
+                      ? "Inhouse"
+                      : "Konsultasi"}
               </button>
             ))}
+          </div>
+
+          {/* Filter Bulan & Sorting */}
+          {/* Filter Bulan & Sorting */}
+          <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-xl border border-zinc-200 shadow-sm">
+            {/* Single Month */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (isCustomRange) {
+                    // Jika sedang rentang, pindah ke single month dengan bulan sekarang
+                    const now = new Date();
+                    setCurrentMonth(now.getMonth() + 1);
+                    setCurrentYear(now.getFullYear());
+                    setIsCustomRange(false);
+                  } else {
+                    goToPrevMonth();
+                  }
+                }}
+                className={`p-1.5 rounded-lg border hover:bg-zinc-50 ${isCustomRange ? "opacity-50 cursor-not-allowed" : "border-zinc-200"}`}
+                disabled={isCustomRange}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+
+              <input
+                type="month"
+                value={`${currentYear}-${String(currentMonth).padStart(2, "0")}`}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split("-").map(Number);
+                  setCurrentYear(year);
+                  setCurrentMonth(month);
+                  setIsCustomRange(false); // Pindah ke single month
+                }}
+                className={`border rounded-lg px-2 py-1 text-sm font-medium text-zinc-700 focus:border-emerald-300 outline-none ${isCustomRange ? "bg-zinc-100 text-zinc-400 border-zinc-200" : "border-zinc-200"}`}
+                disabled={isCustomRange}
+              />
+
+              <button
+                onClick={() => {
+                  if (isCustomRange) {
+                    const now = new Date();
+                    setCurrentMonth(now.getMonth() + 1);
+                    setCurrentYear(now.getFullYear());
+                    setIsCustomRange(false);
+                  } else {
+                    goToNextMonth();
+                  }
+                }}
+                className={`p-1.5 rounded-lg border hover:bg-zinc-50 ${isCustomRange ? "opacity-50 cursor-not-allowed" : "border-zinc-200"}`}
+                disabled={isCustomRange}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+
+              <button
+                onClick={() => {
+                  const now = new Date();
+                  setCurrentMonth(now.getMonth() + 1);
+                  setCurrentYear(now.getFullYear());
+                  setIsCustomRange(false);
+                }}
+                className="px-3 py-1 text-xs font-medium text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50"
+              >
+                Bulan Ini
+              </button>
+            </div>
+
+            <div className="w-px h-6 bg-zinc-200" />
+
+            {/* Rentang */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">Rentang:</span>
+              <input
+                type="month"
+                value={`${customStartYear}-${String(customStartMonth).padStart(2, "0")}`}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split("-").map(Number);
+                  setCustomStartYear(year);
+                  setCustomStartMonth(month);
+                  setIsCustomRange(true);
+                }}
+                className="border border-zinc-200 rounded-lg px-2 py-1 text-xs"
+              />
+              <span className="text-xs text-zinc-400">sampai</span>
+              <input
+                type="month"
+                value={`${customEndYear}-${String(customEndMonth).padStart(2, "0")}`}
+                onChange={(e) => {
+                  const [year, month] = e.target.value.split("-").map(Number);
+                  setCustomEndYear(year);
+                  setCustomEndMonth(month);
+                  setIsCustomRange(true);
+                }}
+                className="border border-zinc-200 rounded-lg px-2 py-1 text-xs"
+              />
+              <button
+                onClick={() => {
+                  setIsCustomRange(true);
+                }}
+                className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors"
+              >
+                Terapkan
+              </button>
+              {isCustomRange && (
+                <button
+                  onClick={() => {
+                    // Kembali ke single month (bulan sekarang)
+                    const now = new Date();
+                    setCurrentMonth(now.getMonth() + 1);
+                    setCurrentYear(now.getFullYear());
+                    setIsCustomRange(false);
+                    // Reset rentang ke bulan sekarang juga
+                    setCustomStartMonth(now.getMonth() + 1);
+                    setCustomStartYear(now.getFullYear());
+                    setCustomEndMonth(now.getMonth() + 1);
+                    setCustomEndYear(now.getFullYear());
+                  }}
+                  className="px-3 py-1 text-xs text-zinc-500 hover:text-zinc-700 underline"
+                >
+                  Pakai satu bulan
+                </button>
+              )}
+            </div>
+
+            <div className="w-px h-6 bg-zinc-200" />
+
+            {/* Sorting Dropdown */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">Urutkan:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="border border-zinc-200 rounded-lg px-2 py-1 text-xs"
+              >
+                <option value="totalPeserta">Total Peserta</option>
+                <option value="pendapatan">Pendapatan</option>
+                <option value="tglSelesai">Tanggal</option>
+              </select>
+              <button
+                onClick={() =>
+                  setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+                }
+                className="p-1 rounded border border-zinc-200 hover:bg-zinc-50 text-xs"
+              >
+                {sortOrder === "desc" ? "↓" : "↑"}
+              </button>
+            </div>
           </div>
 
           {/* Table Card */}
@@ -442,67 +430,25 @@ export default function RekapPotensiPendapatanPage() {
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-zinc-100">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-emerald-50 rounded-lg flex items-center justify-center">
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#10b981"
-                      strokeWidth="2"
-                    >
-                      <rect x="2" y="7" width="20" height="14" rx="2" />
-                      <path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z" />
-                      <line x1="8" y1="12" x2="16" y2="12" />
-                      <line x1="8" y1="16" x2="12" y2="16" />
-                    </svg>
-                  </div>
-                  <p className="font-bold text-zinc-800 text-sm">
-                    Rekap Potensi dan Realisasi Pendapatan
-                  </p>
-                </div>
-
-                {/* Date filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-500 font-medium">
-                    Tanggal
-                  </span>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={tanggal}
-                      onChange={(e) => setTanggal(e.target.value)}
-                      className="border border-zinc-200 rounded-lg pl-3 pr-8 py-1.5 text-xs text-zinc-700 outline-none focus:border-emerald-300 w-36 appearance-none"
-                      placeholder="Pilih Tanggal"
-                    />
-                    <svg
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-300 pointer-events-none"
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setAppliedTanggal(tanggal);
-                      setPage(1);
-                    }}
-                    className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg transition-colors"
+                <div className="w-6 h-6 bg-emerald-50 rounded-lg flex items-center justify-center">
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2"
                   >
-                    Terapkan
-                  </button>
+                    <rect x="2" y="7" width="20" height="14" rx="2" />
+                    <path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                    <line x1="8" y1="16" x2="12" y2="16" />
+                  </svg>
                 </div>
+                <p className="font-bold text-zinc-800 text-sm">
+                  Rekap Potensi dan Realisasi Pendapatan
+                </p>
               </div>
-
               {/* Search */}
               <div className="relative">
                 <svg
@@ -519,11 +465,10 @@ export default function RekapPotensiPendapatanPage() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Cari informasi..."
+                  placeholder="Cari kode / judul..."
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
-                    setPage(1);
                   }}
                   className="pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 w-48"
                 />
@@ -532,7 +477,7 @@ export default function RekapPotensiPendapatanPage() {
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[550px]">
+              <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="border-b border-zinc-100">
                     {cols.map((h) => (
@@ -540,47 +485,57 @@ export default function RekapPotensiPendapatanPage() {
                         key={h}
                         className="px-4 py-3 text-[11px] font-semibold text-zinc-400 text-left whitespace-nowrap"
                       >
-                        <span className="flex items-center gap-1">
-                          {h}
-                          <SortIcon />
-                        </span>
+                        {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {paginated.map((row, i) => (
+                  {paginatedData.map((row, i) => (
                     <tr
-                      key={row.id}
+                      key={row.kodePelatihan + i}
                       className="border-b border-zinc-50 hover:bg-zinc-50 transition-colors"
                     >
                       <td className="px-4 py-3 text-xs text-zinc-500">
-                        {(page - 1) * perPage + i + 1}
+                        {startIndex + i + 1}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-xs text-emerald-500 font-medium hover:text-emerald-600 cursor-pointer transition-colors">
-                          {row.kode}
-                        </span>
+                        <a href={`/input/${row.kodeJadwal}`}>
+                          <span className="text-xs text-emerald-500 font-medium hover:text-emerald-600 cursor-pointer transition-colors">
+                            {row.kodePelatihan}
+                          </span>
+                        </a>
                       </td>
-                      <td
-                        className={`px-4 py-3 text-xs text-zinc-700 ${row.isStrikethrough ? "line-through text-zinc-400" : ""}`}
-                      >
-                        {row.harga}
-                      </td>
-                      <td
-                        className={`px-4 py-3 text-xs text-zinc-700 ${row.isStrikethrough ? "line-through text-zinc-400" : ""}`}
-                      >
-                        {row.peserta}
+                      <td className="px-4 py-3 text-xs text-zinc-700 max-w-xs truncate">
+                        {row.judulLengkap}
                       </td>
                       <td className="px-4 py-3 text-xs text-zinc-700">
-                        {row.pendapatan}
+                        {row.tglSelesai
+                          ? new Date(row.tglSelesai).toLocaleDateString(
+                              "id-ID",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-700">
+                        {formatRupiah(row.biaya)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-700 font-medium">
+                        {row.totalPeserta}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-700 font-medium">
+                        {formatRupiah(row.pendapatan)}
                       </td>
                     </tr>
                   ))}
-                  {paginated.length === 0 && (
+                  {paginatedData.length === 0 && (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={7}
                         className="px-4 py-8 text-center text-xs text-zinc-400"
                       >
                         Tidak ada data ditemukan
@@ -591,16 +546,16 @@ export default function RekapPotensiPendapatanPage() {
               </table>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination & Info */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3 border-t border-zinc-100">
               <p className="text-[11px] text-zinc-400">
                 Menampilkan{" "}
                 <span className="font-semibold text-zinc-600">
-                  {paginated.length}
+                  {paginatedData.length}
                 </span>{" "}
                 dari{" "}
                 <span className="font-semibold text-zinc-600">
-                  {filtered.length}
+                  {totalFiltered}
                 </span>{" "}
                 data
               </p>
@@ -612,24 +567,9 @@ export default function RekapPotensiPendapatanPage() {
                 >
                   ‹ Sebelumnya
                 </button>
-                {pageNumbers().map((p, idx) =>
-                  p === "..." ? (
-                    <span
-                      key={`e-${idx}`}
-                      className="w-7 h-7 flex items-center justify-center text-[11px] text-zinc-400"
-                    >
-                      ...
-                    </span>
-                  ) : (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p as number)}
-                      className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${p === page ? "bg-emerald-500 text-white" : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                    >
-                      {p}
-                    </button>
-                  ),
-                )}
+                <span className="text-xs text-zinc-500 px-2">
+                  {page} / {totalPages}
+                </span>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages || totalPages === 0}
@@ -637,6 +577,22 @@ export default function RekapPotensiPendapatanPage() {
                 >
                   Selanjutnya ›
                 </button>
+              </div>
+            </div>
+
+            {/* Grand Total */}
+            <div className="flex flex-wrap items-center justify-end gap-6 px-5 py-3 bg-zinc-50 border-t border-zinc-100">
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-zinc-500">Total Peserta:</span>
+                <span className="font-bold text-zinc-800">
+                  {grandTotal.totalPeserta}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-zinc-500">Total Pendapatan:</span>
+                <span className="font-bold text-emerald-600">
+                  {formatRupiah(grandTotal.pendapatan)}
+                </span>
               </div>
             </div>
           </div>
