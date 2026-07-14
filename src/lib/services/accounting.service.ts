@@ -396,3 +396,61 @@ export async function deleteNeraca(id: number): Promise<{ message: string }> {
 
   return data;
 }
+
+// ─── Laporan Hasil Usaha Types ─────────────────────────────────
+
+export interface LaporanHasilUsahaItem {
+  kode: string; // kode JudulTraining
+  keterangan: string; // judulTraining dari JudulTraining
+  anggaran: number; // 0 (sementara)
+  realisasi: number; // total hargaTotal peserta FIX dari semua jadwal dengan kode tersebut
+}
+
+export interface LaporanHasilUsahaResponse {
+  data: LaporanHasilUsahaItem[];
+  pagination: Pagination;
+  grandTotal: {
+    totalRealisasi: number;
+    totalAnggaran: number;
+  };
+}
+
+// ─── API Call ─────────────────────────────────────────────────
+
+export async function getLaporanHasilUsaha(
+  params: GetPendapatanParams = {},
+): Promise<LaporanHasilUsahaResponse> {
+  const {
+    page = 1,
+    limit = 10,
+    sortBy = "realisasi",
+    order = "desc",
+    startMonth,
+    startYear,
+    endMonth,
+    endYear,
+    // jenis tidak dipakai di laporan ini, tapi bisa dilewatkan jika ada
+  } = params;
+
+  const queryParams = new URLSearchParams();
+  queryParams.append("page", String(page));
+  queryParams.append("limit", String(limit));
+  queryParams.append("sortBy", sortBy);
+  queryParams.append("order", order);
+
+  if (startMonth !== undefined && startYear !== undefined) {
+    queryParams.append("startMonth", String(startMonth));
+    queryParams.append("startYear", String(startYear));
+  }
+  if (endMonth !== undefined && endYear !== undefined) {
+    queryParams.append("endMonth", String(endMonth));
+    queryParams.append("endYear", String(endYear));
+  }
+
+  const url = `${API_URL}/api/accounting/laporan-hasil?${queryParams.toString()}`;
+  const res = await fetchWithAuth(url, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Gagal mengambil laporan hasil usaha");
+  return data;
+}

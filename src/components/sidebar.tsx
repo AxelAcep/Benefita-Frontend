@@ -159,7 +159,7 @@ const navItems: NavItem[] = [
     children: [
       { label: "Beranda", href: "/accounting/beranda" },
       { label: "Pendapatan", href: "/accounting/pendapatan" },
-      { label: "Neraca 2023", href: "/accounting/neraca2023" },
+      // { label: "Neraca 2023", href: "/accounting/neraca2023" },
       { label: "Neraca", href: "/accounting/neraca" },
       { label: "Laporan Laba Rugi 2023", href: "/accounting/laba-rugi-2023" },
       { label: "Laporan Hasil Usaha", href: "/accounting/hasil-usaha" },
