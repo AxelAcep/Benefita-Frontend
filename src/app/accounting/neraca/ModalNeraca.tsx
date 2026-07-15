@@ -111,7 +111,9 @@ export default function ModalNeraca({
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-zinc-800">
-            {mode === "create" ? "Tambah Neraca" : "Edit Neraca"}
+            {mode === "create"
+              ? "Tambah Jurnal Keuangan"
+              : "Edit Jurnal Keuangan"}
           </h2>
           <button
             onClick={onClose}
