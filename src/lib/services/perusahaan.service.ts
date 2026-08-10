@@ -1221,3 +1221,26 @@ export async function getLogPerubahan(params: {
 
   return { data: data.data, meta: data.meta };
 }
+
+export interface LiniBisnisItem {
+  id: number;
+  nama: string;
+}
+
+export interface LiniBisnisResponse {
+  data: LiniBisnisItem[];
+}
+
+// ── SERVICE ──
+export async function getLiniBisnis(): Promise<LiniBisnisResponse> {
+  const res = await fetchWithAuth(`${API_URL}/api/database/lini-bisnis`, {
+    method: "GET",
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data lini bisnis.");
+  }
+
+  return { data: data.data };
+}

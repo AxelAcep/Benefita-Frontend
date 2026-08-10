@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -261,8 +261,15 @@ export default function Sidebar() {
     localStorage.setItem("openMenus", JSON.stringify(openMenus));
   }, [openMenus]);
 
-  function toggleMenu(key: string) {
-    setOpenMenus((prev) => ({ ...prev, [key]: !prev[key] }));
+  function toggleMenu(key: string, siblings: string[]) {
+    setOpenMenus((prev) => {
+      const next: Record<string, boolean> = { ...prev };
+      siblings.forEach((s) => {
+        next[s] = false;
+      });
+      next[key] = !prev[key];
+      return next;
+    });
   }
 
   function isActive(href?: string) {
@@ -282,7 +289,11 @@ export default function Sidebar() {
   }
 
   // ✅ Render child — bisa punya sub-children (1 level nested)
-  function renderChild(child: NavChild, onLinkClick?: () => void) {
+  function renderChild(
+    child: NavChild,
+    siblingKeys: string[],
+    onLinkClick?: () => void,
+  ) {
     const hasSubChildren = child.children && child.children.length > 0;
     const childActive = isChildActive(child);
 
@@ -296,6 +307,7 @@ export default function Sidebar() {
           key={child.href}
           href={child.href}
           onClick={onLinkClick}
+          prefetch={false}
           className={`block px-2 py-1.5 text-xs rounded ${
             isActive(child.href)
               ? "text-emerald-600 font-medium"
@@ -311,7 +323,7 @@ export default function Sidebar() {
       <div key={child.href}>
         {/* Header sub-menu — bisa diklik untuk expand */}
         <button
-          onClick={() => toggleMenu(menuKey)}
+          onClick={() => toggleMenu(menuKey, siblingKeys)}
           className={`w-full flex items-center justify-between px-2 py-1.5 text-xs rounded ${
             childActive
               ? "text-emerald-600 font-medium"
@@ -334,6 +346,7 @@ export default function Sidebar() {
                 key={sub.href}
                 href={sub.href}
                 onClick={onLinkClick}
+                prefetch={false}
                 className={`block px-2 py-1.5 text-[11px] rounded ${
                   isActive(sub.href)
                     ? "text-emerald-600 font-medium"
@@ -349,10 +362,29 @@ export default function Sidebar() {
     );
   }
 
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+
+    const saved = localStorage.getItem("sidebarScroll");
+    if (saved) nav.scrollTop = parseInt(saved, 10);
+
+    function onScroll() {
+      localStorage.setItem("sidebarScroll", String(nav!.scrollTop));
+    }
+    nav.addEventListener("scroll", onScroll);
+    return () => nav.removeEventListener("scroll", onScroll);
+  }, []);
+
   function NavContent({ onLinkClick }: { onLinkClick?: () => void }) {
     return (
       <>
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+        <nav
+          ref={navRef}
+          className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto"
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isParentActive(item);
@@ -364,6 +396,7 @@ export default function Sidebar() {
                   key={item.label}
                   href={item.href!}
                   onClick={onLinkClick}
+                  prefetch={false}
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium ${
                     active
                       ? "bg-emerald-50 text-emerald-600"
@@ -379,7 +412,12 @@ export default function Sidebar() {
             return (
               <div key={item.label}>
                 <button
-                  onClick={() => toggleMenu(item.label)}
+                  onClick={() =>
+                    toggleMenu(
+                      item.label,
+                      navItems.filter((i) => i.children).map((i) => i.label),
+                    )
+                  }
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium ${
                     active
                       ? "bg-emerald-50 text-emerald-600"
@@ -398,7 +436,13 @@ export default function Sidebar() {
                 {isOpen && (
                   <div className="mt-0.5 ml-3 pl-3 border-l border-zinc-200 space-y-0.5">
                     {item.children.map((child) =>
-                      renderChild(child, onLinkClick),
+                      renderChild(
+                        child,
+                        item
+                          .children!.filter((c) => c.children)
+                          .map((c) => c.href),
+                        onLinkClick,
+                      ),
                     )}
                   </div>
                 )}
@@ -412,6 +456,7 @@ export default function Sidebar() {
           <Link
             href="/karyawan/profil"
             className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-600 hover:text-emerald-600"
+            prefetch={false}
           >
             <Settings className="w-4 h-4" />
             <span>Pengaturan</span>

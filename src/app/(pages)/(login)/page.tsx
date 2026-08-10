@@ -12,9 +12,11 @@ import {
   generateDeviceHash,
   generateDeviceLabel,
 } from "@/lib/services/login.service";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setAuthenticated } = useAuth();
 
   // Login state
   const [email, setEmail] = useState("");
@@ -49,8 +51,12 @@ export default function LoginPage() {
       if (res.requireOtp) {
         setOtpMeta({ deviceHash, deviceLabel });
         setIsOtpStep(true);
-      } else {
+      } else if (res.user) {
         // token & user sudah disimpan di memory oleh loginUser()
+        // Sinkronkan AuthContext supaya status langsung "authenticated" —
+        // tanpa ini, route guard di AuthContext akan salah mem-bounce
+        // navigasi client-side berikutnya (lihat AuthContext.tsx).
+        setAuthenticated(res.user);
         router.push("/dashboard");
       }
     } catch (err: any) {
@@ -65,13 +71,14 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      await verifyOtp({
+      const data = await verifyOtp({
         email,
         deviceHash: otpMeta.deviceHash,
         deviceLabel: otpMeta.deviceLabel,
         code: otpCode,
       });
       // token & user sudah disimpan di memory oleh verifyOtp()
+      setAuthenticated(data.user);
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message);

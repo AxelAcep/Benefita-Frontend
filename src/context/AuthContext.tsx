@@ -25,6 +25,7 @@ interface AuthContextValue {
   user: User | null;
   status: "loading" | "authenticated" | "unauthenticated";
   logout: () => Promise<void>;
+  setAuthenticated: (user: User) => void;
 }
 
 // ─────────────────────────────────────────────
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   status: "loading",
   logout: async () => {},
+  setAuthenticated: () => {},
 });
 
 export function useAuth() {
@@ -138,7 +140,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [status, pathname]); // ← pathname di sini aman karena ada guard status === "loading"
 
-  // ── 3. Logout ──────────────────────────────────────────────────────────────
+  // ── 3. Set authenticated — dipanggil manual setelah login/verify OTP sukses ──
+  // Tanpa ini, `status` tetap "unauthenticated" (hasil init sebelum login) sampai
+  // ada hard reload, sehingga route guard di atas salah mem-bounce navigasi
+  // client-side berikutnya ke "/".
+  function setAuthenticated(newUser: User) {
+    setUser(newUser);
+    setStatus("authenticated");
+  }
+
+  // ── 4. Logout ──────────────────────────────────────────────────────────────
   async function logout() {
     try {
       await authLogout();
@@ -152,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, status, logout }}>
+    <AuthContext.Provider value={{ user, status, logout, setAuthenticated }}>
       {status === "loading" ? <AuthLoadingScreen /> : children}
     </AuthContext.Provider>
   );

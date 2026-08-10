@@ -11,10 +11,39 @@ import type { PropertiFinansialFormData } from "./card-properti";
 import type { InformasiLainnyaFormData } from "./card-lainya";
 import type { KontakFormData } from "./card-kontak";
 import type FormState from "../[id]/page";
+import { useRole } from "@/hooks/use-role";
+import { useDropdownSales } from "@/hooks/use-dropdown-sales";
+import { useLiniBisnis } from "@/hooks/use-lini-bisnis";
 
 // ─────────────────────────────────────────────
 // SHARED UI PRIMITIVES
 // ─────────────────────────────────────────────
+
+const { role, isAdmin, isFinance, isLoggedIn } = useRole();
+
+function Field({
+  label,
+  children,
+  required,
+  optional,
+}: {
+  label: string;
+  children: React.ReactNode;
+  required?: boolean;
+  optional?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium text-zinc-600">
+        {label}
+        {optional && (
+          <span className="ml-1 font-normal text-zinc-400">(opsional)</span>
+        )}
+      </label>
+      {children}
+    </div>
+  );
+}
 
 function FormTextarea({
   label,
@@ -464,6 +493,7 @@ export function ModalKlasifikasi({
   onSave,
 }: ModalKlasifikasiProps) {
   const [form, setForm] = useState<KlasifikasiFormData>(initialData);
+  const { data: liniBisnisData, loading: liniBisnisLoading } = useLiniBisnis();
 
   useEffect(() => {
     setForm(initialData);
@@ -471,6 +501,14 @@ export function ModalKlasifikasi({
 
   function setField(key: keyof KlasifikasiFormData, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const [lbNama = "-", lbKet1 = "-", lbKet2 = "-"] = form.lineBisnis
+    .split(";")
+    .map((s) => s.trim());
+
+  function setLineBisnis(nama: string, ket1: string, ket2: string) {
+    setField("lineBisnis", `${nama || "-"};${ket1 || "-"};${ket2 || "-"}`);
   }
 
   return (
@@ -487,26 +525,52 @@ export function ModalKlasifikasi({
         onChange={(v) => setField("kategoriCpn", v)}
         placeholder="-"
       />
+
+      <Field label="Line Bisnis">
+        <select
+          value={lbNama === "-" ? "" : lbNama}
+          onChange={(e) => setLineBisnis(e.target.value, lbKet1, lbKet2)}
+          disabled={liniBisnisLoading}
+          className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition bg-white disabled:opacity-50"
+        >
+          <option value="">Belum ada data</option>
+          {liniBisnisData.map((lb) => (
+            <option key={lb.id} value={lb.nama}>
+              {lb.nama}
+            </option>
+          ))}
+        </select>
+      </Field>
+
       <div className="grid grid-cols-2 gap-3">
         <FormInput
-          label="Line Bisnis"
-          value={form.lineBisnis}
-          onChange={(v) => setField("lineBisnis", v)}
+          label="Keterangan 1"
+          value={lbKet1 === "-" ? "" : lbKet1}
+          onChange={(v) => setLineBisnis(lbNama, v, lbKet2)}
           placeholder="-"
         />
+        <FormInput
+          label="Keterangan 2"
+          value={lbKet2 === "-" ? "" : lbKet2}
+          onChange={(v) => setLineBisnis(lbNama, lbKet1, v)}
+          placeholder="-"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <FormInput
           label="Sub Kategori"
           value={form.lineBisnisSub}
           onChange={(v) => setField("lineBisnisSub", v)}
           placeholder="Sub kategori"
         />
+        <FormInput
+          label="Permodalan"
+          value={form.permodalan}
+          onChange={(v) => setField("permodalan", v)}
+          placeholder="-"
+        />
       </div>
-      <FormInput
-        label="Permodalan"
-        value={form.permodalan}
-        onChange={(v) => setField("permodalan", v)}
-        placeholder="-"
-      />
     </ModalWrapper>
   );
 }
@@ -537,6 +601,7 @@ export function ModalPropertiFinansial({
   function setField(key: keyof PropertiFinansialFormData, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+  const { data: salesData, loading: salesLoading } = useDropdownSales();
 
   return (
     <ModalWrapper
@@ -621,18 +686,35 @@ export function ModalPropertiFinansial({
         onChange={(v) => setField("bdoAction", v)}
         placeholder="Belum ada data"
       />
-      <FormInput
-        label="Prioritas (MA/NN)"
-        value={form.prioritasMANN}
-        onChange={(v) => setField("prioritasMANN", v)}
-        placeholder="Belum ada data"
-      />
-      <FormInput
-        label="Prioritas (AE)"
-        value={form.prioritasAE}
-        onChange={(v) => setField("prioritasAE", v)}
-        placeholder="Belum ada data"
-      />
+      <Field label="Prioritas (MA/NN)">
+        <select
+          value={form.prioritasMANN}
+          onChange={(e) => setField("prioritasMANN", e.target.value)}
+          disabled={role !== "SUPER_ADMIN" && role !== "ADMIN"}
+          className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition bg-white disabled:opacity-50"
+        >
+          <option value="">Belum di set</option>
+          <option value="MA">MA</option>
+          <option value="NN">NN</option>
+        </select>
+      </Field>
+      <Field label="Prioritas (AE)">
+        <select
+          value={form.prioritasAE}
+          onChange={(e) => setField("prioritasAE", e.target.value)}
+          disabled={
+            salesLoading || (role !== "SUPER_ADMIN" && role !== "ADMIN")
+          }
+          className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition bg-white disabled:opacity-50"
+        >
+          <option value="">Belum ada data</option>
+          {salesData.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nama}
+            </option>
+          ))}
+        </select>
+      </Field>
       <FormInput
         label="Vendor"
         value={form.vendor}

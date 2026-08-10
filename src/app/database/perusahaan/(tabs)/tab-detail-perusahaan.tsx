@@ -22,6 +22,7 @@ import {
   useGetOnePerusahaan,
   useUpdatePerusahaan,
 } from "@/hooks/use-instansi-edit-perusahaan";
+import { useRole } from "@/hooks/use-role";
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -174,6 +175,8 @@ export default function TabDetailPerusahaan({
   const [editingSection, setEditingSection] = useState<EditingSection>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
 
+  const { role, isAdmin, isFinance, isLoggedIn } = useRole();
+
   // Sync API response → form state
   // API may return raw strings for ZonaWaktu — coerce them at the boundary
   useEffect(() => {
@@ -283,7 +286,7 @@ export default function TabDetailPerusahaan({
             setForm((p: FormState) => ({ ...p, perusahaan: val }))
           }
           disabled={isSaving}
-          isEdit={true}
+          isEdit={role == "ADMIN" || role == "SUPER_ADMIN"}
           onEdit={() => setEditingSection("perusahaan")}
         />
         <CardLokasi

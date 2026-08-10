@@ -64,7 +64,7 @@ export default function TabPerusahaan({ jenisInstansi = "PERUSAHAAN" }) {
           <TableButton
             icon="plus"
             onClick={() => {
-              router.push("database/perusahaan/create");
+              router.push("/database/perusahaan/create");
             }}
           >
             Tambah Data

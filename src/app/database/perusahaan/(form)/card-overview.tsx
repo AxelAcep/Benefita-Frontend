@@ -29,6 +29,7 @@ interface CardDetailPerusahaanProps {
   namaPerusahaan: string;
   akun: AkunGroup;
   onEdit?: () => void;
+  isAdmin?: boolean;
 }
 
 // ─────────────────────────────────────────────
@@ -114,6 +115,7 @@ export default function CardDetailPerusahaan({
   namaPerusahaan,
   akun,
   onEdit,
+  isAdmin = false,
 }: CardDetailPerusahaanProps) {
   const router = useRouter();
 
@@ -149,13 +151,17 @@ export default function CardDetailPerusahaan({
               </span>
             </div>
 
-            {onEdit && (
-              <button
-                onClick={onEdit}
-                className="flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors shrink-0"
-              >
-                Edit <Pencil className="w-3 h-3" />
-              </button>
+            {isAdmin && (
+              <>
+                {onEdit && (
+                  <button
+                    onClick={onEdit}
+                    className="flex items-center gap-1.5 text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors shrink-0"
+                  >
+                    Edit <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+              </>
             )}
           </div>
 

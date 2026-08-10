@@ -86,14 +86,13 @@ function clearSession() {
 // ─────────────────────────────────────────────
 
 export function generateDeviceHash(): string {
-  const nav = window.navigator;
-  const raw = `${nav.userAgent}-${nav.language}-${screen.width}x${screen.height}-${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
-  let hash = 0;
-  for (let i = 0; i < raw.length; i++) {
-    hash = (hash << 5) - hash + raw.charCodeAt(i);
-    hash |= 0;
+  const key = "device_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
   }
-  return Math.abs(hash).toString(16);
+  return id;
 }
 
 export function generateDeviceLabel(): string {
@@ -240,7 +239,14 @@ export async function fetchWithAuth(
   // Access token expired → coba silent refresh sekali
   if (res.status === 401) {
     const refreshed = await silentRefresh();
-    if (!refreshed) throw new Error("Sesi berakhir. Silakan login ulang.");
+    if (!refreshed) {
+      clearSession();
+      Cookies.remove("token");
+      Cookies.remove("role");
+      Cookies.remove("user");
+      window.location.href = "/";
+      throw new Error("Sesi berakhir. Silakan login ulang.");
+    }
 
     const newToken = getAccessToken()!;
     return doFetch(newToken);

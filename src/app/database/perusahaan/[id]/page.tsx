@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import ModalKirimPos from "../(form)/modal-pos";
 import ModalRequestPosisi from "../(form)/modal-request";
 import { usePermohonanHakAkses } from "@/hooks/use-perusahaan";
+import { useRole } from "@/hooks/use-role";
 
 type TabKey = "detail" | "peserta" | "contact-person" | "daily" | "riwayat";
 
@@ -36,6 +37,7 @@ export default function DetailInstansiPerusahaanPage() {
   const { data: pegawaiOptions, loading: loadingPegawai } = useDropdownSales();
   const { update, loading: updating, error: updateError } = useUpdateHakAkses();
   const router = useRouter();
+  const { role, isAdmin, isFinance, isLoggedIn } = useRole();
 
   const [activeTab, setActiveTab] = useState<TabKey>("detail");
   const [isPosModalOpen, setPosModalOpen] = useState(false);
@@ -230,6 +232,7 @@ export default function DetailInstansiPerusahaanPage() {
             },
           }}
           onEdit={() => setModalOpen(true)}
+          isAdmin={role == "SUPER_ADMIN" || role == "ADMIN"}
         />
 
         {/* --- MODAL BARU (BLUR & COMPACT) --- */}
