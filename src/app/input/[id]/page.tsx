@@ -133,7 +133,17 @@ export default function InputDataPage() {
 
   useEffect(() => {
     if (editingPesertaId) {
-      fetchDetail(editingPesertaId);
+      fetchDetail(editingPesertaId).catch((err) => {
+        setNotification({
+          message:
+            err instanceof Error
+              ? err.message
+              : "Gagal mengambil detail peserta",
+          type: "error",
+        });
+        setIsModalOpen(false);
+        setEditingPesertaId(null);
+      });
     }
   }, [editingPesertaId]);
 
@@ -195,7 +205,7 @@ export default function InputDataPage() {
       ? {
           nama: detailPeserta.nama,
           jabatan: detailPeserta.jabatan ?? "",
-          noIndukPerusahaan: detailPeserta.perusahaan.noInduk,
+          noIndukPerusahaan: detailPeserta.perusahaan?.noInduk ?? "",
           alamat: detailPeserta.alamat ?? "",
           noTelp: detailPeserta.noTelp ?? "",
           noFax: detailPeserta.noFax ?? "",

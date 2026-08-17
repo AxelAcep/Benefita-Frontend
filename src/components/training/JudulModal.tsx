@@ -34,7 +34,7 @@ export type PengajuanJudulFormValues = z.infer<typeof pengajuanJudulSchema>;
 export interface PengajuanJudulParsed {
   judulTraining: string;
   jumlahHari: number;
-  perusahaanId?: string;
+  perusahaanId?: string | null;
   responMA?: string;
   namaKontak?: string;
   kontak?: string;
@@ -45,14 +45,11 @@ export interface PengajuanJudulData {
   id?: string;
   judulTraining: string;
   jumlahHari: number;
-  perusahaan?: {
-    noInduk: string;
-    company: string | null;
-  };
   namaKontak?: string;
   kontak?: string;
   jumlahPeserta?: number | null;
   responMA?: string | null;
+  perusahaanId?: string | null;
 }
 
 interface PengajuanJudulModalProps {
@@ -130,7 +127,7 @@ export function PengajuanJudulModal({
         judulTraining: initialData?.judulTraining ?? "",
         jmlHari:
           initialData?.jumlahHari != null ? String(initialData.jumlahHari) : "",
-        perusahaanId: initialData?.perusahaan?.noInduk ?? "",
+        perusahaanId: initialData?.perusahaanId ?? "",
         namaKontak: initialData?.namaKontak ?? "",
         kontak: initialData?.kontak ?? "",
         responMA: initialData?.responMA ?? "",

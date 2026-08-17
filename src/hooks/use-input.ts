@@ -105,8 +105,12 @@ export function usePesertaTrainingDetail() {
     try {
       const res = await getPesertaTrainingById(id);
       setData(res);
+      return res;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mengambil detail");
+      const msg =
+        err instanceof Error ? err.message : "Gagal mengambil detail";
+      setError(msg);
+      throw err instanceof Error ? err : new Error(msg);
     } finally {
       setIsLoading(false);
     }

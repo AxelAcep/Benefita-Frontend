@@ -3,14 +3,14 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { ChevronDown, Loader2, Search, X } from "lucide-react";
+import { ChevronDown, Loader2, Pencil, Search, X } from "lucide-react";
 import {
   getListPerusahaan,
   PerusahaanOption,
 } from "@/lib/services/dropdown.service";
 
 interface PerusahaanSelectProps {
-  value?: string; // noInduk
+  value?: string; // noInduk ATAU teks manual
   onChange: (noInduk: string, company: string) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -29,6 +29,7 @@ export function PerusahaanSelect({
   const [options, setOptions] = useState<PerusahaanOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<PerusahaanOption | null>(null);
+  const [manualMode, setManualMode] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
@@ -47,7 +48,7 @@ export function PerusahaanSelect({
 
   // Fetch options saat open atau search berubah
   useEffect(() => {
-    if (!open) return;
+    if (!open || manualMode) return;
     const timeout = setTimeout(async () => {
       setLoading(true);
       try {
@@ -61,7 +62,7 @@ export function PerusahaanSelect({
     }, 300); // debounce 300ms
 
     return () => clearTimeout(timeout);
-  }, [open, search]);
+  }, [open, search, manualMode]);
 
   // Sync selected label dari value (misal pas edit)
   useEffect(() => {
@@ -69,21 +70,28 @@ export function PerusahaanSelect({
       setSelected(null);
       return;
     }
-    // Cari di options yang sudah ada dulu
     const found = options.find((o) => o.noInduk === value);
     if (found) {
       setSelected(found);
-    } else {
-      // Kalau belum ada (pertama load), fetch sekali
-      getListPerusahaan("").then((data) => {
-        const match = data.find((o) => o.noInduk === value);
-        if (match) setSelected(match);
-      });
+      setManualMode(false);
+      return;
     }
+    // Belum ketemu di options yang lagi ke-load → cek ke seluruh list
+    getListPerusahaan("").then((data) => {
+      const match = data.find((o) => o.noInduk === value);
+      if (match) {
+        setSelected(match);
+        setManualMode(false);
+      } else {
+        // Beneran gak ketemu → berarti value ini teks manual
+        setManualMode(true);
+      }
+    });
   }, [value]);
 
   const handleSelect = (option: PerusahaanOption) => {
     setSelected(option);
+    setManualMode(false);
     onChange(option.noInduk, option.company ?? "");
     setOpen(false);
     setSearch("");
@@ -92,7 +100,23 @@ export function PerusahaanSelect({
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSelected(null);
+    setManualMode(false);
     onChange("", "");
+  };
+
+  const switchToManual = () => {
+    setManualMode(true);
+    setOpen(false);
+    setSelected(null);
+  };
+
+  const switchToSearch = () => {
+    setManualMode(false);
+    onChange("", "");
+  };
+
+  const handleManualChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value, e.target.value);
   };
 
   const inputCls =
@@ -101,6 +125,42 @@ export function PerusahaanSelect({
     ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
     : "border-zinc-200 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100";
 
+  // ─────────────────────────────────────────────
+  // MODE MANUAL
+  // ─────────────────────────────────────────────
+  if (manualMode) {
+    return (
+      <div className="relative">
+        <div className="flex items-center gap-1.5">
+          <input
+            type="text"
+            value={value ?? ""}
+            onChange={handleManualChange}
+            disabled={disabled}
+            placeholder="Ketik nama perusahaan..."
+            className={`${inputCls} ${borderCls} ${
+              disabled ? "opacity-50 cursor-not-allowed bg-zinc-50" : "bg-white"
+            }`}
+          />
+          {!disabled && (
+            <button
+              type="button"
+              onClick={switchToSearch}
+              title="Cari dari daftar perusahaan"
+              className="shrink-0 p-2 border border-zinc-200 rounded-xl text-zinc-400 hover:text-emerald-600 hover:border-emerald-200 transition-colors"
+            >
+              <Search className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        {error && <p className="mt-1 text-[10px] text-red-500">{error}</p>}
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // MODE SELECT
+  // ─────────────────────────────────────────────
   return (
     <div ref={wrapperRef} className="relative">
       {/* Trigger */}
@@ -148,6 +208,16 @@ export function PerusahaanSelect({
               className="flex-1 text-xs text-zinc-700 outline-none placeholder:text-zinc-300"
             />
           </div>
+
+          {/* Pinned option: Lainnya / manual */}
+          <button
+            type="button"
+            onClick={switchToManual}
+            className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 border-b border-zinc-100 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5 shrink-0" />
+            <span className="font-medium">Lainnya (ketik manual)</span>
+          </button>
 
           {/* Options */}
           <div className="max-h-48 overflow-y-auto">

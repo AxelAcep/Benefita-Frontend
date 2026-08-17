@@ -17,10 +17,7 @@ export interface PengajuanJudulTraining {
   jumlahPeserta: number | null;
   responMA: "PENDING" | "DISETUJUI" | "DITOLAK";
   tanggalPengajuan: string;
-  perusahaan: {
-    noInduk: string;
-    company: string | null;
-  };
+  perusahaanId: string | null;
   inputOleh: {
     id: string;
     nama: string;
@@ -37,10 +34,7 @@ export interface PengajuanListItem {
   kontak: string | null;
   responMA: string;
   tanggalPengajuan: string;
-  perusahaan: {
-    noInduk: string;
-    company: string | null;
-  };
+  perusahaan: string | null;
   inputOleh: {
     id: string;
     nama: string;

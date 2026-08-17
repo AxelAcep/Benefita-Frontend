@@ -65,7 +65,7 @@ export default function PengajuanJudulTrainingPage() {
         id: detailData.id,
         judulTraining: detailData.judulTraining,
         jumlahHari: detailData.jumlahHari,
-        perusahaan: detailData.perusahaan,
+        perusahaanId: detailData.perusahaanId,
         namaKontak: detailData.namaKontak ?? undefined,
         kontak: detailData.kontak ?? undefined,
         jumlahPeserta: detailData.jumlahPeserta,
@@ -86,7 +86,10 @@ export default function PengajuanJudulTrainingPage() {
       id: item.id,
       judulTraining: item.judulTraining,
       jumlahHari: item.jumlahHari,
-      perusahaan: item.perusahaan,
+      // Nilai identitas perusahaan (noInduk/teks manual) belum tersedia dari
+      // list item — hanya nama tampilannya. Field ini akan langsung
+      // ditimpa oleh detail fetch (usePengajuanById) begitu selesai load.
+      perusahaanId: undefined,
       namaKontak: item.namaKontak ?? undefined,
       kontak: item.kontak ?? undefined,
       responMA: item.responMA ?? undefined,
@@ -99,7 +102,7 @@ export default function PengajuanJudulTrainingPage() {
     const payload = {
       judulTraining: data.judulTraining,
       jumlahHari: data.jumlahHari,
-      perusahaanId: data.perusahaanId,
+      perusahaanId: data.perusahaanId ?? undefined,
       namaKontak: data.namaKontak,
       kontak: data.kontak,
       jumlahPeserta: data.jumlahPeserta ?? undefined,
@@ -156,7 +159,7 @@ export default function PengajuanJudulTrainingPage() {
       label: "Perusahaan/Instansi",
       sortable: true,
       className: "max-w-[180px] whitespace-normal",
-      render: (_val, row) => <span>{row.perusahaan?.company ?? "-"}</span>,
+      render: (_val, row) => <span>{row.perusahaan ?? "-"}</span>,
     },
     {
       key: "namaKontak",
