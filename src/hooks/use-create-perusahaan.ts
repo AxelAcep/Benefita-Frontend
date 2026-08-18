@@ -4,7 +4,10 @@ import { createPerusahaan } from "@/lib/services/perusahaan.service";
 
 import { PerusahaanFormData } from "@/app/database/perusahaan/(form)/card-perusahaan";
 import { LokasiFormData } from "@/app/database/perusahaan/(form)/card-lokasi";
-import { SertifikasiFormData } from "@/app/database/perusahaan/(form)/card-sertifikasi";
+import {
+  SertifikasiFormData,
+  isoListToLegacy,
+} from "@/app/database/perusahaan/(form)/card-sertifikasi";
 import { KlasifikasiFormData } from "@/app/database/perusahaan/(form)/card-klasifikasi";
 import { PropertiFinansialFormData } from "@/app/database/perusahaan/(form)/card-properti";
 import { InformasiLainnyaFormData } from "@/app/database/perusahaan/(form)/card-lainya";
@@ -66,6 +69,10 @@ export function useCreatePerusahaan() {
     setLoading(true);
 
     try {
+      const [iso9000, iso14000, ohsas18001smk3] = isoListToLegacy(
+        form.sertifikasi?.isoList ?? [],
+      );
+
       const payload = {
         // CORE
         noInduk: form.perusahaan.kode,
@@ -80,9 +87,9 @@ export function useCreatePerusahaan() {
         alamatFactoryWaktu: form.lokasi?.zonaWaktuFactory,
 
         // SERTIFIKASI
-        iso9000: form.sertifikasi?.iso9001,
-        iso14000: form.sertifikasi?.iso14001,
-        ohsas18001smk3: form.sertifikasi?.ohsas18001,
+        iso9000,
+        iso14000,
+        ohsas18001smk3,
 
         // KLASIFIKASI
         kategoriCpn: form.klasifikasi?.kategoriCpn,

@@ -4,7 +4,7 @@ import { createPerusahaan } from "@/lib/services/perusahaan.service";
 
 import { PerusahaanFormData } from "@/app/database/perusahaan/(form)/card-perusahaan";
 import { LokasiFormData } from "@/app/database/perusahaan/(form)/card-lokasi";
-import { SertifikasiFormData } from "@/app/database/perusahaan/(form)/card-sertifikasi";
+import { SertifikasiFormData } from "@/app/database/rumah-sakit/(form)/card-sertifikasi";
 import { KlasifikasiFormData } from "@/app/database/perusahaan/(form)/card-klasifikasi";
 import { PropertiFinansialFormData } from "@/app/database/perusahaan/(form)/card-properti";
 import { InformasiLainnyaFormData } from "@/app/database/perusahaan/(form)/card-lainya";

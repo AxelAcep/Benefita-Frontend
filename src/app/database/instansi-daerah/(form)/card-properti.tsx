@@ -33,6 +33,50 @@ interface CardPropertiFinansialProps {
   onEdit?: () => void;
 }
 
+const PRIORITAS_HURUF_OPTIONS = ["A", "B", "C", "D", "E"].map((huruf) => ({
+  label: huruf,
+  value: huruf,
+}));
+
+// ─────────────────────────────────────────────
+// SELECT
+// ─────────────────────────────────────────────
+
+function FormSelect({
+  label,
+  value,
+  onChange,
+  options,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { label: string; value: string }[];
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="w-full px-3 py-2 text-xs text-zinc-700 bg-white border border-zinc-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-400 transition-all disabled:bg-white disabled:cursor-not-allowed appearance-none"
+      >
+        <option value="">Belum ada data</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────
 // TEXTAREA
 // ─────────────────────────────────────────────
@@ -255,18 +299,18 @@ export default function CardPropertiFinansial({
                 placeholder="Belum ada data"
                 disabled={isLocked}
               />
-              <FormInput
+              <FormSelect
                 label="Prioritas (MA/NN)"
                 value={form.prioritasMANN}
                 onChange={(v) => setField("prioritasMANN", v)}
-                placeholder="Belum ada data"
+                options={PRIORITAS_HURUF_OPTIONS}
                 disabled={isLocked}
               />
-              <FormInput
+              <FormSelect
                 label="Prioritas (AE)"
                 value={form.prioritasAE}
                 onChange={(v) => setField("prioritasAE", v)}
-                placeholder="Belum ada data"
+                options={PRIORITAS_HURUF_OPTIONS}
                 disabled={isLocked}
               />
               <FormInput

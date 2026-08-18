@@ -3,7 +3,12 @@
 import { useState, useEffect } from "react";
 import CardPerusahaan from "../(form)/card-perusahaan";
 import CardLokasi, { ZonaWaktu, LokasiFormData } from "../(form)/card-lokasi";
-import CardSertifikasi from "../(form)/card-sertifikasi";
+import CardSertifikasi, {
+  IsoItem,
+  ProperItem,
+  isoListToLegacy,
+  legacyToIsoList,
+} from "../(form)/card-sertifikasi";
 import CardKlasifikasi from "../(form)/card-klasifikasi";
 import CardPropertiFinansial from "../(form)/card-properti";
 import CardInformasiLainnya from "../(form)/card-lainya";
@@ -31,7 +36,7 @@ import { useRole } from "@/hooks/use-role";
 export interface FormState {
   perusahaan: { instansi: string; kode: string; idSimpel: string };
   lokasi: LokasiFormData; // ✅ use LokasiFormData directly — ZonaWaktu is "WIB"|"WITA"|"WIT"|"-"
-  sertifikasi: { iso9001: string; iso14001: string; ohsas18001: string };
+  sertifikasi: { isoList: IsoItem[]; properList: ProperItem[] };
   klasifikasi: {
     kategoriCpn: string;
     lineBisnis: string;
@@ -117,7 +122,7 @@ const EMPTY_FORM: FormState = {
     alamatFactory: "",
     zonaWaktuFactory: "-", // "-" is a valid ZonaWaktu
   },
-  sertifikasi: { iso9001: "", iso14001: "", ohsas18001: "" },
+  sertifikasi: { isoList: [], properList: [] },
   klasifikasi: {
     kategoriCpn: "",
     lineBisnis: "",
@@ -189,7 +194,14 @@ export default function TabDetailPerusahaan({
         alamatFactory: data.lokasi.alamatFactory ?? "",
         zonaWaktuFactory: toZonaWaktu(data.lokasi.zonaWaktuFactory),
       },
-      sertifikasi: data.sertifikasi,
+      sertifikasi: {
+        isoList: legacyToIsoList([
+          data.sertifikasi.iso9001,
+          data.sertifikasi.iso14001,
+          data.sertifikasi.ohsas18001,
+        ]),
+        properList: [],
+      },
       klasifikasi: data.klasifikasi,
       propertiFinansial: data.propertiFinansial,
       informasiLainnya: data.informasiLainnya,
@@ -215,6 +227,9 @@ export default function TabDetailPerusahaan({
     sectionData: FormState[K],
   ) {
     const merged: FormState = { ...form, [section]: sectionData };
+    const [iso9000, iso14000, ohsas18001smk3] = isoListToLegacy(
+      merged.sertifikasi.isoList,
+    );
 
     await mutate(
       id,
@@ -232,9 +247,9 @@ export default function TabDetailPerusahaan({
           merged.lokasi.zonaWaktuFactory === "-"
             ? undefined
             : merged.lokasi.zonaWaktuFactory,
-        iso9000: merged.sertifikasi.iso9001,
-        iso14000: merged.sertifikasi.iso14001,
-        ohsas18001smk3: merged.sertifikasi.ohsas18001,
+        iso9000,
+        iso14000,
+        ohsas18001smk3,
         kategoriCpn: merged.klasifikasi.kategoriCpn,
         lineOfBusiness: merged.klasifikasi.lineBisnis,
         lineBisnisSub: merged.klasifikasi.lineBisnisSub,

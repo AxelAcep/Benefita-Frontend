@@ -5,21 +5,17 @@ import { X, Save } from "lucide-react";
 import FormInput from "@/components/base/form-input";
 import type { PerusahaanFormData } from "./card-perusahaan";
 import type { LokasiFormData, ZonaWaktu } from "./card-lokasi";
-import type { SertifikasiFormData } from "./card-sertifikasi";
+import { SertifikasiEditor, type SertifikasiFormData } from "./card-sertifikasi";
 import type { KlasifikasiFormData } from "./card-klasifikasi";
 import type { PropertiFinansialFormData } from "./card-properti";
 import type { InformasiLainnyaFormData } from "./card-lainya";
 import type { KontakFormData } from "./card-kontak";
 import type FormState from "../[id]/page";
-import { useRole } from "@/hooks/use-role";
-import { useDropdownSales } from "@/hooks/use-dropdown-sales";
 import { useLiniBisnis } from "@/hooks/use-lini-bisnis";
 
 // ─────────────────────────────────────────────
 // SHARED UI PRIMITIVES
 // ─────────────────────────────────────────────
-
-const { role, isAdmin, isFinance, isLoggedIn } = useRole();
 
 function Field({
   label,
@@ -75,6 +71,11 @@ function FormTextarea({
 }
 
 const ZONA_OPTIONS: ZonaWaktu[] = ["WIB", "WITA", "WIT", "-"];
+
+const PRIORITAS_HURUF_OPTIONS = ["A", "B", "C", "D", "E"].map((huruf) => ({
+  label: huruf,
+  value: huruf,
+}));
 
 function ZonaWaktuSelect({
   label,
@@ -441,36 +442,15 @@ export function ModalSertifikasi({
     setForm(initialData);
   }, [initialData]);
 
-  function setField(key: keyof SertifikasiFormData, value: string) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
   return (
     <ModalWrapper
-      title="Edit Sertifikasi"
-      subtitle="Perbarui data sertifikasi perusahaan."
+      title="Edit Sertifikasi & PROPER"
+      subtitle="Tambah, ubah, atau hapus data ISO dan PROPER perusahaan."
       onClose={onClose}
       onSave={() => onSave(form)}
       isSaving={isSaving}
     >
-      <FormInput
-        label="ISO 9001"
-        value={form.iso9001}
-        onChange={(v) => setField("iso9001", v)}
-        placeholder="-"
-      />
-      <FormInput
-        label="ISO 14001"
-        value={form.iso14001}
-        onChange={(v) => setField("iso14001", v)}
-        placeholder="-"
-      />
-      <FormInput
-        label="OHSAS 18001"
-        value={form.ohsas18001}
-        onChange={(v) => setField("ohsas18001", v)}
-        placeholder="-"
-      />
+      <SertifikasiEditor form={form} onChangeForm={setForm} />
     </ModalWrapper>
   );
 }
@@ -601,7 +581,6 @@ export function ModalPropertiFinansial({
   function setField(key: keyof PropertiFinansialFormData, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
-  const { data: salesData, loading: salesLoading } = useDropdownSales();
 
   return (
     <ModalWrapper
@@ -690,27 +669,26 @@ export function ModalPropertiFinansial({
         <select
           value={form.prioritasMANN}
           onChange={(e) => setField("prioritasMANN", e.target.value)}
-          disabled={role !== "SUPER_ADMIN" && role !== "ADMIN"}
           className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition bg-white disabled:opacity-50"
         >
-          <option value="">Belum di set</option>
-          <option value="MA">MA</option>
-          <option value="NN">NN</option>
+          <option value="">Belum ada data</option>
+          {PRIORITAS_HURUF_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </Field>
       <Field label="Prioritas (AE)">
         <select
           value={form.prioritasAE}
           onChange={(e) => setField("prioritasAE", e.target.value)}
-          disabled={
-            salesLoading || (role !== "SUPER_ADMIN" && role !== "ADMIN")
-          }
           className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition bg-white disabled:opacity-50"
         >
           <option value="">Belum ada data</option>
-          {salesData.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nama}
+          {PRIORITAS_HURUF_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
             </option>
           ))}
         </select>

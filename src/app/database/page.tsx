@@ -10,6 +10,7 @@ import TabInstansiDaerah from "./tab-instansi-daerah";
 import TabSekolah from "./tab-sekolah";
 import TabDaily from "./tab-daily";
 import TabAlokasiAkun from "./tab-alokasi-akun";
+import TabGroup from "./tab-group";
 import { useRole } from "@/hooks/use-role";
 
 type TabKey =
@@ -18,6 +19,7 @@ type TabKey =
   | "pemda"
   | "instansi-daerah"
   | "sekolah"
+  | "group"
   | "daily"
   | "alokasi-akun";
 
@@ -27,6 +29,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "pemda", label: "PEMDA" },
   { key: "instansi-daerah", label: "Instansi Daerah" },
   { key: "sekolah", label: "Sekolah" },
+  { key: "group", label: "Group" },
   { key: "daily", label: "Daily" },
   { key: "alokasi-akun", label: "Alokasi Akun" },
 ];
@@ -68,6 +71,7 @@ export default function InstansiPerusahaanPage() {
       {activeTab === "pemda" && <TabPemda />}
       {activeTab === "instansi-daerah" && <TabInstansiDaerah />}
       {activeTab === "sekolah" && <TabSekolah />}
+      {activeTab === "group" && <TabGroup />}
       {activeTab === "daily" &&
         (isAdmin ? (
           <TabDaily id="daily" />

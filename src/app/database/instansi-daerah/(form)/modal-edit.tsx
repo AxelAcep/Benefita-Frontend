@@ -5,7 +5,7 @@ import { X, Save } from "lucide-react";
 import FormInput from "@/components/base/form-input";
 import type { PerusahaanFormData } from "./card-perusahaan";
 import type { LokasiFormData, ZonaWaktu } from "./card-lokasi";
-import type { SertifikasiFormData } from "./card-sertifikasi";
+import { SertifikasiEditor, type SertifikasiFormData } from "./card-sertifikasi";
 import type { KlasifikasiFormData } from "./card-klasifikasi";
 import type { PropertiFinansialFormData } from "./card-properti";
 import type { InformasiLainnyaFormData } from "./card-lainya";
@@ -92,6 +92,11 @@ function FormSelect({
 }
 
 const ZONA_OPTIONS: ZonaWaktu[] = ["WIB", "WITA", "WIT", "-"];
+
+const PRIORITAS_HURUF_OPTIONS = ["A", "B", "C", "D", "E"].map((huruf) => ({
+  label: huruf,
+  value: huruf,
+}));
 
 function ZonaWaktuSelect({
   label,
@@ -458,36 +463,15 @@ export function ModalSertifikasi({
     setForm(initialData);
   }, [initialData]);
 
-  function setField(key: keyof SertifikasiFormData, value: string) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
   return (
     <ModalWrapper
-      title="Edit Sertifikasi"
-      subtitle="Perbarui data sertifikasi perusahaan."
+      title="Edit Sertifikasi & PROPER"
+      subtitle="Tambah, ubah, atau hapus data ISO dan PROPER perusahaan."
       onClose={onClose}
       onSave={() => onSave(form)}
       isSaving={isSaving}
     >
-      <FormInput
-        label="ISO 9001"
-        value={form.iso9001}
-        onChange={(v) => setField("iso9001", v)}
-        placeholder="-"
-      />
-      <FormInput
-        label="ISO 14001"
-        value={form.iso14001}
-        onChange={(v) => setField("iso14001", v)}
-        placeholder="-"
-      />
-      <FormInput
-        label="OHSAS 18001"
-        value={form.ohsas18001}
-        onChange={(v) => setField("ohsas18001", v)}
-        placeholder="-"
-      />
+      <SertifikasiEditor form={form} onChangeForm={setForm} />
     </ModalWrapper>
   );
 }
@@ -667,17 +651,17 @@ export function ModalPropertiFinansial({
         onChange={(v) => setField("bdoAction", v)}
         placeholder="Belum ada data"
       />
-      <FormInput
+      <FormSelect
         label="Prioritas (MA/NN)"
         value={form.prioritasMANN}
         onChange={(v) => setField("prioritasMANN", v)}
-        placeholder="Belum ada data"
+        options={PRIORITAS_HURUF_OPTIONS}
       />
-      <FormInput
+      <FormSelect
         label="Prioritas (AE)"
         value={form.prioritasAE}
         onChange={(v) => setField("prioritasAE", v)}
-        placeholder="Belum ada data"
+        options={PRIORITAS_HURUF_OPTIONS}
       />
       <FormInput
         label="Vendor"
