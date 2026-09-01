@@ -102,6 +102,10 @@ export interface UpdateJadwalTrainingRequest {
   fileAgenda?: File | null;
 }
 
+export interface NextNoJadwalResponse {
+  noJadwal: string;
+}
+
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
@@ -171,6 +175,21 @@ export async function getJadwalTrainingById(
   const data = await res.json();
   if (!res.ok)
     throw new Error(data.message || "Gagal mengambil detail jadwal training");
+
+  return data.data;
+}
+
+export async function getNextNoJadwal(): Promise<NextNoJadwalResponse> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/training/jadwal-training/next-no-jadwal`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(
+      data.message || "Gagal mengambil nomor jadwal berikutnya",
+    );
 
   return data.data;
 }

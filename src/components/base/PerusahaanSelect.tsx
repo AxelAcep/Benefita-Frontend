@@ -15,6 +15,10 @@ interface PerusahaanSelectProps {
   placeholder?: string;
   disabled?: boolean;
   error?: string;
+  // Default: getListPerusahaan (protected, endpoint admin). Override dengan
+  // getListPerusahaanPublic untuk halaman public (mis. /biodata/[id]) yang
+  // tidak punya session.
+  fetchFn?: (search: string) => Promise<PerusahaanOption[]>;
 }
 
 export function PerusahaanSelect({
@@ -23,6 +27,7 @@ export function PerusahaanSelect({
   placeholder = "Pilih perusahaan...",
   disabled = false,
   error,
+  fetchFn = getListPerusahaan,
 }: PerusahaanSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -52,7 +57,7 @@ export function PerusahaanSelect({
     const timeout = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = await getListPerusahaan(search);
+        const data = await fetchFn(search);
         setOptions(data);
       } catch {
         setOptions([]);
@@ -62,7 +67,7 @@ export function PerusahaanSelect({
     }, 300); // debounce 300ms
 
     return () => clearTimeout(timeout);
-  }, [open, search, manualMode]);
+  }, [open, search, manualMode, fetchFn]);
 
   // Sync selected label dari value (misal pas edit)
   useEffect(() => {
@@ -77,7 +82,7 @@ export function PerusahaanSelect({
       return;
     }
     // Belum ketemu di options yang lagi ke-load → cek ke seluruh list
-    getListPerusahaan("").then((data) => {
+    fetchFn("").then((data) => {
       const match = data.find((o) => o.noInduk === value);
       if (match) {
         setSelected(match);
@@ -87,7 +92,7 @@ export function PerusahaanSelect({
         setManualMode(true);
       }
     });
-  }, [value]);
+  }, [value, fetchFn]);
 
   const handleSelect = (option: PerusahaanOption) => {
     setSelected(option);

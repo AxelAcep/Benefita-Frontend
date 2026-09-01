@@ -14,6 +14,12 @@ const ADMIN_ONLY_ROUTES = [
 
 const FINANCE_ROUTES = ["/keuangan", "/accounting"];
 
+// Halaman public yang HARUS SELALU bisa diakses tanpa auth (form isi biodata
+// peserta, form evaluasi pelatihan, halaman pengumuman link per jadwal, dst).
+// Tinggal tambah prefix baru di sini kalau ada halaman public baru — tidak
+// perlu ubah logic middleware.
+const ALWAYS_PUBLIC_PREFIXES = ["/biodata", "/evaluasi", "/pengumuman"];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -25,6 +31,10 @@ export function middleware(request: NextRequest) {
     if (token && role) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
+    return NextResponse.next();
+  }
+
+  if (ALWAYS_PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next();
   }
 

@@ -76,9 +76,18 @@ export async function getJadwalFix(quarter: string): Promise<MonthRow[]> {
 }
 
 export interface ScheduleDay {
-  day: "senin" | "selasa" | "rabu" | "kamis" | "jumat";
+  day:
+    | "senin"
+    | "selasa"
+    | "rabu"
+    | "kamis"
+    | "jumat"
+    | "sabtu"
+    | "minggu";
+  tanggal: number;
   code: string;
   category: "WM" | "CSR" | "TSM" | "EPM";
+  tipe: "ENV" | "CSR" | "TSM" | "EPM" | "publik" | "inhouse";
 }
 
 export interface TrainingRow {

@@ -5,6 +5,7 @@ import {
   createJadwalTraining,
   updateJadwalTraining,
   deleteJadwalTraining,
+  getNextNoJadwal,
   type JadwalTrainingListItem,
   type JadwalTraining,
   type JadwalTrainingPagination,
@@ -165,6 +166,35 @@ export function useJadwalTrainingDetail() {
   }, []);
 
   return { data, isLoading, error, fetch };
+}
+
+// ─────────────────────────────────────────────
+// NEXT NO. JADWAL HOOK (auto-generate)
+// ─────────────────────────────────────────────
+
+export function useNextNoJadwal() {
+  const [noJadwal, setNoJadwal] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetch = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await getNextNoJadwal();
+      setNoJadwal(res.noJadwal);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Gagal mengambil nomor jadwal berikutnya",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { noJadwal, isLoading, error, fetch };
 }
 
 // ─────────────────────────────────────────────

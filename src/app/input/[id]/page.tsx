@@ -303,10 +303,11 @@ export default function InputDataPage() {
 
         <CardDaftarMenu
           handlers={{
-            onEvaluasiKegiatan: () => alert("Evaluasi Kegiatan"),
+            onEvaluasiKegiatan: () =>
+              router.push(`${params.id}/rekap-evaluasi`),
             onRekapNomorSertifikat: () =>
               router.push(`/input/${params.id}/Recap`),
-            onLinkPengisianData: () => alert("Link Pengisian Data"),
+            onLinkPengisianData: () => router.push(`/pengumuman/${noJadwal}`),
             onCetakFormulir: () =>
               router.push(`/input/${params.id}/formulir-pendaftaram`),
             onPindahJadwalPeserta: () => alert("Pindah Jadwal Peserta"),

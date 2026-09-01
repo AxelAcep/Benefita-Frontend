@@ -47,7 +47,24 @@ export function useAuth() {
 // ROUTES
 // ─────────────────────────────────────────────
 
-const PUBLIC_ROUTES = ["/", "/forgot-password"];
+// Guest-only: kalau status === "authenticated", di-redirect ke /dashboard
+// (supaya user yang sudah login tidak balik lagi ke halaman login/forgot-password).
+const GUEST_ONLY_ROUTES = ["/", "/forgot-password"];
+
+function isGuestOnlyRoute(pathname: string): boolean {
+  return GUEST_ONLY_ROUTES.includes(pathname);
+}
+
+// Always-public: harus SELALU bisa diakses, baik authenticated maupun
+// unauthenticated. TIDAK PERNAH di-redirect kemanapun oleh guard di bawah.
+// Prefix match karena ada dynamic segment ([id] / [noJadwal]). Tinggal
+// tambah prefix baru di sini kalau ada halaman public baru — samakan dengan
+// ALWAYS_PUBLIC_PREFIXES di middleware.ts.
+const ALWAYS_PUBLIC_PREFIXES = ["/biodata", "/evaluasi", "/pengumuman"];
+
+function isAlwaysPublicRoute(pathname: string): boolean {
+  return ALWAYS_PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 // ─────────────────────────────────────────────
 // PROVIDER
@@ -127,14 +144,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Belum selesai init, jangan redirect dulu
     if (status === "loading") return;
 
-    const isPublic = PUBLIC_ROUTES.includes(pathname);
+    // Always-public route (mis. /biodata/[id]): render apa adanya, tidak
+    // pernah di-redirect ke manapun, baik authenticated maupun unauthenticated.
+    if (isAlwaysPublicRoute(pathname)) return;
 
-    if (status === "unauthenticated" && !isPublic) {
+    const isGuestOnly = isGuestOnlyRoute(pathname);
+
+    if (status === "unauthenticated" && !isGuestOnly) {
       router.replace("/");
       return;
     }
 
-    if (status === "authenticated" && isPublic) {
+    if (status === "authenticated" && isGuestOnly) {
       router.replace("/dashboard");
       return;
     }

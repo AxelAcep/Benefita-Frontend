@@ -43,13 +43,12 @@ type JadwalFormValues = z.infer<typeof jadwalSchema>;
 // ─────────────────────────────────────────────
 
 const METODE_OPTIONS = ["Online", "Offline", "Hybrid"];
-const JENIS_OPTIONS = [
-  "REG",
-  "Regular",
-  "Refreshment",
-  "In House",
-  "Uji Kompetensi",
-  "Konsultasi",
+const JENIS_OPTIONS: { value: string; label: string }[] = [
+  { value: "REG", label: "Regular" },
+  { value: "RFM", label: "Refreshment" },
+  { value: "INH", label: "In House" },
+  { value: "UJI", label: "Uji Kompetensi" },
+  { value: "KON", label: "Konsultasi" },
 ];
 const STATUS_JADWAL_OPTIONS = [
   "TENTATIVE",
@@ -436,8 +435,8 @@ export default function EditJadwalTrainingPage() {
                   <select {...register("jenisTraining")} className={selectCls}>
                     <option value="">Pilih Jenis Training</option>
                     {JENIS_OPTIONS.map((j) => (
-                      <option key={j} value={j}>
-                        {j}
+                      <option key={j.value} value={j.value}>
+                        {j.label}
                       </option>
                     ))}
                   </select>

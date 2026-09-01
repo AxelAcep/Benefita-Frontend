@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Save, CalendarDays, Paperclip, X } from "lucide-react";
+import { Save, CalendarDays, Paperclip, X, Loader2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { JudulTrainingSelect } from "@/components/base/JudulTrainingSelect";
 import { TrainerSelect } from "@/components/base/TrainerSelect";
-import { useJadwalTrainingMutation } from "@/hooks/use-jadwal-training";
+import {
+  useJadwalTrainingMutation,
+  useNextNoJadwal,
+} from "@/hooks/use-jadwal-training";
 import Notification from "@/components/base/notifications";
 
 // ─────────────────────────────────────────────
@@ -40,13 +43,12 @@ type JadwalFormValues = z.infer<typeof jadwalSchema>;
 // ─────────────────────────────────────────────
 
 const METODE_OPTIONS = ["Online", "Offline", "Hybrid"];
-const JENIS_OPTIONS = [
-  "REG",
-  "Regular",
-  "Refreshment",
-  "In House",
-  "Uji Kompetensi",
-  "Konsultasi",
+const JENIS_OPTIONS: { value: string; label: string }[] = [
+  { value: "REG", label: "Regular" },
+  { value: "RFM", label: "Refreshment" },
+  { value: "INH", label: "In House" },
+  { value: "UJI", label: "Uji Kompetensi" },
+  { value: "KON", label: "Konsultasi" },
 ];
 const STATUS_JADWAL_OPTIONS = [
   "TENTATIVE",
@@ -117,6 +119,7 @@ export default function TambahJadwalTrainingPage({
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<JadwalFormValues>({
     resolver: zodResolver(jadwalSchema),
@@ -137,6 +140,25 @@ export default function TambahJadwalTrainingPage({
       catatan: initialData?.catatan ?? "",
     },
   });
+
+  // ── No. Jadwal auto-generate — dipaksa pakai nilai dari endpoint,
+  // gak bisa diketik manual (cuma berlaku pas mode tambah, bukan edit) ──
+  const {
+    noJadwal: generatedNoJadwal,
+    isLoading: isLoadingNoJadwal,
+    error: noJadwalError,
+    fetch: fetchNextNoJadwal,
+  } = useNextNoJadwal();
+
+  useEffect(() => {
+    if (!isEdit) fetchNextNoJadwal();
+  }, [isEdit, fetchNextNoJadwal]);
+
+  useEffect(() => {
+    if (!isEdit && generatedNoJadwal) {
+      setValue("noJadwal", generatedNoJadwal);
+    }
+  }, [isEdit, generatedNoJadwal, setValue]);
 
   // ── Mutation hook ─────────────────────────
   const { handleCreate, handleUpdate } = useJadwalTrainingMutation({
@@ -227,11 +249,37 @@ export default function TambahJadwalTrainingPage({
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
                 <FieldLabel>No. Jadwal</FieldLabel>
-                <input
-                  {...register("noJadwal")}
-                  placeholder="Contoh: 2026142"
-                  className={inputCls}
-                />
+                <div className="relative">
+                  <input
+                    {...register("noJadwal")}
+                    readOnly
+                    placeholder={
+                      isEdit
+                        ? "Contoh: 2026142"
+                        : isLoadingNoJadwal
+                          ? "Memuat nomor otomatis..."
+                          : "Contoh: 2026142"
+                    }
+                    className={`${inputCls} ${
+                      isEdit
+                        ? ""
+                        : "bg-zinc-50 cursor-not-allowed text-zinc-500"
+                    }`}
+                  />
+                  {!isEdit && isLoadingNoJadwal && (
+                    <Loader2 className="w-3.5 h-3.5 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 animate-spin" />
+                  )}
+                </div>
+                {!isEdit && (
+                  <p className="mt-1 text-[10px] text-zinc-400">
+                    Otomatis dari sistem, tidak bisa diubah.
+                  </p>
+                )}
+                {!isEdit && noJadwalError && (
+                  <p className="mt-1 text-[10px] text-red-500">
+                    Gagal mengambil nomor jadwal: {noJadwalError}
+                  </p>
+                )}
                 <FieldError message={errors.noJadwal?.message} />
               </div>
               <div>
@@ -316,8 +364,8 @@ export default function TambahJadwalTrainingPage({
                   <select {...register("jenisTraining")} className={selectCls}>
                     <option value="">Pilih Jenis Training</option>
                     {JENIS_OPTIONS.map((j) => (
-                      <option key={j} value={j}>
-                        {j}
+                      <option key={j.value} value={j.value}>
+                        {j.label}
                       </option>
                     ))}
                   </select>
@@ -478,7 +526,10 @@ export default function TambahJadwalTrainingPage({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting ||
+                (!isEdit && (isLoadingNoJadwal || !generatedNoJadwal))
+              }
               className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 min-w-[110px] justify-center"
             >
               <Save className="w-3.5 h-3.5" />

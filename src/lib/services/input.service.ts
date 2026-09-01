@@ -263,3 +263,256 @@ export async function deletePesertaTraining(id: string): Promise<void> {
     throw new Error(data.message || "Gagal menghapus peserta");
   }
 }
+
+export interface BiodataPeserta {
+  id: number;
+  nama: string;
+  tempatLahir: string | null;
+  tanggalLahir: string | null;
+  jenisKelamin: string | null;
+  jabatan: string | null;
+  bidang: string | null;
+  email: string | null;
+  noHp: string | null;
+  noIndukPerusahaan: string | null;
+  perusahaan: {
+    noInduk: string;
+    company: string;
+    alamat: string | null;
+    telp: string | null;
+  } | null;
+}
+
+export interface UpdateBiodataPesertaRequest {
+  nama?: string;
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  jenisKelamin?: string;
+  noIndukPerusahaan?: string;
+  jabatan?: string;
+  bidang?: string;
+  email?: string;
+  noHp?: string;
+}
+
+/**
+ * GET BIODATA PESERTA (public form - sebelum diisi)
+ */
+export async function getBiodataPeserta(id: string): Promise<BiodataPeserta> {
+  const res = await fetch(`${API_URL}/api/input/peserta/${id}/biodata`, {
+    method: "GET",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil biodata peserta");
+  }
+
+  return data.data;
+}
+
+/**
+ * UPDATE BIODATA PESERTA (public form - trainer isi/benerin)
+ */
+export async function updateBiodataPeserta(
+  id: string,
+  payload: UpdateBiodataPesertaRequest,
+): Promise<PesertaTraining> {
+  const res = await fetch(`${API_URL}/api/input/peserta/${id}/biodata`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengupdate biodata peserta");
+  }
+
+  return data.data;
+}
+
+/**
+ * GET CONTEXT EVALUASI (public - sebelum diisi)
+ */
+export async function getEvaluasiContext(id: string): Promise<EvaluasiContext> {
+  const res = await fetch(`${API_URL}/api/public/evaluasi/${id}`, {
+    method: "GET",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data evaluasi");
+  }
+
+  return data.data;
+}
+
+/**
+ * GET LIST JUDUL TRAINING (public - opsi checkbox pelatihan diminati)
+ */
+
+export interface EvaluasiContext {
+  pesertaTrainingId: number;
+  nama: string;
+  jadwalTraining: {
+    noJadwal: string;
+    judulLengkap: string;
+    judulPendek: string | null;
+    tglMulai: string | null;
+    tglSelesai: string | null;
+  };
+  sudahMengisi: boolean;
+}
+
+export interface JudulTrainingOption {
+  id: number;
+  kode: string;
+  judulTraining: string;
+  tipe: string;
+}
+
+export interface CreateEvaluasiPelatihanRequest {
+  nilaiSistematikaMateri: number;
+  nilaiTampilanSlide: number;
+  nilaiAlokasiWaktu: number;
+  nilaiPenerapanMateri: number;
+  nilaiPeningkatanKompetensi: number;
+  nilaiTrainer: number;
+  manfaatUntukPeserta?: string;
+  manfaatUntukPerusahaan?: string;
+  divisiDisarankan?: string;
+  prosedurPengajuan?: string;
+  pelatihanDiminatiIds?: number[];
+}
+
+export interface EvaluasiPelatihan {
+  id: number;
+  pesertaTrainingId: number;
+  nilaiSistematikaMateri: number;
+  nilaiTampilanSlide: number;
+  nilaiAlokasiWaktu: number;
+  nilaiPenerapanMateri: number;
+  nilaiPeningkatanKompetensi: number;
+  nilaiTrainer: number;
+  manfaatUntukPeserta: string | null;
+  manfaatUntukPerusahaan: string | null;
+  divisiDisarankan: string | null;
+  prosedurPengajuan: string | null;
+  pelatihanDiminati: {
+    judulTraining: JudulTrainingOption;
+  }[];
+}
+
+export async function getJudulTrainingOptions(): Promise<
+  JudulTrainingOption[]
+> {
+  const res = await fetch(`${API_URL}/api/public/evaluasi/judul-training`, {
+    method: "GET",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil daftar pelatihan");
+  }
+
+  return data.data;
+}
+
+/**
+ * CREATE EVALUASI PELATIHAN (public - submit form)
+ */
+export async function createEvaluasiPelatihan(
+  id: string,
+  payload: CreateEvaluasiPelatihanRequest,
+): Promise<EvaluasiPelatihan> {
+  const res = await fetch(`${API_URL}/api/public/evaluasi/${id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengirim evaluasi");
+  }
+
+  return data.data;
+}
+
+export interface JadwalPesertaLinksResponse {
+  jadwal: {
+    judulLengkap: string;
+    tglMulai: string | null;
+    metode: string | null;
+  };
+  peserta: {
+    id: number;
+    nama: string;
+  }[];
+}
+
+/**
+ * GET JADWAL + PESERTA (public - buat halaman pengumuman link biodata/evaluasi)
+ */
+export async function getJadwalPesertaLinks(
+  noJadwal: string,
+): Promise<JadwalPesertaLinksResponse> {
+  const res = await fetch(
+    `${API_URL}/api/public/jadwal/${noJadwal}/peserta-links`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data jadwal");
+  }
+
+  return data.data;
+}
+
+export interface RekapEvaluasiResponse {
+  jadwal: {
+    judulLengkap: string;
+    tglMulai: string | null;
+    tglSelesai: string | null;
+  };
+  totalPeserta: number;
+  totalMengisi: number;
+  rataRata: {
+    nilaiSistematikaMateri: number;
+    nilaiTampilanSlide: number;
+    nilaiAlokasiWaktu: number;
+    nilaiPenerapanMateri: number;
+    nilaiPeningkatanKompetensi: number;
+    nilaiTrainer: number;
+  };
+  komentarManfaatPeserta: string[];
+  komentarManfaatPerusahaan: string[];
+}
+
+/**
+ * GET REKAP EVALUASI (admin - protected)
+ */
+export async function getRekapEvaluasi(
+  noJadwal: string,
+): Promise<RekapEvaluasiResponse> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/training/jadwal/${noJadwal}/rekap-evaluasi`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil rekap evaluasi");
+  }
+
+  return data.data;
+}

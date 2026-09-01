@@ -7,7 +7,7 @@ import { useJadwalFix } from "@/hooks/use-dashboard";
 type Quarter = "Q1" | "Q2" | "Q3" | "Q4";
 
 const days = ["Sen", "Sel", "Rab", "Kam", "Jun", "Sab", "Min"];
-const weeks = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"];
+const weeks = ["Bulan 1", "Bulan 2", "Bulan 3", "Bulan 4"];
 const weekDates = [
   ["01", "02", "03", "04", "05", "06", "07"],
   ["08", "09", "10", "11", "12", "13", "14"],

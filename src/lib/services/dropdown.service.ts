@@ -29,6 +29,29 @@ export async function getListPerusahaan(
   return data.data;
 }
 
+// Versi PUBLIC (tanpa auth) — dipakai dropdown perusahaan di halaman public
+// seperti /biodata/[id] (form isi biodata peserta, tanpa login). Endpoint
+// backend: GET /api/public/perusahaan (searchPerusahaanPublic).
+export async function getListPerusahaanPublic(
+  search: string,
+): Promise<PerusahaanOption[]> {
+  const query = new URLSearchParams();
+  if (search) query.append("search", search);
+
+  const res = await fetch(
+    `${API_URL}/api/public/perusahaan?${query.toString()}`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil daftar perusahaan");
+  }
+
+  return data.data;
+}
+
 // services/judul-training.service.ts — tambahkan di bawah
 
 export interface JudulTrainingOption {
