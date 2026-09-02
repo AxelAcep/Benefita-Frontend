@@ -1,108 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Anchor from "@/components/base/anchor";
+import { usePerusahaanTbk } from "@/hooks/use-perusahaan-tbk";
 
-interface PerusahaanTBK {
-  id: number;
-  noInduk: string;
-  perusahaan: string;
-  acc: string;
-  tglTerakhirTraining: string;
-  alamat: string;
-  noTelepon: string;
-  update: string;
-  lineOfBiz: string;
+function formatTanggal(iso: string | null) {
+  if (!iso) return <span className="text-zinc-300">-</span>;
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-const DUMMY_DATA: PerusahaanTBK[] = [
-  {
-    id: 1,
-    noInduk: "PR00621",
-    perusahaan: "PT. ABC",
-    acc: "EE",
-    tglTerakhirTraining: "29 - 2 July 2015",
-    alamat: "Jl. Raya Jakarta-Bogor Km. 37 Cimanggis, Depok - Jabar",
-    noTelepon: "021-8751735",
-    update: "700101-WULAN",
-    lineOfBiz: "7-MM :MPJ - Farmasi; Susu - M",
-  },
-  {
-    id: 2,
-    noInduk: "PR07304",
-    perusahaan: "PT. BCA",
-    acc: "SS",
-    tglTerakhirTraining: "18 - 20 December 2023",
-    alamat:
-      "ACSET Building Jl. Majapahit No.26 Petojo Selatan Jakarta Pusat 10160",
-    noTelepon: "021-87511231",
-    update: "700101-MULYADI",
-    lineOfBiz: "14-EPC & Prop:Manajemen - EPC",
-  },
-  {
-    id: 3,
-    noInduk: "PR02434",
-    perusahaan: "PT. XYZ",
-    acc: "SL",
-    tglTerakhirTraining: "12 - 14 March 2024",
-    alamat: "Jl. Raya Pasar Minggu Km. 18 Jakarta Selatan",
-    noTelepon: "021-87511222",
-    update: "700101-MULYADI",
-    lineOfBiz: "14-EPC & Prop:5 bisnis",
-  },
-  {
-    id: 4,
-    noInduk: "PR08091",
-    perusahaan: "PT. ACC",
-    acc: "WW",
-    tglTerakhirTraining: "7 - 8 November 2013",
-    alamat:
-      "Gd. Graha Kirana Lt. 6, Jl. Yos Sudarso No. 88 Jakarta Utara 14350",
-    noTelepon: "021-8751222",
-    update: "700101-ARISTA",
-    lineOfBiz: "5-Otomotif : Transportasi - D",
-  },
-  {
-    id: 5,
-    noInduk: "PR00123",
-    perusahaan: "PT. Maju Jaya",
-    acc: "MG",
-    tglTerakhirTraining: "1 - 3 March 2025",
-    alamat: "Jl. Sudirman Kav. 52-53, Jakarta Pusat 10220",
-    noTelepon: "021-5711234",
-    update: "700101-BUDI",
-    lineOfBiz: "3-Manufaktur : Kimia - B",
-  },
-  {
-    id: 6,
-    noInduk: "PR00456",
-    perusahaan: "PT. Nusantara Energy",
-    acc: "NW",
-    tglTerakhirTraining: "5 - 7 August 2024",
-    alamat: "Jl. TB Simatupang No. 10, Jakarta Selatan 12430",
-    noTelepon: "021-7884321",
-    update: "700101-SARI",
-    lineOfBiz: "10-Energi : Pertambangan - C",
-  },
-];
-
-const PAGE_SIZE = 10;
+function Dash({ children }: { children: React.ReactNode }) {
+  if (!children) return <span className="text-zinc-300">-</span>;
+  return <>{children}</>;
+}
 
 export default function DaftarPerusahaanTBKPage() {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const filtered = DUMMY_DATA.filter(
-    (d) =>
-      d.perusahaan.toLowerCase().includes(search.toLowerCase()) ||
-      d.noInduk.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  const {
+    data,
+    pagination,
+    loading,
+    search,
+    page,
+    sort,
+    setPage,
+    handleSearch,
+    toggleSort,
+  } = usePerusahaanTbk();
 
   return (
     <AppLayout
@@ -136,13 +65,10 @@ export default function DaftarPerusahaanTBKPage() {
             </svg>
             <input
               type="text"
-              placeholder="Cari informasi..."
+              placeholder="Cari kategori CPN atau nama perusahaan..."
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full sm:w-52 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full sm:w-64 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
             />
           </div>
         </div>
@@ -153,36 +79,56 @@ export default function DaftarPerusahaanTBKPage() {
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50/60">
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-10">
-                  No ↕
+                  No
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-20">
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
                   No Induk
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-36">
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-44">
                   Perusahaan/Instansi
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-center w-16">
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-center w-32">
                   Acc
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-44">
-                  Tgl. Terakhir Training ↕
+                  <button
+                    type="button"
+                    onClick={toggleSort}
+                    className="inline-flex items-center gap-1 hover:text-zinc-600 transition-colors"
+                  >
+                    Tgl. Terakhir Training
+                    {sort === "asc" ? (
+                      <ArrowUp className="w-3 h-3" />
+                    ) : (
+                      <ArrowDown className="w-3 h-3" />
+                    )}
+                  </button>
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">
                   Alamat
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-36">
                   No. Telepon
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">
-                  Update
+                  Update Terakhir
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-36">
-                  Line of Biz ↕
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-32">
+                  Lini Bisnis
                 </th>
               </tr>
             </thead>
             <tbody>
-              {paginated.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-4 py-12 text-center text-xs text-zinc-400"
+                  >
+                    Memuat data...
+                  </td>
+                </tr>
+              ) : data.length === 0 ? (
                 <tr>
                   <td
                     colSpan={9}
@@ -192,37 +138,40 @@ export default function DaftarPerusahaanTBKPage() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((row, i) => (
+                data.map((row, i) => (
                   <tr
-                    key={row.id}
+                    key={row.noInduk}
                     className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors"
                   >
-                    <td className="px-4 py-3 text-xs text-zinc-400">
-                      {(currentPage - 1) * PAGE_SIZE + i + 1}
+                    <td className="px-4 py-3 text-xs text-zinc-400 align-top">
+                      {(page - 1) * pagination.pageSize + i + 1}
                     </td>
-                    <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline">
-                      {row.noInduk}
+                    <td className="px-4 py-3 text-xs align-top whitespace-nowrap">
+                      <Anchor
+                        name={row.noInduk}
+                        route={`/database/perusahaan/${row.noInduk}`}
+                      />
                     </td>
-                    <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline max-w-[140px] truncate overflow-hidden whitespace-nowrap">
-                      {row.perusahaan}
+                    <td className="px-4 py-3 text-xs text-zinc-700 align-top max-w-[180px] truncate">
+                      <Dash>{row.namaPerusahaan}</Dash>
                     </td>
-                    <td className="px-3 py-3 text-center text-xs font-semibold text-zinc-600">
-                      {row.acc}
+                    <td className="px-3 py-3 text-center text-xs text-zinc-600 align-top max-w-[160px] truncate">
+                      <Dash>{row.acc}</Dash>
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.tglTerakhirTraining}
+                    <td className="px-4 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
+                      {formatTanggal(row.tglTerakhirTraining)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-600 max-w-[200px]">
-                      {row.alamat}
+                    <td className="px-4 py-3 text-xs text-zinc-600 align-top max-w-[240px]">
+                      <Dash>{row.alamat}</Dash>
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.noTelepon}
+                    <td className="px-4 py-3 text-xs text-zinc-600 align-top">
+                      <Dash>{row.telp}</Dash>
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.update}
+                    <td className="px-4 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
+                      {formatTanggal(row.updateTerakhir)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.lineOfBiz}
+                    <td className="px-4 py-3 text-xs text-zinc-600 align-top">
+                      <Dash>{row.liniBisnis}</Dash>
                     </td>
                   </tr>
                 ))
@@ -236,40 +185,46 @@ export default function DaftarPerusahaanTBKPage() {
           <p className="text-[11px] text-zinc-400">
             Menampilkan{" "}
             <span className="font-semibold text-zinc-600">
-              {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
-              {Math.min(currentPage * PAGE_SIZE, filtered.length)}
+              {pagination.total === 0
+                ? 0
+                : (page - 1) * pagination.pageSize + 1}
+              –{Math.min(page * pagination.pageSize, pagination.total)}
             </span>{" "}
             dari{" "}
             <span className="font-semibold text-zinc-600">
-              {filtered.length}
+              {pagination.total}
             </span>{" "}
             data
           </p>
 
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage((p) => p - 1)}
-              disabled={currentPage === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               ‹ Sebelumnya
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setCurrentPage(p)}
-                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                  p === currentPage
-                    ? "bg-emerald-500 text-white"
-                    : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+              (p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
+                    p === page
+                      ? "bg-emerald-500 text-white"
+                      : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                  }`}
+                >
+                  {p}
+                </button>
+              ),
+            )}
             <button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage === totalPages}
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
+              disabled={page === pagination.totalPages}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               Selanjutnya ›

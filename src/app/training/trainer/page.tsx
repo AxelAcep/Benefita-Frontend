@@ -25,8 +25,10 @@ export default function ManajemenTrainerPage() {
     loading,
     page,
     search,
+    status,
     setPage,
     handleSearch,
+    handleStatusChange,
     refresh,
   } = useTrainers();
 
@@ -95,6 +97,7 @@ export default function ManajemenTrainerPage() {
       subjekKhusus: data.subyekKhusus ?? undefined,
       keterangan: data.keterangan ?? undefined,
       tugas: data.tugas ?? undefined,
+      statusAktif: data.statusAktif ?? true,
     };
 
     if (selectedItem) {
@@ -188,6 +191,23 @@ export default function ManajemenTrainerPage() {
       className: "text-center font-semibold text-zinc-700",
     },
     {
+      key: "statusAktif",
+      label: "Status",
+      headerClassName: "text-center",
+      className: "text-center",
+      render: (_val, row) => (
+        <span
+          className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
+            row.statusAktif
+              ? "bg-emerald-50 text-emerald-600"
+              : "bg-zinc-100 text-zinc-500"
+          }`}
+        >
+          {row.statusAktif ? "Aktif" : "Nonaktif"}
+        </span>
+      ),
+    },
+    {
       key: "detail",
       label: "Detail",
       render: (_val, row) => (
@@ -230,13 +250,28 @@ export default function ManajemenTrainerPage() {
           onSearchChange={handleSearch}
           isLoading={loading}
           actionSlot={
-            <button
-              onClick={handleOpenAdd}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Tambah Data Trainer
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value={status}
+                onChange={(e) =>
+                  handleStatusChange(
+                    e.target.value as "aktif" | "nonaktif" | "",
+                  )
+                }
+                className="px-2.5 py-2 border border-zinc-200 rounded-xl text-xs text-zinc-600 outline-none focus:border-emerald-300"
+              >
+                <option value="">Semua Status</option>
+                <option value="aktif">Aktif</option>
+                <option value="nonaktif">Nonaktif</option>
+              </select>
+              <button
+                onClick={handleOpenAdd}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Tambah Data Trainer
+              </button>
+            </div>
           }
         />
 

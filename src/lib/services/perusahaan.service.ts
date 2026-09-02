@@ -1244,3 +1244,430 @@ export async function getLiniBisnis(): Promise<LiniBisnisResponse> {
 
   return { data: data.data };
 }
+
+// ─────────────────────────────────────────────
+// PERUSAHAAN TBK — kategoriCpn mengandung "Tbk" (posisi/kapitalisasi bebas)
+// ─────────────────────────────────────────────
+
+export interface PerusahaanTbkItem {
+  noInduk: string;
+  namaPerusahaan: string | null;
+  acc: string | null;
+  alamat: string | null;
+  telp: string | null;
+  updateTerakhir: string | null;
+  liniBisnis: string | null;
+  tglTerakhirTraining: string | null;
+}
+
+export interface PerusahaanTbkPagination {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface GetPerusahaanTbkResponse {
+  data: PerusahaanTbkItem[];
+  pagination: PerusahaanTbkPagination;
+}
+
+export async function getPerusahaanTbkList(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sort?: "asc" | "desc";
+}): Promise<GetPerusahaanTbkResponse> {
+  const query = new URLSearchParams();
+
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  if (params?.search) query.append("search", params.search);
+  if (params?.sort) query.append("sort", params.sort);
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan-tbk?${query.toString()}`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data perusahaan Tbk.");
+  }
+
+  return { data: data.data, pagination: data.pagination };
+}
+
+// ─────────────────────────────────────────────
+// PERUSAHAAN PROPER — perusahaan yang punya riwayat rating PROPER
+// ─────────────────────────────────────────────
+
+export type PeringkatProper =
+  | "EMAS"
+  | "HIJAU"
+  | "BIRU"
+  | "MERAH"
+  | "HITAM"
+  | "DITUNDA"
+  | "MASALAH"
+  | "TUTUP"
+  | "DITANGGUHKAN"
+  | "MERAH_MUDA";
+
+export interface PerusahaanProperItem {
+  noInduk: string;
+  namaPerusahaan: string | null;
+  acc: string | null;
+  alamat: string | null;
+  telp: string | null;
+  email: string | null;
+  updatter: string | null;
+  updateTerakhir: string | null;
+  kategoriCpn: string | null;
+  liniBisnis: string | null;
+  tahunPeringkat: string | null;
+}
+
+export interface PerusahaanProperPagination {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface GetPerusahaanProperResponse {
+  data: PerusahaanProperItem[];
+  pagination: PerusahaanProperPagination;
+}
+
+export async function getPerusahaanProperList(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sort?: "asc" | "desc";
+  peringkat?: PeringkatProper | "";
+  liniBisnisId?: number | "";
+}): Promise<GetPerusahaanProperResponse> {
+  const query = new URLSearchParams();
+
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  if (params?.search) query.append("search", params.search);
+  if (params?.sort) query.append("sort", params.sort);
+  if (params?.peringkat) query.append("peringkat", params.peringkat);
+  if (params?.liniBisnisId) query.append("liniBisnisId", String(params.liniBisnisId));
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan-proper?${query.toString()}`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data perusahaan Proper.");
+  }
+
+  return { data: data.data, pagination: data.pagination };
+}
+
+// ─────────────────────────────────────────────
+// PERUSAHAAN ISO — kategoriCpn mengandung "ISO"
+// ─────────────────────────────────────────────
+
+export interface PerusahaanIsoItem {
+  noInduk: string;
+  namaPerusahaan: string | null;
+  alamat: string | null;
+  telp: string | null;
+  updatter: string | null;
+  updateTerakhir: string | null;
+  kategoriCpn: string | null;
+  liniBisnis: string | null;
+  tahunPeringkat: string | null;
+  env: string | null;
+  csr: string | null;
+  tsm: string | null;
+  epm: string | null;
+}
+
+export interface PerusahaanIsoPagination {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface GetPerusahaanIsoResponse {
+  data: PerusahaanIsoItem[];
+  pagination: PerusahaanIsoPagination;
+}
+
+export async function getPerusahaanIsoList(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sort?: "asc" | "desc";
+  liniBisnisId?: number | "";
+}): Promise<GetPerusahaanIsoResponse> {
+  const query = new URLSearchParams();
+
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  if (params?.search) query.append("search", params.search);
+  if (params?.sort) query.append("sort", params.sort);
+  if (params?.liniBisnisId) query.append("liniBisnisId", String(params.liniBisnisId));
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan-iso?${query.toString()}`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data perusahaan ISO.");
+  }
+
+  return { data: data.data, pagination: data.pagination };
+}
+
+// ─────────────────────────────────────────────
+// PERUSAHAAN PRIORITAS — filter by Prioritas MA / Prioritas AE
+// Rentangnya cuma huruf A–E. Data aslinya kotor (kecampur tanggal/nama di
+// belakang huruf), jadi backend filter pakai prefix match (startsWith), bukan
+// exact match. Kolom Kategori & Akun sengaja belum diimplementasi — belum
+// ketemu field DB yang jadi sumbernya (lihat catatan di controller backend).
+// ─────────────────────────────────────────────
+
+export const PRIORITAS_LETTER_OPTIONS = ["A", "B", "C", "D", "E"] as const;
+
+export interface PerusahaanPrioritasItem {
+  noInduk: string;
+  namaPerusahaan: string | null;
+  alamat: string | null;
+  telp: string | null;
+  email: string | null;
+  prioritasMa: string | null;
+  prioritasAe: string | null;
+  updatter: string | null;
+  updateTerakhir: string | null;
+  env: string | null;
+  csr: string | null;
+}
+
+export interface PerusahaanPrioritasPagination {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface GetPerusahaanPrioritasResponse {
+  data: PerusahaanPrioritasItem[];
+  pagination: PerusahaanPrioritasPagination;
+}
+
+export async function getPerusahaanPrioritasList(params: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  prioritasMa?: string;
+  prioritasAe?: string;
+}): Promise<GetPerusahaanPrioritasResponse> {
+  const query = new URLSearchParams();
+
+  if (params.page) query.append("page", String(params.page));
+  if (params.limit) query.append("limit", String(params.limit));
+  if (params.search) query.append("search", params.search);
+  if (params.prioritasMa) query.append("prioritasMa", params.prioritasMa);
+  if (params.prioritasAe) query.append("prioritasAe", params.prioritasAe);
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan-prioritas?${query.toString()}`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data.message || "Gagal mengambil data perusahaan prioritas.",
+    );
+  }
+
+  return { data: data.data, pagination: data.pagination };
+}
+
+// ─────────────────────────────────────────────
+// PERUSAHAAN VENDOR — cuma perusahaan yang field vendor-nya keisi (bukan
+// null/kosong). Datanya nyaris kosong semua di DB (cuma segelintir yang
+// beneran keisi), jadi wajar kalau hasilnya sedikit.
+// ─────────────────────────────────────────────
+
+export interface PerusahaanVendorItem {
+  noInduk: string;
+  namaPerusahaan: string | null;
+  acc: string[];
+  status: string | null;
+  expired: string | null;
+}
+
+export interface PerusahaanVendorPagination {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface GetPerusahaanVendorResponse {
+  data: PerusahaanVendorItem[];
+  pagination: PerusahaanVendorPagination;
+}
+
+export async function getPerusahaanVendorList(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}): Promise<GetPerusahaanVendorResponse> {
+  const query = new URLSearchParams();
+
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  if (params?.search) query.append("search", params.search);
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan-vendor?${query.toString()}`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data perusahaan vendor.");
+  }
+
+  return { data: data.data, pagination: data.pagination };
+}
+
+// ─────────────────────────────────────────────
+// PERUSAHAAN BY ALAMAT — semua perusahaan, diurutkan berdasarkan alamat
+// ─────────────────────────────────────────────
+
+export interface PerusahaanByAlamatItem {
+  noInduk: string;
+  namaPerusahaan: string | null;
+  alamat: string | null;
+  alamatFactory: string | null;
+  acc: string | null;
+}
+
+export interface PerusahaanByAlamatPagination {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface GetPerusahaanByAlamatResponse {
+  data: PerusahaanByAlamatItem[];
+  pagination: PerusahaanByAlamatPagination;
+}
+
+export async function getPerusahaanByAlamatList(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}): Promise<GetPerusahaanByAlamatResponse> {
+  const query = new URLSearchParams();
+
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  if (params?.search) query.append("search", params.search);
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan-by-alamat?${query.toString()}`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data.message || "Gagal mengambil data perusahaan berdasarkan alamat.",
+    );
+  }
+
+  return { data: data.data, pagination: data.pagination };
+}
+
+// ─────────────────────────────────────────────
+// PERUSAHAAN CUSTOMER — semua perusahaan (jenisInstansi PERUSAHAAN), riwayat
+// pelatihan pertama/terakhir, rating PROPER, PIC ENV/CSR/TSM/EPM
+// ─────────────────────────────────────────────
+
+export interface PelatihanRange {
+  tglMulai: string | null;
+  tglSelesai: string | null;
+}
+
+export interface PerusahaanCustomerItem {
+  noInduk: string;
+  namaPerusahaan: string | null;
+  env: string | null;
+  csr: string | null;
+  tsm: string | null;
+  epm: string | null;
+  proper: string | null;
+  pelatihanPertama: PelatihanRange;
+  pelatihanTerakhir: PelatihanRange;
+}
+
+export interface PerusahaanCustomerPagination {
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface GetPerusahaanCustomerResponse {
+  data: PerusahaanCustomerItem[];
+  pagination: PerusahaanCustomerPagination;
+}
+
+export async function getPelatihanTahunOptions(): Promise<number[]> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/pelatihan-tahun-options`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil opsi tahun pelatihan.");
+  }
+
+  return data.data;
+}
+
+export async function getPerusahaanCustomerList(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  tahun?: number | "";
+}): Promise<GetPerusahaanCustomerResponse> {
+  const query = new URLSearchParams();
+
+  if (params?.page) query.append("page", String(params.page));
+  if (params?.limit) query.append("limit", String(params.limit));
+  if (params?.search) query.append("search", params.search);
+  if (params?.tahun) query.append("tahun", String(params.tahun));
+
+  const res = await fetchWithAuth(
+    `${API_URL}/api/database/perusahaan-customer?${query.toString()}`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data.message || "Gagal mengambil data perusahaan customer.",
+    );
+  }
+
+  return { data: data.data, pagination: data.pagination };
+}

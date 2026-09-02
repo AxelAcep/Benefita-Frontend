@@ -13,7 +13,6 @@ import TableListPeserta from "./table-list-peserta";
 import ModalTambahPeserta, {
   type TambahPesertaFormData,
 } from "./modal-tambah-peserta";
-import PageKonfirmasi from "./konfirmasi/[idPeserta]/page";
 import PageKwitansi from "./kwitansi/[idPeserta]/page";
 import PageInvoice from "./invoice/[idPeserta]/page";
 import Notification from "@/components/base/notifications"; // sesuaikan path
@@ -43,8 +42,6 @@ export default function InputDataPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPesertaId, setEditingPesertaId] = useState<string | null>(null);
-  const [konfirmasiPeserta, setKonfirmasiPeserta] =
-    useState<PesertaTrainingListItem | null>(null);
   const [invoicePeserta, setInvoicePeserta] =
     useState<PesertaTrainingListItem | null>(null);
   const [kwitansiPeserta, setKwitansiPeserta] =
@@ -241,23 +238,6 @@ export default function InputDataPage() {
         }
       : undefined;
 
-  if (konfirmasiPeserta) {
-    return (
-      <PageKonfirmasi
-        initialData={{
-          namaPeserta: konfirmasiPeserta.nama,
-          instansi: konfirmasiPeserta.perusahaan?.company ?? "",
-        }}
-        onBack={() => setKonfirmasiPeserta(null)}
-        onSimpan={(data) => {
-          console.log("Simpan konfirmasi:", data);
-          setKonfirmasiPeserta(null);
-        }}
-        onDownloadPdf={(data) => console.log("Download PDF konfirmasi:", data)}
-      />
-    );
-  }
-
   if (invoicePeserta) return <PageInvoice />;
   if (kwitansiPeserta) return <PageKwitansi />;
 
@@ -333,7 +313,8 @@ export default function InputDataPage() {
           onTambah={handleTambah}
           aksiHandlers={{
             onEdit: handleEdit,
-            onKonfirmasi: (p) => setKonfirmasiPeserta(p),
+            onKonfirmasi: (p) =>
+              router.push(`/input/${noJadwal}/konfirmasi/${p.id}`),
             onCetakKwitansi: (p) =>
               router.push(`/input/${noJadwal}/kwitansi/${p.id}`),
             onCetakInvoice: (p) =>

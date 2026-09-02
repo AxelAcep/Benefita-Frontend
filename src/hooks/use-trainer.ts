@@ -33,6 +33,7 @@ function mapListItem(item: TrainerListItem): Trainer {
     keterangan: null,
     tugas: item.tugas ?? null,
     jumlahHari: item.jumlahHari ?? 0,
+    statusAktif: item.statusAktif,
   };
 }
 
@@ -54,6 +55,7 @@ function mapDetail(item: TrainerAPI): Trainer {
     keterangan: item.keterangan ?? null,
     tugas: item.tugas ?? null,
     jumlahHari: 0, // tidak ada di detail response
+    statusAktif: item.statusAktif,
   };
 }
 
@@ -70,6 +72,7 @@ export function useTrainers() {
     totalPages: 0,
   });
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"aktif" | "nonaktif" | "">("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(false);
@@ -79,7 +82,12 @@ export function useTrainers() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getTrainers({ page, limit, search });
+      const res = await getTrainers({
+        page,
+        limit,
+        search,
+        status: status || undefined,
+      });
       setData(res.data.map(mapListItem));
       setPagination(res.pagination);
     } catch (err: any) {
@@ -87,7 +95,7 @@ export function useTrainers() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search]);
+  }, [page, limit, search, status]);
 
   useEffect(() => {
     fetch();
@@ -98,17 +106,24 @@ export function useTrainers() {
     setPage(1);
   };
 
+  const handleStatusChange = (value: "aktif" | "nonaktif" | "") => {
+    setStatus(value);
+    setPage(1);
+  };
+
   return {
     data,
     pagination,
     loading,
     error,
     search,
+    status,
     page,
     limit,
     setPage,
     setLimit,
     handleSearch,
+    handleStatusChange,
     refresh: fetch,
   };
 }

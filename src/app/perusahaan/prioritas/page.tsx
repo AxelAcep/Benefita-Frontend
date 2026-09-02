@@ -1,246 +1,81 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { LayoutList } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Anchor from "@/components/base/anchor";
+import { usePerusahaanPrioritas } from "@/hooks/use-perusahaan-prioritas";
+import { PRIORITAS_LETTER_OPTIONS } from "@/lib/services/perusahaan.service";
 
 // ---------------------------------------------------------------------------
-// Types
+// Helpers
 // ---------------------------------------------------------------------------
 
-interface PerusahaanPrioritas {
-  id: number;
-  noInduk: string;
-  perusahaan: string;
-  prioMA: string;
-  prioAE: string;
-  env: string;
-  csr: string;
-  alamat: string;
-  noTeleponEmail: string;
-  updBy: string;
-  tanggal: string;
-  kategori: string;
-  akun: string;
+function formatTanggal(iso: string | null) {
+  if (!iso) return <span className="text-zinc-300">-</span>;
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-// ---------------------------------------------------------------------------
-// Dummy data
-// ---------------------------------------------------------------------------
+function Dash({ children }: { children: React.ReactNode }) {
+  if (!children) return <span className="text-zinc-300">-</span>;
+  return <>{children}</>;
+}
 
-const DUMMY_DATA: PerusahaanPrioritas[] = [
-  {
-    id: 1,
-    noInduk: "PR00621",
-    perusahaan: "PT. ABC",
-    prioMA: "p120 - Inhouse Training",
-    prioAE: "A201114",
-    env: "EE240528; MA240",
-    csr: "SL260112;MA2601",
-    alamat: "Wisma KIE, Jl. Ammonia Kav. 79 Bontang - Kaltim 75314",
-    noTeleponEmail:
-      "0548-21133, 552 909 |Training: 021-365 646 |Training: 330 243, 336 317 551 354 |laboratorium@21168, 551 107, 23220, 21202; 0541-43100; 021-330 243, 336 317 |infocenter@badaking.com; sudaryan@badaking.co.id; bambang.sukindar@badaking.co.id",
-    updBy: "MULYADI",
-    tanggal: "03 Jul 25",
-    kategori: "BTE",
-    akun: "ENI",
-  },
-  {
-    id: 2,
-    noInduk: "PR07304",
-    perusahaan: "PT. BCA",
-    prioMA: "p120 - Inhouse Training",
-    prioAE: "A201114",
-    env: "EE251212;MA2512",
-    csr: "NW251229;MA2512",
-    alamat:
-      "Kawasan Industri Delta Silikon, Jl. MH Thamrin Blok A3-1 Lippo Cikarang Kab. Bekasi - Jabar 17550",
-    noTeleponEmail:
-      "024-866 4117, 866 4123; 021-89907333-37; 021-42873888-89 | Ade.Hermanto@Kalbefarma.com; Corp.Comm@kalbe.co.id",
-    updBy: "MULYADI",
-    tanggal: "03 Jul 25",
-    kategori: "BTE",
-    akun: "ENI",
-  },
-  {
-    id: 3,
-    noInduk: "PR02434",
-    perusahaan: "PT. XYZ",
-    prioMA: "p120 - Inhouse Training",
-    prioAE: "A201114",
-    env: "EE250627;MA2506",
-    csr: "AM231030; -;ND2",
-    alamat: "Jl. Raya Balongan Km. 09 Balongan, Indramayu - Jabar 45217",
-    noTeleponEmail: "0234-428 232, 428 629, 428 183, 0234 525 5200/5233/5230",
-    updBy: "MULYADI",
-    tanggal: "03 Jul 25",
-    kategori: "BTE",
-    akun: "ENI",
-  },
-  {
-    id: 4,
-    noInduk: "PR08091",
-    perusahaan: "PT. ACC",
-    prioMA: "p120 - Inhouse Training",
-    prioAE: "A201114",
-    env: "EE251231;MA2512",
-    csr: "SL251230;MA2512",
-    alamat:
-      "Jl. Raya Jaya Negara Kp. Kabandungan, Kec.Kalapa­runggal Kab. Sukabumi - Jabar",
-    noTeleponEmail:
-      "0286-225540 ext 56616; +62-215731020 | afpo@chevron.com; Ade.Daniia@chevron.com; bediona@chevron.com; rsuratino@chevron.com; resl@chevron.com; carolina.gita@chevron.com; luciagb@chevron.com",
-    updBy: "MULYADI",
-    tanggal: "03 Jul 25",
-    kategori: "BTE",
-    akun: "ENI",
-  },
-  {
-    id: 5,
-    noInduk: "PR03312",
-    perusahaan: "PT. DEF",
-    prioMA: "p110 - Reguler",
-    prioAE: "A201115",
-    env: "EE250101;MA2501",
-    csr: "SL250102;MA2501",
-    alamat: "Jl. Gatot Subroto Kav. 51 Jakarta Selatan 12950",
-    noTeleponEmail:
-      "021-5252-1111; 021-5252-1122 | info@def.co.id; marketing@def.co.id",
-    updBy: "SISKA",
-    tanggal: "10 Agt 25",
-    kategori: "MAN",
-    akun: "BRI",
-  },
-  {
-    id: 6,
-    noInduk: "PR04455",
-    perusahaan: "PT. GHI",
-    prioMA: "p110 - Reguler",
-    prioAE: "A201115",
-    env: "EE250201;MA2502",
-    csr: "AM250203;MA2502",
-    alamat: "Jl. HR Rasuna Said Blok X-5 Kav. 2-3 Kuningan Jakarta Selatan",
-    noTeleponEmail:
-      "021-527-7222; 021-527-8333 | hrd@ghi.co.id; contact@ghi.co.id",
-    updBy: "SISKA",
-    tanggal: "10 Agt 25",
-    kategori: "MAN",
-    akun: "BRI",
-  },
-  {
-    id: 7,
-    noInduk: "PR05678",
-    perusahaan: "PT. JKL",
-    prioMA: "p130 - VIP",
-    prioAE: "A201116",
-    env: "EE250301;MA2503",
-    csr: "NW250302;MA2503",
-    alamat: "Jl. Jend. Sudirman Kav. 52-53 Jakarta Pusat 10220",
-    noTeleponEmail:
-      "021-515-5000; 021-515-6000 | info@jkl.co.id; vip@jkl.co.id",
-    updBy: "REZA",
-    tanggal: "15 Sep 25",
-    kategori: "BTE",
-    akun: "MND",
-  },
-  {
-    id: 8,
-    noInduk: "PR06789",
-    perusahaan: "PT. MNO",
-    prioMA: "p130 - VIP",
-    prioAE: "A201116",
-    env: "EE250401;MA2504",
-    csr: "SL250402;MA2504",
-    alamat: "Jl. TB Simatupang No. 88 Jakarta Selatan 12560",
-    noTeleponEmail: "021-789-1111; 021-789-2222 | cs@mno.co.id; info@mno.co.id",
-    updBy: "REZA",
-    tanggal: "15 Sep 25",
-    kategori: "BTE",
-    akun: "MND",
-  },
-];
+function AksesBadge({
+  val,
+  color,
+}: {
+  val: string | null;
+  color: { bg: string; text: string };
+}) {
+  if (!val) return <span className="text-zinc-300 select-none">–</span>;
+  return (
+    <span
+      className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold tracking-wide ${color.bg} ${color.text}`}
+    >
+      {val}
+    </span>
+  );
+}
 
-const MA_OPTIONS = ["P1", "P2", "P3"];
-const AE_OPTIONS = ["A", "B", "C"];
-const KATEGORI_OPTIONS = ["BTE", "MAN", "PRO"];
-const AKUN_OPTIONS = ["ENI", "BRI", "MND"];
+const AKSES_COLOR = {
+  env: { bg: "bg-blue-100", text: "text-blue-700" },
+  csr: { bg: "bg-emerald-100", text: "text-emerald-800" },
+};
+
+const selectClass =
+  "pl-2.5 pr-6 py-1.5 border border-zinc-200 rounded-lg text-[11px] text-zinc-600 outline-none focus:border-emerald-300 transition-all bg-white appearance-none cursor-pointer";
+const chevronStyle = {
+  backgroundImage:
+    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
+  backgroundRepeat: "no-repeat" as const,
+  backgroundPosition: "right 6px center",
+};
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function DaftarPerusahaanPrioritasPage() {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const [selectedMA, setSelectedMA] = useState("");
-  const [selectedAE, setSelectedAE] = useState("");
-  const [selectedKategori, setSelectedKategori] = useState("");
-  const [selectedAkun, setSelectedAkun] = useState("");
-
-  const [appliedMA, setAppliedMA] = useState("");
-  const [appliedAE, setAppliedAE] = useState("");
-  const [appliedKategori, setAppliedKategori] = useState("");
-  const [appliedAkun, setAppliedAkun] = useState("");
-
-  const PAGE_SIZE = 10;
-
-  const handleTerapkan = () => {
-    setAppliedMA(selectedMA);
-    setAppliedAE(selectedAE);
-    setAppliedKategori(selectedKategori);
-    setAppliedAkun(selectedAkun);
-    setCurrentPage(1);
-  };
-
-  const hasApplied =
-    appliedMA !== "" ||
-    appliedAE !== "" ||
-    appliedKategori !== "" ||
-    appliedAkun !== "";
-
-  const filtered = hasApplied
-    ? DUMMY_DATA.filter((d) => {
-        const matchSearch =
-          d.perusahaan.toLowerCase().includes(search.toLowerCase()) ||
-          d.noInduk.toLowerCase().includes(search.toLowerCase());
-        // If a filter is set, match it; if not set, allow all
-        const matchMA = appliedMA
-          ? d.prioAE.startsWith(
-              appliedMA === "P1"
-                ? "A201114"
-                : appliedMA === "P2"
-                  ? "A201115"
-                  : "A201116",
-            )
-          : true;
-        const matchAE = appliedAE ? true : true; // demo: always pass
-        const matchKategori = appliedKategori
-          ? d.kategori === appliedKategori
-          : true;
-        const matchAkun = appliedAkun ? d.akun === appliedAkun : true;
-        return matchSearch && matchMA && matchAE && matchKategori && matchAkun;
-      })
-    : [];
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  // Build label for applied filters
-  const appliedLabels = [appliedMA, appliedAE, appliedKategori, appliedAkun]
-    .filter(Boolean)
-    .join(", ");
-
-  const selectClass =
-    "pl-2.5 pr-6 py-1.5 border border-zinc-200 rounded-lg text-[11px] text-zinc-600 outline-none focus:border-emerald-300 transition-all bg-white appearance-none cursor-pointer";
-  const chevronStyle = {
-    backgroundImage:
-      "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
-    backgroundRepeat: "no-repeat" as const,
-    backgroundPosition: "right 6px center",
-  };
+  const {
+    data,
+    pagination,
+    loading,
+    search,
+    page,
+    prioritasMa,
+    prioritasAe,
+    hasApplied,
+    setPrioritasMa,
+    setPrioritasAe,
+    handleSearch,
+    handleTerapkan,
+    handlePageChange,
+  } = usePerusahaanPrioritas();
 
   return (
     <AppLayout
@@ -255,7 +90,6 @@ export default function DaftarPerusahaanPrioritasPage() {
       <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="px-5 py-3 border-b border-zinc-100">
-          {/* Row 1 */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Title */}
             <div className="flex items-center gap-2 mr-2">
@@ -273,13 +107,13 @@ export default function DaftarPerusahaanPrioritasPage() {
                 Prioritas MA
               </span>
               <select
-                value={selectedMA}
-                onChange={(e) => setSelectedMA(e.target.value)}
+                value={prioritasMa}
+                onChange={(e) => setPrioritasMa(e.target.value)}
                 className={selectClass}
                 style={chevronStyle}
               >
-                <option value="">P1</option>
-                {MA_OPTIONS.map((o) => (
+                <option value="">Semua</option>
+                {PRIORITAS_LETTER_OPTIONS.map((o) => (
                   <option key={o} value={o}>
                     {o}
                   </option>
@@ -293,13 +127,13 @@ export default function DaftarPerusahaanPrioritasPage() {
                 Prioritas AE
               </span>
               <select
-                value={selectedAE}
-                onChange={(e) => setSelectedAE(e.target.value)}
+                value={prioritasAe}
+                onChange={(e) => setPrioritasAe(e.target.value)}
                 className={selectClass}
                 style={chevronStyle}
               >
-                <option value="">A</option>
-                {AE_OPTIONS.map((o) => (
+                <option value="">Semua</option>
+                {PRIORITAS_LETTER_OPTIONS.map((o) => (
                   <option key={o} value={o}>
                     {o}
                   </option>
@@ -307,45 +141,22 @@ export default function DaftarPerusahaanPrioritasPage() {
               </select>
             </div>
 
-            {/* Filter Kategori */}
+            {/* Filter Kategori & Akun — dikomen dulu, belum ketemu field DB
+                sumbernya. Lihat catatan di perusahaan.controller.js. */}
+            {/*
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-zinc-500 font-medium">
-                Kategori
-              </span>
-              <select
-                value={selectedKategori}
-                onChange={(e) => setSelectedKategori(e.target.value)}
-                className={selectClass}
-                style={chevronStyle}
-              >
-                <option value="">BTE</option>
-                {KATEGORI_OPTIONS.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
+              <span className="text-[11px] text-zinc-500 font-medium">Kategori</span>
+              <select className={selectClass} style={chevronStyle}>
+                <option value="">Semua</option>
               </select>
             </div>
-
-            {/* Filter Akun */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-zinc-500 font-medium">
-                Akun
-              </span>
-              <select
-                value={selectedAkun}
-                onChange={(e) => setSelectedAkun(e.target.value)}
-                className={selectClass}
-                style={chevronStyle}
-              >
-                <option value="">ENI</option>
-                {AKUN_OPTIONS.map((o) => (
-                  <option key={o} value={o}>
-                    {o}
-                  </option>
-                ))}
+              <span className="text-[11px] text-zinc-500 font-medium">Akun</span>
+              <select className={selectClass} style={chevronStyle}>
+                <option value="">Semua</option>
               </select>
             </div>
+            */}
 
             {/* Terapkan */}
             <button
@@ -371,23 +182,20 @@ export default function DaftarPerusahaanPrioritasPage() {
               </svg>
               <input
                 type="text"
-                placeholder="Cari informasi..."
+                placeholder="Cari nama perusahaan atau no induk..."
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="w-full sm:w-52 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
               />
             </div>
           </div>
 
-          {/* Row 2: label filter aktif */}
-          {hasApplied && appliedLabels && (
+          {hasApplied && (
             <p className="mt-2 text-[11px] text-zinc-500">
               Menampilkan data dari{" "}
               <span className="font-semibold text-zinc-700">
-                &quot;{appliedLabels}&quot;
+                &quot;{[prioritasMa, prioritasAe].filter(Boolean).join(", ")}
+                &quot;
               </span>
             </p>
           )}
@@ -395,25 +203,23 @@ export default function DaftarPerusahaanPrioritasPage() {
 
         {/* Body */}
         {!hasApplied ? (
-          /* Empty state */
           <div className="flex flex-col items-center justify-center py-24 gap-2">
             <p className="text-sm font-bold text-zinc-700">
-              Silahkan Pilih MA, AE, Kategori, Akun
+              Silahkan Pilih Prioritas MA / Prioritas AE
             </p>
             <p className="text-xs text-zinc-400">
-              Pilih input yang ingin ditampilkan
+              Pilih input yang ingin ditampilkan, lalu klik Terapkan
             </p>
           </div>
         ) : (
-          /* Table */
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1400px]">
+            <table className="w-full min-w-[1300px]">
               <thead>
                 <tr className="border-b border-zinc-100 bg-zinc-50/60">
                   <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-10">
-                    No ↕
+                    No
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-36">
+                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">
                     Prio MA
                   </th>
                   <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
@@ -422,33 +228,41 @@ export default function DaftarPerusahaanPrioritasPage() {
                   <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
                     No Induk
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-32">
+                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-36">
                     Perusahaan/Instansi
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-32">
-                    <div>AE</div>
-                    <div>ENV</div>
+                  <th className="px-3 py-2 text-[10px] font-bold text-center w-16 bg-blue-100 text-blue-700">
+                    ENV
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-32">
+                  <th className="px-3 py-2 text-[10px] font-bold text-center w-16 bg-emerald-100 text-emerald-800">
                     CSR
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-44">
+                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-80">
                     Alamat
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-52">
+                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-56">
                     No. Telepon & Email
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-20">
+                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
                     Upd. By
                   </th>
-                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-20">
+                  <th className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
                     Tanggal
                   </th>
                 </tr>
               </thead>
 
               <tbody>
-                {paginated.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td
+                      colSpan={11}
+                      className="px-4 py-12 text-center text-xs text-zinc-400"
+                    >
+                      Memuat data...
+                    </td>
+                  </tr>
+                ) : data.length === 0 ? (
                   <tr>
                     <td
                       colSpan={11}
@@ -458,43 +272,56 @@ export default function DaftarPerusahaanPrioritasPage() {
                     </td>
                   </tr>
                 ) : (
-                  paginated.map((row, i) => (
+                  data.map((row, i) => (
                     <tr
-                      key={row.id}
+                      key={row.noInduk}
                       className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors align-top"
                     >
                       <td className="px-3 py-3 text-xs text-zinc-400">
-                        {(currentPage - 1) * PAGE_SIZE + i + 1}
+                        {(page - 1) * pagination.pageSize + i + 1}
                       </td>
                       <td className="px-3 py-3 text-xs text-zinc-600">
-                        {row.prioMA}
+                        <Dash>{row.prioritasMa}</Dash>
                       </td>
                       <td className="px-3 py-3 text-xs text-zinc-600">
-                        {row.prioAE}
+                        <Dash>{row.prioritasAe}</Dash>
                       </td>
-                      <td className="px-3 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                        {row.noInduk}
+                      <td className="px-3 py-3 text-xs whitespace-nowrap">
+                        <Anchor
+                          name={row.noInduk}
+                          route={`/database/perusahaan/${row.noInduk}`}
+                        />
                       </td>
-                      <td className="px-3 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                        {row.perusahaan}
+                      <td className="px-3 py-3 text-xs text-zinc-700 max-w-[160px] truncate">
+                        <Dash>{row.namaPerusahaan}</Dash>
                       </td>
-                      <td className="px-3 py-3 text-xs text-zinc-600 leading-relaxed">
-                        {row.env}
+                      <td className="px-3 py-3 text-center">
+                        <AksesBadge val={row.env} color={AKSES_COLOR.env} />
                       </td>
-                      <td className="px-3 py-3 text-xs text-zinc-600 leading-relaxed">
-                        {row.csr}
+                      <td className="px-3 py-3 text-center">
+                        <AksesBadge val={row.csr} color={AKSES_COLOR.csr} />
                       </td>
-                      <td className="px-3 py-3 text-xs text-zinc-600 leading-relaxed">
-                        {row.alamat}
+                      <td className="px-3 py-3 text-xs text-zinc-600 leading-relaxed max-w-[320px]">
+                        <Dash>{row.alamat}</Dash>
                       </td>
-                      <td className="px-3 py-3 text-xs text-zinc-600 leading-relaxed whitespace-pre-line">
-                        {row.noTeleponEmail}
+                      <td className="px-3 py-3 text-xs text-zinc-600 leading-relaxed max-w-[220px] break-words">
+                        {row.telp || row.email ? (
+                          <>
+                            <Dash>{row.telp}</Dash>
+                            {row.telp && row.email && (
+                              <span className="text-zinc-300"> | </span>
+                            )}
+                            <Dash>{row.email}</Dash>
+                          </>
+                        ) : (
+                          <span className="text-zinc-300">-</span>
+                        )}
                       </td>
                       <td className="px-3 py-3 text-xs text-zinc-600 whitespace-nowrap">
-                        {row.updBy}
+                        <Dash>{row.updatter}</Dash>
                       </td>
                       <td className="px-3 py-3 text-xs text-zinc-600 whitespace-nowrap">
-                        {row.tanggal}
+                        {formatTanggal(row.updateTerakhir)}
                       </td>
                     </tr>
                   ))
@@ -509,35 +336,35 @@ export default function DaftarPerusahaanPrioritasPage() {
           <p className="text-[11px] text-zinc-400">
             Menampilkan{" "}
             <span className="font-semibold text-zinc-600">
-              {!hasApplied || filtered.length === 0
+              {!hasApplied || pagination.total === 0
                 ? 0
-                : (currentPage - 1) * PAGE_SIZE + 1}
-              –{Math.min(currentPage * PAGE_SIZE, filtered.length)}
+                : (page - 1) * pagination.pageSize + 1}
+              –{Math.min(page * pagination.pageSize, pagination.total)}
             </span>{" "}
             dari{" "}
             <span className="font-semibold text-zinc-600">
-              {filtered.length}
+              {pagination.total}
             </span>{" "}
             data
           </p>
 
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage((p) => p - 1)}
-              disabled={currentPage === 1}
+              onClick={() => handlePageChange(Math.max(1, page - 1))}
+              disabled={!hasApplied || page === 1}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               ‹ Sebelumnya
             </button>
             {Array.from(
-              { length: hasApplied ? totalPages : 1 },
+              { length: hasApplied ? pagination.totalPages : 0 },
               (_, i) => i + 1,
             ).map((p) => (
               <button
                 key={p}
-                onClick={() => setCurrentPage(p)}
+                onClick={() => handlePageChange(p)}
                 className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                  p === currentPage
+                  p === page
                     ? "bg-emerald-500 text-white"
                     : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
                 }`}
@@ -546,8 +373,10 @@ export default function DaftarPerusahaanPrioritasPage() {
               </button>
             ))}
             <button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={!hasApplied || currentPage === totalPages}
+              onClick={() =>
+                handlePageChange(Math.min(pagination.totalPages, page + 1))
+              }
+              disabled={!hasApplied || page === pagination.totalPages}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               Selanjutnya ›

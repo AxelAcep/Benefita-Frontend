@@ -13,6 +13,7 @@ export interface Trainer {
   keterangan: string | null;
   tugas: string | null;
   jumlahHari: number;
+  statusAktif: boolean;
 }
 
 export const dummyTrainers: Trainer[] = [
@@ -31,6 +32,7 @@ export const dummyTrainers: Trainer[] = [
     keterangan: null,
     tugas: "24 Mar 2025",
     jumlahHari: 196,
+    statusAktif: true,
   },
   {
     id: 2,
@@ -47,6 +49,7 @@ export const dummyTrainers: Trainer[] = [
     keterangan: null,
     tugas: null,
     jumlahHari: 0,
+    statusAktif: true,
   },
   {
     id: 3,
@@ -63,6 +66,7 @@ export const dummyTrainers: Trainer[] = [
     keterangan: "Trainer senior bidang manajemen",
     tugas: "15 Jan 2025",
     jumlahHari: 30,
+    statusAktif: true,
   },
   {
     id: 4,
@@ -79,6 +83,7 @@ export const dummyTrainers: Trainer[] = [
     keterangan: null,
     tugas: "10 Feb 2025",
     jumlahHari: 24,
+    statusAktif: true,
   },
   {
     id: 5,
@@ -95,6 +100,7 @@ export const dummyTrainers: Trainer[] = [
     keterangan: "Spesialis K3 industri",
     tugas: "20 Feb 2025",
     jumlahHari: 45,
+    statusAktif: true,
   },
   {
     id: 6,
@@ -111,6 +117,7 @@ export const dummyTrainers: Trainer[] = [
     keterangan: null,
     tugas: "05 Mar 2025",
     jumlahHari: 18,
+    statusAktif: true,
   },
   {
     id: 7,
@@ -127,5 +134,6 @@ export const dummyTrainers: Trainer[] = [
     keterangan: "Ahli AMDAL bersertifikat",
     tugas: "12 Mar 2025",
     jumlahHari: 62,
+    statusAktif: true,
   },
 ];

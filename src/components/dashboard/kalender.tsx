@@ -12,6 +12,7 @@ import {
 import { Icons } from "@/assets";
 import Link from "next/link";
 import { useKalenderTraining } from "@/hooks/use-dashboard";
+import TrainerHariModal from "./trainer-hari-modal";
 
 type CategoryType = "ENV" | "CSR" | "TSM" | "EPM" | "publik" | "inhouse";
 
@@ -100,6 +101,13 @@ export default function KalenderTraining() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [showFilter, setShowFilter] = useState(false);
+
+  // Modal assign trainer per hari
+  const [trainerModalNoJadwal, setTrainerModalNoJadwal] = useState<
+    string | null
+  >(null);
+  const [trainerModalJudul, setTrainerModalJudul] = useState<string>("");
+  const [trainerModalOpen, setTrainerModalOpen] = useState(false);
 
   const monthPages = useMemo(
     () => getMonthPages(activeBulan, activeTahun),
@@ -314,12 +322,12 @@ export default function KalenderTraining() {
               <th
                 className={`${stickyThCls} text-center px-3 py-2.5 font-medium whitespace-nowrap`}
               >
-                No Jadwal
+                Trainer
               </th>
               <th
                 className={`${stickyThCls} text-center px-3 py-2.5 font-medium`}
               >
-                Trainer
+                Detail
               </th>
             </tr>
           </thead>
@@ -433,12 +441,17 @@ export default function KalenderTraining() {
                         {row.lokasiDetail}
                       </td>
                       <td className="text-center px-3 py-3">
-                        <Link
-                          href={`/training/jadwal/${row.noJadwal}`}
-                          className="text-emerald-500 hover:text-emerald-600 cursor-pointer whitespace-nowrap"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTrainerModalNoJadwal(row.noJadwal);
+                            setTrainerModalJudul(row.judul);
+                            setTrainerModalOpen(true);
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors whitespace-nowrap"
                         >
-                          {row.noJadwal}
-                        </Link>
+                          Trainer
+                        </button>
                       </td>
                       <td className="text-center px-3 py-3">
                         <Link
@@ -484,6 +497,16 @@ export default function KalenderTraining() {
           </div>
         </div>
       </div>
+
+      <TrainerHariModal
+        noJadwal={trainerModalNoJadwal}
+        judulFallback={trainerModalJudul}
+        open={trainerModalOpen}
+        onOpenChange={(next) => {
+          setTrainerModalOpen(next);
+          if (!next) setTrainerModalNoJadwal(null);
+        }}
+      />
     </div>
   );
 }

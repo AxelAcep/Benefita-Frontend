@@ -24,6 +24,7 @@ const trainerFormSchema = z.object({
   subyekKhusus: z.string().optional(),
   keterangan: z.string().optional(),
   tugas: z.string().optional(), // ← tambah ini
+  statusAktif: z.boolean().optional(),
 });
 
 export type TrainerFormValues = z.infer<typeof trainerFormSchema>;
@@ -138,6 +139,20 @@ export function TrainerDetailModal({
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
               <DetailField label="Nama" value={`${data.nama} - ${data.kode}`} />
               <DetailField
+                label="Status"
+                value={
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      data.statusAktif
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "bg-zinc-100 text-zinc-500"
+                    }`}
+                  >
+                    {data.statusAktif ? "Aktif" : "Nonaktif"}
+                  </span>
+                }
+              />
+              <DetailField
                 label="Referensi"
                 value={data.referensi.join(", ") || "-"}
               />
@@ -222,6 +237,7 @@ export function TrainerFormModal({
       subyekKhusus: "",
       keterangan: "",
       tugas: "", // ← sini
+      statusAktif: true,
     },
   });
 
@@ -240,6 +256,7 @@ export function TrainerFormModal({
         subyekKhusus: initialData?.subyekKhusus ?? "",
         keterangan: initialData?.keterangan ?? "",
         tugas: initialData?.tugas ?? "", // ← sini
+        statusAktif: initialData?.statusAktif ?? true,
       });
     }
   }, [open, initialData, reset]);
@@ -398,6 +415,17 @@ export function TrainerFormModal({
               <FieldLabel optional>Tugas</FieldLabel>
               <input type="date" {...register("tugas")} className={inputCls} />
             </div>
+
+            <label className="flex items-center gap-2 cursor-pointer w-fit">
+              <input
+                type="checkbox"
+                {...register("statusAktif")}
+                className="w-3.5 h-3.5 rounded border-zinc-300 text-emerald-500 focus:ring-emerald-200"
+              />
+              <span className="text-xs font-medium text-zinc-600">
+                Trainer aktif
+              </span>
+            </label>
           </div>
 
           {/* Footer */}

@@ -18,6 +18,7 @@ export interface Trainer {
   kantor?: string | null;
   alamatKantor?: string | null;
   noTelpKantor?: string | null;
+  statusAktif: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +34,7 @@ export interface TrainerListItem {
   subjekKhusus?: string | null;
   tugas?: string | null;
   jumlahHari?: number | null;
+  statusAktif: boolean;
 }
 
 export interface TrainerPagination {
@@ -60,6 +62,7 @@ export interface CreateTrainerRequest {
   kantor?: string;
   alamatKantor?: string;
   noTelpKantor?: string;
+  statusAktif?: boolean;
 }
 
 export interface UpdateTrainerRequest {
@@ -75,6 +78,7 @@ export interface UpdateTrainerRequest {
   kantor?: string;
   alamatKantor?: string;
   noTelpKantor?: string;
+  statusAktif?: boolean;
 }
 
 // ─────────────────────────────────────────────
@@ -97,12 +101,14 @@ export async function getTrainers(params?: {
   page?: number;
   limit?: number;
   search?: string;
+  status?: "aktif" | "nonaktif";
 }): Promise<GetTrainersResponse> {
   const query = new URLSearchParams();
 
   if (params?.page) query.append("page", String(params.page));
   if (params?.limit) query.append("limit", String(params.limit));
   if (params?.search) query.append("search", params.search);
+  if (params?.status) query.append("status", params.status);
 
   const res = await fetchWithAuth(
     `${API_URL}/api/training/trainer?${query.toString()}`,

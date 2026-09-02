@@ -209,8 +209,21 @@ export default function TableListPeserta({
                   <td className="px-3 py-3 text-xs text-zinc-600 align-top">
                     <Dash>{row.ujian ? "Ya" : null}</Dash>
                   </td>
-                  <td className="px-3 py-3 text-xs text-zinc-600 align-top">
-                    <Dash>{row.pegawaiKonfirmasi?.nama}</Dash>
+                  <td className="px-3 py-3 align-top">
+                    {row.pegawaiKonfirmasi ? (
+                      <div className="flex flex-col">
+                        <span className="text-xs text-zinc-600">
+                          KONFIRMASI OLEH {row.pegawaiKonfirmasi.nama}
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          {row.konTgl
+                            ? new Date(row.konTgl).toISOString().split("T")[0]
+                            : "-"}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-zinc-300 select-none">–</span>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
                     {formatRupiah(row.hargaTotal)}

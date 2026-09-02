@@ -1,82 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { TableProperties } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Anchor from "@/components/base/anchor";
+import { usePerusahaanVendor } from "@/hooks/use-perusahaan-vendor";
 
 // ---------------------------------------------------------------------------
-// Types
+// Helpers
 // ---------------------------------------------------------------------------
 
-interface Vendor {
-  id: number;
-  noInduk: string;
-  perusahaan: string;
-  acc: string[];
-  status: string;
-  expired: string;
+function formatTanggal(iso: string | null) {
+  if (!iso) return <span className="text-zinc-300">–</span>;
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-// ---------------------------------------------------------------------------
-// Dummy Data
-// ---------------------------------------------------------------------------
-
-const DUMMY_DATA: Vendor[] = [
-  {
-    id: 1,
-    noInduk: "PR00621",
-    perusahaan: "PT. ABC",
-    acc: ["SL", "SL", "AM", "MW"],
-    status: "Dalam Proses",
-    expired: "-",
-  },
-  {
-    id: 2,
-    noInduk: "PR07304",
-    perusahaan: "PT. BCA",
-    acc: ["SL", "SL", "AM", "MW"],
-    status: "Dalam Proses",
-    expired: "-",
-  },
-  {
-    id: 3,
-    noInduk: "PR02434",
-    perusahaan: "PT. XYZ",
-    acc: ["SL", "CF", "EE", "TA"],
-    status: "Dalam Proses",
-    expired: "ISO 14001 (LRQA)",
-  },
-  {
-    id: 4,
-    noInduk: "PR08091",
-    perusahaan: "PT. ACC",
-    acc: ["SL", "NW", "EE", "SL"],
-    status: "Dalam Proses",
-    expired: "ISO 14001 (PSB-9912)",
-  },
-];
+function Dash({ children }: { children: React.ReactNode }) {
+  if (!children) return <span className="text-zinc-300">-</span>;
+  return <>{children}</>;
+}
 
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function DaftarPerusahaanVendorPage() {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const PAGE_SIZE = 10;
-
-  const filtered = DUMMY_DATA.filter(
-    (d) =>
-      d.perusahaan.toLowerCase().includes(search.toLowerCase()) ||
-      d.noInduk.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  const {
+    data,
+    pagination,
+    loading,
+    search,
+    page,
+    setPage,
+    handleSearch,
+  } = usePerusahaanVendor();
 
   return (
     <AppLayout
@@ -119,10 +80,7 @@ export default function DaftarPerusahaanVendorPage() {
                 type="text"
                 placeholder="Cari informasi..."
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="w-full sm:w-52 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
               />
             </div>
@@ -135,7 +93,7 @@ export default function DaftarPerusahaanVendorPage() {
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50/60">
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-10">
-                  No ↕
+                  No
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
                   No Induk
@@ -156,7 +114,16 @@ export default function DaftarPerusahaanVendorPage() {
             </thead>
 
             <tbody>
-              {paginated.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-12 text-center text-xs text-zinc-400"
+                  >
+                    Memuat data...
+                  </td>
+                </tr>
+              ) : data.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -166,47 +133,50 @@ export default function DaftarPerusahaanVendorPage() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((row, i) => (
+                data.map((row, i) => (
                   <tr
-                    key={row.id}
+                    key={row.noInduk}
                     className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors align-top"
                   >
                     <td className="px-4 py-3 text-xs text-zinc-400">
-                      {(currentPage - 1) * PAGE_SIZE + i + 1}
+                      {(page - 1) * pagination.pageSize + i + 1}
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                      {row.noInduk}
+                    <td className="px-4 py-3 text-xs whitespace-nowrap">
+                      <Anchor
+                        name={row.noInduk}
+                        route={`/database/perusahaan/${row.noInduk}`}
+                      />
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                      {row.perusahaan}
+                    <td className="px-4 py-3 text-xs text-zinc-700 whitespace-nowrap max-w-[180px] truncate">
+                      <Dash>{row.namaPerusahaan}</Dash>
                     </td>
 
                     {/* ACC Badge */}
                     <td className="px-4 py-3">
-                      <div className="flex gap-1 flex-wrap">
-                        {row.acc.map((a, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 text-[10px] rounded-md bg-zinc-100 text-zinc-500"
-                          >
-                            {a}
-                          </span>
-                        ))}
-                      </div>
+                      {row.acc.length === 0 ? (
+                        <span className="text-zinc-300 select-none">–</span>
+                      ) : (
+                        <div className="flex gap-1 flex-wrap">
+                          {row.acc.map((a, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 text-[10px] rounded-md bg-zinc-100 text-zinc-500"
+                            >
+                              {a}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
 
                     <td className="px-4 py-3 text-xs text-zinc-600 whitespace-nowrap">
-                      {row.status}
+                      <Dash>{row.status}</Dash>
                     </td>
 
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.expired === "-" ? (
-                        <span className="text-zinc-300">–</span>
-                      ) : (
-                        row.expired
-                      )}
+                      {formatTanggal(row.expired)}
                     </td>
                   </tr>
                 ))
@@ -220,42 +190,48 @@ export default function DaftarPerusahaanVendorPage() {
           <p className="text-[11px] text-zinc-400">
             Menampilkan{" "}
             <span className="font-semibold text-zinc-600">
-              {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
-              {Math.min(currentPage * PAGE_SIZE, filtered.length)}
+              {pagination.total === 0
+                ? 0
+                : (page - 1) * pagination.pageSize + 1}
+              –{Math.min(page * pagination.pageSize, pagination.total)}
             </span>{" "}
             dari{" "}
             <span className="font-semibold text-zinc-600">
-              {filtered.length}
+              {pagination.total}
             </span>{" "}
             data
           </p>
 
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage((p) => p - 1)}
-              disabled={currentPage === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               ‹ Sebelumnya
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setCurrentPage(p)}
-                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                  p === currentPage
-                    ? "bg-emerald-500 text-white"
-                    : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+              (p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
+                    p === page
+                      ? "bg-emerald-500 text-white"
+                      : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                  }`}
+                >
+                  {p}
+                </button>
+              ),
+            )}
 
             <button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage === totalPages}
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
+              disabled={page === pagination.totalPages}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               Selanjutnya ›

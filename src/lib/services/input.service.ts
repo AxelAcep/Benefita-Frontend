@@ -16,6 +16,7 @@ export interface PesertaTrainingListItem {
   status: string | null;
   ujian: string | null;
   konfirmasiOleh: string | null;
+  konTgl: string | null;
   hargaTotal: number | null;
   diskon: number | null;
   ppn: number | null;

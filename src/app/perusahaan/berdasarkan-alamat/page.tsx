@@ -1,85 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { TableProperties } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Anchor from "@/components/base/anchor";
+import { usePerusahaanByAlamat } from "@/hooks/use-perusahaan-by-alamat";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface PerusahaanAlamat {
-  id: number;
-  noInduk: string;
-  perusahaan: string;
-  alamat: string;
-  alamatFAC: string;
-  acc: string;
+function Dash({ children }: { children: React.ReactNode }) {
+  if (!children) return <span className="text-zinc-300">–</span>;
+  return <>{children}</>;
 }
 
-// ---------------------------------------------------------------------------
-// Dummy Data
-// ---------------------------------------------------------------------------
-
-const DUMMY_DATA: PerusahaanAlamat[] = [
-  {
-    id: 1,
-    noInduk: "PR00621",
-    perusahaan: "PT. ABC",
-    alamat: "Wisma KIE, Jl. Ammonia Kav. 79 Bontang - Kaltim 75314",
-    alamatFAC: "Jl. Diponegoro Km. 39 Tambun Kab. Bekasi - Jabar 17510",
-    acc: "EE",
-  },
-  {
-    id: 2,
-    noInduk: "PR07304",
-    perusahaan: "PT. BCA",
-    alamat:
-      "Kawasan Industri Delta Silikon, Jl. MH Thamrin Blok A3-1 Lippo Cikarang Kab. Bekasi - Jabar 17550",
-    alamatFAC: "Jl. Raya - Purwosari No. 1 Km. 61 Purwosari Pasuruan - Jatim",
-    acc: "EE",
-  },
-  {
-    id: 3,
-    noInduk: "PR02434",
-    perusahaan: "PT. XYZ",
-    alamat: "Jl. Raya Balongan Km. 09 Balongan, Indramayu - Jabar 45217",
-    alamatFAC: "-",
-    acc: "RQ",
-  },
-  {
-    id: 4,
-    noInduk: "PR08091",
-    perusahaan: "PT. ACC",
-    alamat:
-      "Jl. Raya Jaya Negara Kp. Kabandungan, Kec.Kalapanunggal Kab. Sukabumi - Jabar",
-    alamatFAC: "-",
-    acc: "TA",
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
 export default function DaftarPerusahaanByAlamatPage() {
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const PAGE_SIZE = 10;
-
-  const filtered = DUMMY_DATA.filter(
-    (d) =>
-      d.perusahaan.toLowerCase().includes(search.toLowerCase()) ||
-      d.noInduk.toLowerCase().includes(search.toLowerCase()) ||
-      d.alamat.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  const { data, pagination, loading, search, page, setPage, handleSearch } =
+    usePerusahaanByAlamat();
 
   return (
     <AppLayout
@@ -122,10 +56,7 @@ export default function DaftarPerusahaanByAlamatPage() {
                 type="text"
                 placeholder="Cari informasi..."
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="w-full sm:w-52 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
               />
             </div>
@@ -138,7 +69,7 @@ export default function DaftarPerusahaanByAlamatPage() {
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50/60">
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-10">
-                  No ↕
+                  No
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
                   No Induk
@@ -146,10 +77,10 @@ export default function DaftarPerusahaanByAlamatPage() {
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-40">
                   Perusahaan/Instansi
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-56">
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-64">
                   Alamat
                 </th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-56">
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-64">
                   Alamat FAC
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-20">
@@ -159,7 +90,16 @@ export default function DaftarPerusahaanByAlamatPage() {
             </thead>
 
             <tbody>
-              {paginated.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-12 text-center text-xs text-zinc-400"
+                  >
+                    Memuat data...
+                  </td>
+                </tr>
+              ) : data.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -169,37 +109,36 @@ export default function DaftarPerusahaanByAlamatPage() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((row, i) => (
+                data.map((row, i) => (
                   <tr
-                    key={row.id}
+                    key={row.noInduk}
                     className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors align-top"
                   >
                     <td className="px-4 py-3 text-xs text-zinc-400">
-                      {(currentPage - 1) * PAGE_SIZE + i + 1}
+                      {(page - 1) * pagination.pageSize + i + 1}
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                      {row.noInduk}
+                    <td className="px-4 py-3 text-xs whitespace-nowrap">
+                      <Anchor
+                        name={row.noInduk}
+                        route={`/database/perusahaan/${row.noInduk}`}
+                      />
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                      {row.perusahaan}
+                    <td className="px-4 py-3 text-xs text-zinc-700 whitespace-nowrap max-w-[180px] truncate">
+                      <Dash>{row.namaPerusahaan}</Dash>
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-zinc-600 leading-relaxed">
-                      {row.alamat}
+                    <td className="px-4 py-3 text-xs text-zinc-600 leading-relaxed max-w-[280px]">
+                      <Dash>{row.alamat}</Dash>
                     </td>
 
-                    <td className="px-4 py-3 text-xs text-zinc-600 leading-relaxed">
-                      {row.alamatFAC === "-" ? (
-                        <span className="text-zinc-300">–</span>
-                      ) : (
-                        row.alamatFAC
-                      )}
+                    <td className="px-4 py-3 text-xs text-zinc-600 leading-relaxed max-w-[280px]">
+                      <Dash>{row.alamatFactory?.trim()}</Dash>
                     </td>
 
                     <td className="px-4 py-3 text-xs text-zinc-600 whitespace-nowrap">
-                      {row.acc}
+                      <Dash>{row.acc}</Dash>
                     </td>
                   </tr>
                 ))
@@ -213,42 +152,48 @@ export default function DaftarPerusahaanByAlamatPage() {
           <p className="text-[11px] text-zinc-400">
             Menampilkan{" "}
             <span className="font-semibold text-zinc-600">
-              {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
-              {Math.min(currentPage * PAGE_SIZE, filtered.length)}
+              {pagination.total === 0
+                ? 0
+                : (page - 1) * pagination.pageSize + 1}
+              –{Math.min(page * pagination.pageSize, pagination.total)}
             </span>{" "}
             dari{" "}
             <span className="font-semibold text-zinc-600">
-              {filtered.length}
+              {pagination.total}
             </span>{" "}
             data
           </p>
 
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage((p) => p - 1)}
-              disabled={currentPage === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               ‹ Sebelumnya
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                onClick={() => setCurrentPage(p)}
-                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                  p === currentPage
-                    ? "bg-emerald-500 text-white"
-                    : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+              (p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
+                    p === page
+                      ? "bg-emerald-500 text-white"
+                      : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                  }`}
+                >
+                  {p}
+                </button>
+              ),
+            )}
 
             <button
-              onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage === totalPages}
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
+              disabled={page === pagination.totalPages}
               className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
             >
               Selanjutnya ›
