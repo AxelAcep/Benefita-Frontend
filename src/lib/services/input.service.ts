@@ -17,6 +17,8 @@ export interface PesertaTrainingListItem {
   ujian: string | null;
   konfirmasiOleh: string | null;
   konTgl: string | null;
+  statusFinal: boolean;
+  finalTgl: string | null;
   hargaTotal: number | null;
   diskon: number | null;
   ppn: number | null;
@@ -30,6 +32,7 @@ export interface PesertaTrainingListItem {
   pegawaiInput: { id: string; nama: string } | null;
   pegawaiUpdate: { id: string; nama: string } | null;
   pegawaiKonfirmasi: { id: string; nama: string } | null;
+  pegawaiFinal: { id: string; nama: string } | null;
 }
 
 export interface PesertaTraining extends PesertaTrainingListItem {
@@ -69,6 +72,7 @@ export interface JadwalSummary {
   metode: string;
   biaya: number;
   status: string;
+  jenisTraining: string;
   kodePelatihan: string;
   lokasiDetail: string | null;
   judulLengkap: string;
@@ -263,6 +267,94 @@ export async function deletePesertaTraining(id: string): Promise<void> {
   if (!res.ok) {
     throw new Error(data.message || "Gagal menghapus peserta");
   }
+}
+
+/**
+ * UPDATE STATUS FINAL PESERTA
+ * Peserta yang statusnya Final = udah nyelesain training & berhak
+ * didaftarkan ke uji kompetensi (buat sertifikat LSP).
+ */
+export async function updateStatusFinalPeserta(
+  id: string,
+  statusFinal: boolean = true,
+): Promise<PesertaTraining> {
+  const res = await fetchWithAuth(`${API_URL}/api/input/peserta/${id}/final`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ statusFinal }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengubah status Final peserta");
+  }
+
+  return data.data;
+}
+
+// ─────────────────────────────────────────────
+// BRIDGE KE UJI KOMPETENSI (LSP)
+// Daftarkan peserta yang sudah Final ke PesertaUji.
+// ─────────────────────────────────────────────
+
+export interface SkemaKualifikasiOption {
+  id: number;
+  kode: string;
+  nama: string;
+}
+
+export async function getSkemaKualifikasiOptions(): Promise<
+  SkemaKualifikasiOption[]
+> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/input/skema-kualifikasi/list`,
+    { method: "GET" },
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil daftar skema kualifikasi");
+  }
+
+  return data.data;
+}
+
+export interface PesertaUji {
+  id: number;
+  pesertaTrainingId: number | null;
+  nama: string;
+  instansi: string | null;
+  email: string | null;
+  wa: string | null;
+  skemaId: number;
+  status: string;
+  skema: SkemaKualifikasiOption;
+}
+
+export async function createPesertaUjiFromTraining(
+  pesertaTrainingId: string,
+  skemaId: number,
+): Promise<PesertaUji> {
+  const res = await fetchWithAuth(
+    `${API_URL}/api/input/peserta-uji/dari-training`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pesertaTrainingId, skemaId }),
+    },
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      data.message || "Gagal mendaftarkan peserta ke uji kompetensi",
+    );
+  }
+
+  return data.data;
 }
 
 export interface BiodataPeserta {

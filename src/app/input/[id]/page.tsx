@@ -15,6 +15,7 @@ import ModalTambahPeserta, {
 } from "./modal-tambah-peserta";
 import PageKwitansi from "./kwitansi/[idPeserta]/page";
 import PageInvoice from "./invoice/[idPeserta]/page";
+import DaftarkanUjiModal from "./daftarkan-uji-modal";
 import Notification from "@/components/base/notifications"; // sesuaikan path
 
 import {
@@ -25,6 +26,7 @@ import {
 import {
   PesertaTrainingListItem,
   JadwalSummary,
+  createPesertaUjiFromTraining,
 } from "@/lib/services/input.service";
 
 export default function InputDataPage() {
@@ -46,6 +48,9 @@ export default function InputDataPage() {
     useState<PesertaTrainingListItem | null>(null);
   const [kwitansiPeserta, setKwitansiPeserta] =
     useState<PesertaTrainingListItem | null>(null);
+  const [daftarUjiPeserta, setDaftarUjiPeserta] =
+    useState<PesertaTrainingListItem | null>(null);
+  const [isDaftarUjiSubmitting, setIsDaftarUjiSubmitting] = useState(false);
 
   const {
     data,
@@ -89,6 +94,56 @@ export default function InputDataPage() {
       setNotification({ message: msg, type: "error" });
     },
   });
+
+  const pendingFinalMessageRef = React.useRef<string | null>(null);
+
+  const { handleSetFinal } = usePesertaTrainingMutation({
+    onSuccess: () => {
+      fetch();
+      if (pendingFinalMessageRef.current) {
+        setNotification({
+          message: pendingFinalMessageRef.current,
+          type: "success",
+        });
+        pendingFinalMessageRef.current = null;
+      }
+    },
+    onError: (msg) => {
+      pendingFinalMessageRef.current = null;
+      setNotification({ message: msg, type: "error" });
+    },
+  });
+
+  function handleTogglePesertaFinal(peserta: PesertaTrainingListItem) {
+    const nextStatusFinal = !peserta.statusFinal;
+    pendingFinalMessageRef.current = nextStatusFinal
+      ? "Peserta berhasil ditandai Final"
+      : "Status Final peserta dibatalkan";
+    handleSetFinal(String(peserta.id), nextStatusFinal);
+  }
+
+  async function handleSubmitDaftarUji(skemaId: number) {
+    if (!daftarUjiPeserta) return;
+    setIsDaftarUjiSubmitting(true);
+    try {
+      await createPesertaUjiFromTraining(String(daftarUjiPeserta.id), skemaId);
+      setDaftarUjiPeserta(null);
+      setNotification({
+        message: "Peserta berhasil didaftarkan ke uji kompetensi",
+        type: "success",
+      });
+    } catch (err) {
+      setNotification({
+        message:
+          err instanceof Error
+            ? err.message
+            : "Gagal mendaftarkan peserta ke uji kompetensi",
+        type: "error",
+      });
+    } finally {
+      setIsDaftarUjiSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     fetch();
@@ -311,6 +366,7 @@ export default function InputDataPage() {
           searchValue={search}
           isLoading={isLoading}
           onTambah={handleTambah}
+          jenisTraining={jadwal?.jenisTraining}
           aksiHandlers={{
             onEdit: handleEdit,
             onKonfirmasi: (p) =>
@@ -319,7 +375,8 @@ export default function InputDataPage() {
               router.push(`/input/${noJadwal}/kwitansi/${p.id}`),
             onCetakInvoice: (p) =>
               router.push(`/input/${noJadwal}/invoice/${p.id}`),
-            onPesertaFinal: (p) => console.log("Peserta Final", p),
+            onPesertaFinal: handleTogglePesertaFinal,
+            onDaftarkanUji: (p) => setDaftarUjiPeserta(p),
           }}
         />
       </div>
@@ -347,6 +404,14 @@ export default function InputDataPage() {
             ? detailPeserta.tglUpdate.split("T")[0]
             : undefined
         }
+      />
+
+      <DaftarkanUjiModal
+        open={!!daftarUjiPeserta}
+        onClose={() => setDaftarUjiPeserta(null)}
+        onSubmit={handleSubmitDaftarUji}
+        namaPeserta={daftarUjiPeserta?.nama}
+        isLoading={isDaftarUjiSubmitting}
       />
     </AppLayout>
   );

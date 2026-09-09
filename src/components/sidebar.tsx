@@ -21,6 +21,7 @@ import {
   X,
   FileText,
   Database,
+  BadgeCheck,
 } from "lucide-react";
 import { Icons } from "@/assets";
 // Tambah useAuth di import
@@ -158,6 +159,11 @@ const navItems: NavItem[] = [
     icon: ChartColumnIncreasing,
     children: [
       { label: "Beranda", href: "/accounting/beranda" },
+      { label: "Master Akun", href: "/accounting/akun" },
+      {
+        label: "Pengeluaran & Pemasukan",
+        href: "/accounting/pengeluaran-pemasukan",
+      },
       { label: "Pendapatan", href: "/accounting/pendapatan" },
       // { label: "Neraca 2023", href: "/accounting/neraca2023" },
       { label: "Jurnal Keuangan", href: "/accounting/neraca" },
@@ -212,6 +218,19 @@ const navItems: NavItem[] = [
       { label: "Manajemen Trainer", href: "/training/trainer" },
       { label: "Manajemen Hotel", href: "/training/hotel" },
       { label: "Pengajuan Judul Training", href: "/training/pengajuan-judul" },
+    ],
+  },
+  {
+    label: "LSP",
+    icon: BadgeCheck,
+    children: [
+      { label: "Input TUK", href: "/training/tuk" },
+      { label: "Input Asesor", href: "/training/asesor" },
+      { label: "Peserta Uji", href: "/training/peserta-uji" },
+      { label: "Laporan KLHK", href: "/training/laporan-klhk" },
+      { label: "Daftar Asesi", href: "/training/daftar-asesi" },
+      { label: "Daftar Asesi BK", href: "/training/daftar-asesi-bk" },
+      { label: "Calon Peserta Uji", href: "/training/calon-peserta-uji" },
     ],
   },
   {

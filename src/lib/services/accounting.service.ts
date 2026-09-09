@@ -601,3 +601,239 @@ export async function getUmkById(id: number): Promise<UmkDetailResponse> {
   if (!res.ok) throw new Error(data.message || "Gagal mengambil detail UMK");
   return data;
 }
+
+// ─────────────────────────────────────────────
+// MASTER AKUN — Keuangan Tahap 1
+// 5 jenis akun baku, gak bisa custom dari UI.
+// ─────────────────────────────────────────────
+
+export const JENIS_AKUN_OPTIONS = [
+  "ASET",
+  "LIABILITAS",
+  "MODAL",
+  "PENDAPATAN",
+  "BEBAN",
+] as const;
+
+export type JenisAkun = (typeof JENIS_AKUN_OPTIONS)[number];
+
+export interface AkunItem {
+  id: number;
+  kode: string | null;
+  nama: string;
+  jenis: JenisAkun;
+  saldoAwal: string; // Prisma Decimal → string di JSON
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AkunResponse {
+  data: AkunItem[];
+  pagination: Pagination;
+}
+
+// ─── Akun API Calls ────────────────────────────────────────────────
+
+export async function getAkunList(
+  params: {
+    page?: number;
+    limit?: number;
+    jenis?: JenisAkun;
+    search?: string;
+    isActive?: boolean;
+  } = {},
+): Promise<AkunResponse> {
+  const { page = 1, limit = 10, jenis, search, isActive } = params;
+
+  const queryParams = new URLSearchParams();
+  queryParams.append("page", String(page));
+  queryParams.append("limit", String(limit));
+  if (jenis) queryParams.append("jenis", jenis);
+  if (search) queryParams.append("search", search);
+  if (isActive !== undefined) queryParams.append("isActive", String(isActive));
+
+  const url = `${API_URL}/api/accounting/akun?${queryParams.toString()}`;
+  const res = await fetchWithAuth(url, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengambil data akun");
+  return data;
+}
+
+export async function getAkunById(id: number): Promise<{ data: AkunItem }> {
+  const url = `${API_URL}/api/accounting/akun/${id}`;
+  const res = await fetchWithAuth(url, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengambil detail akun");
+  return data;
+}
+
+export async function createAkun(payload: {
+  kode?: string;
+  nama: string;
+  jenis: JenisAkun;
+  saldoAwal?: number;
+}): Promise<{ message: string; data: AkunItem }> {
+  const url = `${API_URL}/api/accounting/akun`;
+  const res = await fetchWithAuth(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal membuat akun");
+  return data;
+}
+
+export async function updateAkun(
+  id: number,
+  payload: {
+    kode?: string;
+    nama?: string;
+    jenis?: JenisAkun;
+    saldoAwal?: number;
+  },
+): Promise<{ message: string; data: AkunItem }> {
+  const url = `${API_URL}/api/accounting/akun/${id}`;
+  const res = await fetchWithAuth(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal memperbarui akun");
+  return data;
+}
+
+export async function toggleAkunStatus(
+  id: number,
+  isActive?: boolean,
+): Promise<{ message: string; data: AkunItem }> {
+  const url = `${API_URL}/api/accounting/akun/${id}/status`;
+  const res = await fetchWithAuth(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(isActive === undefined ? {} : { isActive }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengubah status akun");
+  return data;
+}
+
+// ─────────────────────────────────────────────
+// PENGELUARAN & PEMASUKAN — Fitur 0 (lanjutan)
+// Alur: user request → approver approve/reject → selesai (belum nyentuh
+// Jurnal Keuangan).
+// ─────────────────────────────────────────────
+
+export const JENIS_REQUEST_OPTIONS = ["PENGELUARAN", "PEMASUKAN"] as const;
+export type JenisRequestKeuangan = (typeof JENIS_REQUEST_OPTIONS)[number];
+
+export const STATUS_REQUEST_OPTIONS = ["PENDING", "APPROVED", "REJECTED"] as const;
+export type StatusRequestKeuangan = (typeof STATUS_REQUEST_OPTIONS)[number];
+
+// PENGELUARAN → dropdown akun jenis BEBAN, PEMASUKAN → dropdown akun jenis PENDAPATAN
+export const JENIS_REQUEST_TO_AKUN: Record<JenisRequestKeuangan, JenisAkun> = {
+  PENGELUARAN: "BEBAN",
+  PEMASUKAN: "PENDAPATAN",
+};
+
+export interface RequestKeuanganItem {
+  id: number;
+  jenis: JenisRequestKeuangan;
+  akunId: number | null;
+  akun: { id: number; kode: string | null; nama: string; jenis: JenisAkun } | null;
+  deskripsi: string;
+  nominal: string; // Prisma Decimal → string di JSON
+  tanggal: string;
+  requestedBy: string;
+  requestedOleh: { id: string; nama: string };
+  status: StatusRequestKeuangan;
+  approvedBy: string | null;
+  approvedOleh: { id: string; nama: string } | null;
+  approvedAt: string | null;
+  catatan: string | null;
+  buktiFile: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RequestKeuanganResponse {
+  data: RequestKeuanganItem[];
+  pagination: Pagination;
+}
+
+// ─── Request Keuangan API Calls ────────────────────────────────────
+
+export async function getRequestKeuanganList(
+  params: {
+    page?: number;
+    limit?: number;
+    status?: StatusRequestKeuangan;
+    jenis?: JenisRequestKeuangan;
+    search?: string;
+  } = {},
+): Promise<RequestKeuanganResponse> {
+  const { page = 1, limit = 10, status, jenis, search } = params;
+
+  const queryParams = new URLSearchParams();
+  queryParams.append("page", String(page));
+  queryParams.append("limit", String(limit));
+  if (status) queryParams.append("status", status);
+  if (jenis) queryParams.append("jenis", jenis);
+  if (search) queryParams.append("search", search);
+
+  const url = `${API_URL}/api/accounting/request-keuangan?${queryParams.toString()}`;
+  const res = await fetchWithAuth(url, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengambil data request keuangan");
+  return data;
+}
+
+export async function createRequestKeuangan(payload: {
+  jenis: JenisRequestKeuangan;
+  akunId?: number;
+  deskripsi: string;
+  nominal: number;
+  tanggal?: string;
+  buktiFile?: File;
+}): Promise<{ message: string; data: RequestKeuanganItem }> {
+  const formData = new FormData();
+  formData.append("jenis", payload.jenis);
+  if (payload.akunId) formData.append("akunId", String(payload.akunId));
+  formData.append("deskripsi", payload.deskripsi);
+  formData.append("nominal", String(payload.nominal));
+  if (payload.tanggal) formData.append("tanggal", payload.tanggal);
+  if (payload.buktiFile) formData.append("buktiFile", payload.buktiFile);
+
+  const url = `${API_URL}/api/accounting/request-keuangan`;
+  const res = await fetchWithAuth(url, { method: "POST", body: formData });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengajukan request");
+  return data;
+}
+
+export async function approveRequestKeuangan(
+  id: number,
+): Promise<{ message: string; data: RequestKeuanganItem }> {
+  const url = `${API_URL}/api/accounting/request-keuangan/${id}/approve`;
+  const res = await fetchWithAuth(url, { method: "PATCH" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal menyetujui request");
+  return data;
+}
+
+export async function rejectRequestKeuangan(
+  id: number,
+  catatan: string,
+): Promise<{ message: string; data: RequestKeuanganItem }> {
+  const url = `${API_URL}/api/accounting/request-keuangan/${id}/reject`;
+  const res = await fetchWithAuth(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ catatan }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal menolak request");
+  return data;
+}

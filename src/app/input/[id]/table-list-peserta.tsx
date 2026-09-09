@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Users, Plus } from "lucide-react";
 import { PesertaTrainingListItem } from "@/lib/services/input.service";
 
@@ -14,6 +14,7 @@ export interface PesertaAksiHandlers {
   onCetakKwitansi?: (peserta: PesertaTrainingListItem) => void;
   onCetakInvoice?: (peserta: PesertaTrainingListItem) => void;
   onPesertaFinal?: (peserta: PesertaTrainingListItem) => void;
+  onDaftarkanUji?: (peserta: PesertaTrainingListItem) => void;
 }
 
 interface TableListPesertaProps {
@@ -27,6 +28,8 @@ interface TableListPesertaProps {
   isLoading?: boolean;
   onTambah?: () => void;
   aksiHandlers?: PesertaAksiHandlers;
+  // Tombol "Daftarkan ke Uji" cuma muncul kalau jadwal ini jenisnya "UJI"
+  jenisTraining?: string;
 }
 
 const PAGE_SIZE = 10;
@@ -79,6 +82,7 @@ export default function TableListPeserta({
   isLoading,
   onTambah,
   aksiHandlers = {},
+  jenisTraining,
 }: TableListPesertaProps) {
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
@@ -204,7 +208,14 @@ export default function TableListPeserta({
                     <Dash>{row.ownEnv}</Dash>
                   </td>
                   <td className="px-3 py-3 align-top">
-                    <StatusBadge status={row.status} />
+                    <div className="flex flex-col items-start gap-1">
+                      <StatusBadge status={row.status} />
+                      {row.statusFinal && (
+                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-600">
+                          FINAL
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 py-3 text-xs text-zinc-600 align-top">
                     <Dash>{row.ujian ? "Ya" : null}</Dash>
@@ -301,10 +312,24 @@ export default function TableListPeserta({
                       </button>
                       <button
                         onClick={() => aksiHandlers.onPesertaFinal?.(row)}
-                        className="text-[11px] text-emerald-600 font-semibold hover:underline text-left"
+                        className={`text-[11px] font-semibold hover:underline text-left ${
+                          row.statusFinal
+                            ? "text-zinc-500"
+                            : "text-emerald-600"
+                        }`}
                       >
-                        Peserta Final
+                        {row.statusFinal
+                          ? "Batalkan Final"
+                          : "Tandai Peserta Final"}
                       </button>
+                      {jenisTraining === "UJI" && row.statusFinal && (
+                        <button
+                          onClick={() => aksiHandlers.onDaftarkanUji?.(row)}
+                          className="text-[11px] text-blue-600 font-semibold hover:underline text-left"
+                        >
+                          Daftarkan ke Uji
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

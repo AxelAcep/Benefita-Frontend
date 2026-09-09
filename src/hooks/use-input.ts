@@ -6,6 +6,7 @@ import {
   getPesertaTrainingById,
   createPesertaTraining,
   updatePesertaTraining,
+  updateStatusFinalPeserta,
   type PesertaTrainingListItem,
   type PesertaTraining,
   type PesertaTrainingPagination,
@@ -174,5 +175,26 @@ export function usePesertaTrainingMutation({
     [onSuccess, onError],
   );
 
-  return { isLoading, error, handleCreate, handleUpdate };
+  const handleSetFinal = useCallback(
+    async (id: string, statusFinal: boolean = true) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await updateStatusFinalPeserta(id, statusFinal);
+        onSuccess?.();
+      } catch (err) {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Gagal mengubah status Final peserta";
+        setError(msg);
+        onError?.(msg);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [onSuccess, onError],
+  );
+
+  return { isLoading, error, handleCreate, handleUpdate, handleSetFinal };
 }
