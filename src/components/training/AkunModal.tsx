@@ -18,6 +18,7 @@ const akunFormSchema = z.object({
     error: "Jenis akun wajib dipilih",
   }),
   saldoAwal: z.string().optional(),
+  isKasBank: z.boolean().optional(),
 });
 
 export type AkunFormValues = z.infer<typeof akunFormSchema>;
@@ -96,6 +97,7 @@ export function AkunModal({
       nama: "",
       jenis: "ASET",
       saldoAwal: "",
+      isKasBank: false,
     },
   });
 
@@ -106,6 +108,7 @@ export function AkunModal({
         nama: initialData?.nama ?? "",
         jenis: initialData?.jenis ?? "ASET",
         saldoAwal: initialData?.saldoAwal ?? "",
+        isKasBank: initialData?.isKasBank ?? false,
       });
     }
   }, [open, initialData, reset]);
@@ -189,6 +192,15 @@ export function AkunModal({
                 className={inputCls}
               />
             </div>
+
+            <label className="flex items-center gap-2 text-xs font-medium text-zinc-600">
+              <input
+                type="checkbox"
+                {...register("isKasBank")}
+                className="h-4 w-4 rounded border-zinc-300 text-emerald-500 focus:ring-emerald-400"
+              />
+              Tandai sebagai akun Kas &amp; Bank
+            </label>
           </div>
 
           {/* Footer */}

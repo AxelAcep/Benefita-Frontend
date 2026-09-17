@@ -179,7 +179,10 @@ export default function NeracaKeuanganPage() {
                   </svg>
                 </div>
                 <p className="font-bold text-zinc-800 text-sm">
-                  Jurnal Keuangan
+                  Jurnal Keuangan (Lama)
+                  <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    Arsip
+                  </span>
                 </p>
               </div>
               <button

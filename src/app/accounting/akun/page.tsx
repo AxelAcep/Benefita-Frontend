@@ -117,6 +117,7 @@ export default function MasterAkunPage() {
       nama: row.nama,
       jenis: row.jenis,
       saldoAwal: row.saldoAwal,
+      isKasBank: row.isKasBank,
     });
     setModalOpen(true);
   }
@@ -133,6 +134,7 @@ export default function MasterAkunPage() {
         nama: data.nama,
         jenis: data.jenis,
         saldoAwal: data.saldoAwal ? Number(data.saldoAwal) : undefined,
+        isKasBank: data.isKasBank ?? false,
       };
 
       if (editTarget) {

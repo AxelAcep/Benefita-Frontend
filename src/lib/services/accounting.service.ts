@@ -624,6 +624,7 @@ export interface AkunItem {
   jenis: JenisAkun;
   saldoAwal: string; // Prisma Decimal → string di JSON
   isActive: boolean;
+  isKasBank: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -673,6 +674,7 @@ export async function createAkun(payload: {
   nama: string;
   jenis: JenisAkun;
   saldoAwal?: number;
+  isKasBank?: boolean;
 }): Promise<{ message: string; data: AkunItem }> {
   const url = `${API_URL}/api/accounting/akun`;
   const res = await fetchWithAuth(url, {
@@ -692,6 +694,7 @@ export async function updateAkun(
     nama?: string;
     jenis?: JenisAkun;
     saldoAwal?: number;
+    isKasBank?: boolean;
   },
 ): Promise<{ message: string; data: AkunItem }> {
   const url = `${API_URL}/api/accounting/akun/${id}`;
