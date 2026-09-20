@@ -225,8 +225,14 @@ export interface NeracaRow {
 
 export interface NeracaResponse {
   tanggal: string;
-  aset: NeracaRow[];
-  liabilitas: NeracaRow[];
+  aktivaLancar: NeracaRow[];
+  totalAktivaLancar: number;
+  aktivaTetap: NeracaRow[];
+  totalAktivaTetap: number;
+  hutangLancar: NeracaRow[];
+  totalHutangLancar: number;
+  hutangJangkaPanjang: NeracaRow[];
+  totalHutangJangkaPanjang: number;
   modal: NeracaRow[];
   totalAset: number;
   totalLiabilitas: number;

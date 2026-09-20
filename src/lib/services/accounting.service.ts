@@ -617,6 +617,28 @@ export const JENIS_AKUN_OPTIONS = [
 
 export type JenisAkun = (typeof JENIS_AKUN_OPTIONS)[number];
 
+export const KATEGORI_AKUN_OPTIONS = [
+  "KAS_BANK",
+  "PIUTANG_USAHA",
+  "PIUTANG_LAINNYA",
+  "AKTIVA_TETAP",
+  "HUTANG_LANCAR",
+  "HUTANG_JANGKA_PANJANG",
+  "MODAL_AKUN",
+] as const;
+
+export type KategoriAkun = (typeof KATEGORI_AKUN_OPTIONS)[number];
+
+// Kategori mana yang valid buat tiap jenis akun — dipakai buat filter opsi
+// di form Master Akun (PENDAPATAN/BEBAN gak punya subgrup).
+export const KATEGORI_BY_JENIS: Record<JenisAkun, KategoriAkun[]> = {
+  ASET: ["KAS_BANK", "PIUTANG_USAHA", "PIUTANG_LAINNYA", "AKTIVA_TETAP"],
+  LIABILITAS: ["HUTANG_LANCAR", "HUTANG_JANGKA_PANJANG"],
+  MODAL: ["MODAL_AKUN"],
+  PENDAPATAN: [],
+  BEBAN: [],
+};
+
 export interface AkunItem {
   id: number;
   kode: string | null;
@@ -625,6 +647,7 @@ export interface AkunItem {
   saldoAwal: string; // Prisma Decimal → string di JSON
   isActive: boolean;
   isKasBank: boolean;
+  kategori: KategoriAkun | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -675,6 +698,7 @@ export async function createAkun(payload: {
   jenis: JenisAkun;
   saldoAwal?: number;
   isKasBank?: boolean;
+  kategori?: KategoriAkun | "";
 }): Promise<{ message: string; data: AkunItem }> {
   const url = `${API_URL}/api/accounting/akun`;
   const res = await fetchWithAuth(url, {
@@ -695,6 +719,7 @@ export async function updateAkun(
     jenis?: JenisAkun;
     saldoAwal?: number;
     isKasBank?: boolean;
+    kategori?: KategoriAkun | "";
   },
 ): Promise<{ message: string; data: AkunItem }> {
   const url = `${API_URL}/api/accounting/akun/${id}`;

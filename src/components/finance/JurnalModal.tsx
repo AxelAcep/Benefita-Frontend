@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { X, Plus, Trash2, Save, Loader2 } from "lucide-react";
 import type { AkunItem } from "@/lib/services/accounting.service";
 import type { ModeJurnal, JurnalBarisInput } from "@/lib/services/jurnal-keuangan.service";
 
@@ -36,6 +36,11 @@ function emptyRow(): AdvancedRow {
 function formatRupiah(val: number) {
   return `Rp${val.toLocaleString("id-ID")}`;
 }
+
+const inputCls =
+  "w-full px-3 py-2 border border-zinc-200 rounded-xl text-xs text-zinc-700 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all placeholder:text-zinc-300";
+
+const labelCls = "block text-[11px] font-semibold text-zinc-500 mb-1.5";
 
 export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: JurnalModalProps) {
   const [mode, setMode] = useState<ModeJurnal>("SIMPLE");
@@ -139,22 +144,37 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-lg">
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-800">Tambah Jurnal Keuangan</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={20} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
+          <div>
+            <p className="font-bold text-zinc-800 text-sm">Tambah Jurnal Keuangan</p>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              Catat transaksi double-entry (debit = kredit).
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600 shrink-0"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="space-y-4 px-6 py-4">
+        <div className="px-6 py-5 space-y-4">
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => setMode("SIMPLE")}
-              className={`rounded-md px-4 py-2 text-sm font-medium ${
-                mode === "SIMPLE" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                mode === "SIMPLE" ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
               }`}
             >
               Simple
@@ -162,44 +182,44 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
             <button
               type="button"
               onClick={() => setMode("ADVANCED")}
-              className={`rounded-md px-4 py-2 text-sm font-medium ${
-                mode === "ADVANCED" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600"
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                mode === "ADVANCED" ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
               }`}
             >
               Advanced
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Tanggal</label>
+              <label className={labelCls}>Tanggal</label>
               <input
                 type="date"
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className={inputCls}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Deskripsi</label>
+              <label className={labelCls}>Deskripsi</label>
               <input
                 type="text"
                 value={deskripsi}
                 onChange={(e) => setDeskripsi(e.target.value)}
                 placeholder="Contoh: Pembayaran listrik kantor"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                className={inputCls}
               />
             </div>
           </div>
 
           {mode === "SIMPLE" ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Dari Akun (kredit)</label>
+                <label className={labelCls}>Dari Akun (kredit)</label>
                 <select
                   value={dariAkunId}
                   onChange={(e) => setDariAkunId(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className={`${inputCls} bg-white`}
                 >
                   <option value="">Pilih akun</option>
                   {akunList && akunList.length > 0
@@ -214,11 +234,11 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Ke Akun (debit)</label>
+                <label className={labelCls}>Ke Akun (debit)</label>
                 <select
                   value={keAkunId}
                   onChange={(e) => setKeAkunId(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  className={`${inputCls} bg-white`}
                 >
                   <option value="">Pilih akun</option>
                   {akunList && akunList.length > 0
@@ -232,20 +252,21 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
                     : null}
                 </select>
               </div>
-              <div className="col-span-2">
-                <label className="mb-1 block text-sm font-medium text-gray-700">Nominal</label>
+              <div className="sm:col-span-2">
+                <label className={labelCls}>Nominal</label>
                 <input
                   type="number"
                   min={0}
                   value={nominal}
                   onChange={(e) => setNominal(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="0"
+                  className={inputCls}
                 />
               </div>
             </div>
           ) : (
             <div>
-              <div className="mb-2 grid grid-cols-12 gap-2 text-xs font-medium text-gray-500">
+              <div className="mb-2 grid grid-cols-12 gap-2 text-[10px] font-semibold text-zinc-400">
                 <div className="col-span-4">Akun</div>
                 <div className="col-span-2">Debit</div>
                 <div className="col-span-2">Kredit</div>
@@ -259,7 +280,7 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
                         <select
                           value={row.akunId}
                           onChange={(e) => onChangeRow(index, "akunId", e.target.value)}
-                          className="col-span-4 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                          className="col-span-4 px-2 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all bg-white"
                         >
                           <option value="">Pilih akun</option>
                           {akunList && akunList.length > 0
@@ -277,28 +298,28 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
                           min={0}
                           value={row.debit}
                           onChange={(e) => onChangeRow(index, "debit", e.target.value)}
-                          className="col-span-2 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                          className="col-span-2 px-2 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
                         />
                         <input
                           type="number"
                           min={0}
                           value={row.kredit}
                           onChange={(e) => onChangeRow(index, "kredit", e.target.value)}
-                          className="col-span-2 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                          className="col-span-2 px-2 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
                         />
                         <input
                           type="text"
                           value={row.keterangan}
                           onChange={(e) => onChangeRow(index, "keterangan", e.target.value)}
-                          className="col-span-3 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+                          className="col-span-3 px-2 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
                         />
                         <button
                           type="button"
                           onClick={() => onRemoveRow(index)}
                           disabled={rows.length <= 2}
-                          className="col-span-1 text-gray-400 hover:text-red-500 disabled:opacity-30"
+                          className="col-span-1 text-zinc-400 hover:text-red-500 disabled:opacity-30 transition-colors"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     );
@@ -307,41 +328,52 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
               <button
                 type="button"
                 onClick={onAddRow}
-                className="mt-1 flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+                className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700"
               >
-                <Plus size={14} /> Tambah Baris
+                <Plus className="w-3.5 h-3.5" /> Tambah Baris
               </button>
             </div>
           )}
 
-          <div className="flex items-center justify-between rounded-md bg-gray-50 px-4 py-3 text-sm">
-            <div>
-              Total Debit: <span className="font-semibold">{formatRupiah(totalDebit)}</span>
+          <div className="flex items-center justify-between rounded-xl bg-zinc-50 border border-zinc-100 px-4 py-3 text-xs">
+            <div className="text-zinc-500">
+              Total Debit: <span className="font-semibold text-zinc-700">{formatRupiah(totalDebit)}</span>
             </div>
-            <div>
-              Total Kredit: <span className="font-semibold">{formatRupiah(totalKredit)}</span>
+            <div className="text-zinc-500">
+              Total Kredit: <span className="font-semibold text-zinc-700">{formatRupiah(totalKredit)}</span>
             </div>
             <div className={isBalance ? "font-semibold text-emerald-600" : "font-semibold text-red-500"}>
               {isBalance ? "Balance" : "Belum Balance"}
             </div>
           </div>
 
-          {errorMsg ? <p className="text-sm text-red-500">{errorMsg}</p> : null}
+          {errorMsg ? <p className="text-[11px] text-red-500">{errorMsg}</p> : null}
         </div>
 
-        <div className="flex justify-end gap-2 border-t px-6 py-4">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-zinc-100">
           <button
             onClick={onClose}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600"
+            disabled={saving}
+            className="px-4 py-2 rounded-xl text-xs font-semibold border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors disabled:opacity-50"
           >
             Batal
           </button>
           <button
             onClick={onSave}
             disabled={!isBalance || saving}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 min-w-[110px] justify-center"
           >
-            {saving ? "Menyimpan..." : "Simpan"}
+            {saving ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Menyimpan...
+              </>
+            ) : (
+              <>
+                <Save className="w-3.5 h-3.5" />
+                Simpan
+              </>
+            )}
           </button>
         </div>
       </div>

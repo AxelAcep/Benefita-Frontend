@@ -5,7 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Save, X } from "lucide-react";
-import { JENIS_AKUN_OPTIONS, type JenisAkun } from "@/lib/services/accounting.service";
+import {
+  JENIS_AKUN_OPTIONS,
+  KATEGORI_AKUN_OPTIONS,
+  KATEGORI_BY_JENIS,
+  type JenisAkun,
+  type KategoriAkun,
+} from "@/lib/services/accounting.service";
 
 // ---------------------------------------------------------------------------
 // Schema & Types
@@ -19,6 +25,7 @@ const akunFormSchema = z.object({
   }),
   saldoAwal: z.string().optional(),
   isKasBank: z.boolean().optional(),
+  kategori: z.enum([...KATEGORI_AKUN_OPTIONS, ""]).optional(),
 });
 
 export type AkunFormValues = z.infer<typeof akunFormSchema>;
@@ -41,6 +48,16 @@ const JENIS_LABEL: Record<JenisAkun, string> = {
   MODAL: "Modal",
   PENDAPATAN: "Pendapatan",
   BEBAN: "Beban",
+};
+
+const KATEGORI_LABEL: Record<KategoriAkun, string> = {
+  KAS_BANK: "Kas & Bank",
+  PIUTANG_USAHA: "Piutang Usaha",
+  PIUTANG_LAINNYA: "Piutang Lainnya",
+  AKTIVA_TETAP: "Aktiva Tetap",
+  HUTANG_LANCAR: "Hutang Lancar",
+  HUTANG_JANGKA_PANJANG: "Hutang Jangka Panjang",
+  MODAL_AKUN: "Modal",
 };
 
 // ---------------------------------------------------------------------------
@@ -89,6 +106,8 @@ export function AkunModal({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<AkunFormValues>({
     resolver: zodResolver(akunFormSchema),
@@ -98,8 +117,12 @@ export function AkunModal({
       jenis: "ASET",
       saldoAwal: "",
       isKasBank: false,
+      kategori: "",
     },
   });
+
+  const selectedJenis = watch("jenis");
+  const kategoriOptions = KATEGORI_BY_JENIS[selectedJenis] ?? [];
 
   useEffect(() => {
     if (open) {
@@ -109,9 +132,15 @@ export function AkunModal({
         jenis: initialData?.jenis ?? "ASET",
         saldoAwal: initialData?.saldoAwal ?? "",
         isKasBank: initialData?.isKasBank ?? false,
+        kategori: initialData?.kategori ?? "",
       });
     }
   }, [open, initialData, reset]);
+
+  function onChangeJenis(value: JenisAkun) {
+    setValue("jenis", value);
+    setValue("kategori", "");
+  }
 
   const onFormSubmit = async (data: AkunFormValues) => {
     await onSubmit(data);
@@ -162,7 +191,11 @@ export function AkunModal({
               </div>
               <div>
                 <FieldLabel>Jenis Akun</FieldLabel>
-                <select {...register("jenis")} className={`${inputCls} bg-white`}>
+                <select
+                  value={selectedJenis}
+                  onChange={(e) => onChangeJenis(e.target.value as JenisAkun)}
+                  className={`${inputCls} bg-white`}
+                >
                   {JENIS_AKUN_OPTIONS.map((j) => (
                     <option key={j} value={j}>
                       {JENIS_LABEL[j]}
@@ -172,6 +205,20 @@ export function AkunModal({
                 <FieldError message={errors.jenis?.message} />
               </div>
             </div>
+
+            {kategoriOptions.length > 0 ? (
+              <div>
+                <FieldLabel optional>Kategori (grup Neraca)</FieldLabel>
+                <select {...register("kategori")} className={`${inputCls} bg-white`}>
+                  <option value="">Tanpa kategori</option>
+                  {kategoriOptions.map((k) => (
+                    <option key={k} value={k}>
+                      {KATEGORI_LABEL[k]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
 
             <div>
               <FieldLabel>Nama Akun</FieldLabel>

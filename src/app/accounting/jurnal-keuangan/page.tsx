@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { BookText, Plus } from "lucide-react";
+import { BookText, Plus, Search } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { useBoolean } from "@/hooks/use-boolean";
-import { useJurnal } from "@/hooks/use-jurnal";
-import { useJurnalMutation } from "@/hooks/use-jurnal";
+import { useJurnal, useJurnalMutation } from "@/hooks/use-jurnal";
 import { getAkunList, type AkunItem } from "@/lib/services/accounting.service";
 import { JurnalModal } from "@/components/finance/JurnalModal";
 import { useRole } from "@/hooks/use-role";
@@ -61,9 +60,10 @@ export default function JurnalKeuanganPage() {
     loadAkun();
   }, []);
 
-  function onSearch() {
+  function onSearch(v: string) {
+    setSearch(v);
     setPage(1);
-    refetch({ page: 1, search: search || undefined });
+    refetch({ page: 1, search: v || undefined });
   }
 
   function onChangePage(newPage: number) {
@@ -75,88 +75,102 @@ export default function JurnalKeuanganPage() {
     await create(payload);
     showNotif("Jurnal berhasil disimpan.", "success");
     onCloseModal();
-    refetch({ page: 1 });
     setPage(1);
+    refetch({ page: 1 });
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-              <BookText size={22} /> Jurnal Keuangan
-            </h1>
-            <p className="text-sm text-gray-500">
-              Pencatatan jurnal double-entry (debit = kredit) untuk seluruh transaksi keuangan.
-            </p>
+    <AppLayout
+      breadcrumbs={[
+        { label: "Accounting", href: "/accounting" },
+        { label: "Jurnal Keuangan" },
+      ]}
+    >
+      {notif && (
+        <Notification
+          key={notif.key}
+          message={notif.message}
+          type={notif.type}
+          onClose={() => setNotif(null)}
+        />
+      )}
+
+      <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+        {/* Toolbar */}
+        <div className="px-5 py-3 border-b border-zinc-100 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center">
+              <BookText className="w-3.5 h-3.5 text-emerald-500" />
+            </div>
+            <span className="font-bold text-zinc-800 text-sm">Jurnal Keuangan</span>
           </div>
+
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-300" />
+            <input
+              type="text"
+              placeholder="Cari deskripsi atau no. jurnal..."
+              value={search}
+              onChange={(e) => onSearch(e.target.value)}
+              className="w-64 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
+            />
+          </div>
+
           {isFinance ? (
             <button
               onClick={onOpenModal}
-              className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors whitespace-nowrap"
             >
-              <Plus size={16} /> Tambah Jurnal
+              <Plus className="w-3.5 h-3.5" />
+              Tambah Jurnal
             </button>
           ) : null}
         </div>
 
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && onSearch()}
-            placeholder="Cari deskripsi atau no. jurnal..."
-            className="w-full max-w-sm rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-          <button
-            onClick={onSearch}
-            className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600"
-          >
-            Cari
-          </button>
-        </div>
-
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
-              <tr>
-                <th className="px-4 py-3">No. Jurnal</th>
-                <th className="px-4 py-3">Tanggal</th>
-                <th className="px-4 py-3">Deskripsi</th>
-                <th className="px-4 py-3">Sumber</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Nominal</th>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px]">
+            <thead>
+              <tr className="border-b border-zinc-100 bg-zinc-50/60">
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">No. Jurnal</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">Tanggal</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">Deskripsi</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-32">Sumber</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-center w-24">Status</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-right w-36">Nominal</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-12 text-center text-xs text-zinc-400">
                     Memuat data...
                   </td>
                 </tr>
               ) : data && data.length > 0 ? (
                 data.map((item) => {
                   return (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-700">{item.noJurnal}</td>
-                      <td className="px-4 py-3 text-gray-600">{formatTanggal(item.tanggal)}</td>
-                      <td className="px-4 py-3 text-gray-600">{item.deskripsi}</td>
-                      <td className="px-4 py-3 text-gray-500">{item.sumber}</td>
-                      <td className="px-4 py-3">
+                    <tr key={item.id} className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors">
+                      <td className="px-4 py-3 text-xs text-zinc-700 font-medium align-top whitespace-nowrap">
+                        {item.noJurnal}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
+                        {formatTanggal(item.tanggal)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-600 align-top">{item.deskripsi}</td>
+                      <td className="px-4 py-3 text-xs text-zinc-400 align-top">{item.sumber}</td>
+                      <td className="px-4 py-3 text-center align-top">
                         <span
-                          className={`rounded-full px-2 py-1 text-xs font-medium ${
+                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${
                             item.status === "CLOSED"
-                              ? "bg-gray-100 text-gray-600"
+                              ? "bg-zinc-100 text-zinc-500"
                               : "bg-emerald-50 text-emerald-600"
                           }`}
                         >
                           {item.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-700">
+                      <td className="px-4 py-3 text-xs text-zinc-700 font-semibold text-right align-top whitespace-nowrap">
                         {formatRupiah(item.totalNominal)}
                       </td>
                     </tr>
@@ -164,7 +178,7 @@ export default function JurnalKeuanganPage() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-12 text-center text-xs text-zinc-400">
                     Belum ada data jurnal.
                   </td>
                 </tr>
@@ -173,25 +187,29 @@ export default function JurnalKeuanganPage() {
           </table>
         </div>
 
+        {/* Pagination */}
         {pagination.totalPages > 1 ? (
-          <div className="flex items-center justify-end gap-2">
-            <button
-              onClick={() => onChangePage(Math.max(1, page - 1))}
-              disabled={page <= 1}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-40"
-            >
-              Sebelumnya
-            </button>
-            <span className="text-sm text-gray-500">
-              Halaman {pagination.page} dari {pagination.totalPages}
-            </span>
-            <button
-              onClick={() => onChangePage(Math.min(pagination.totalPages, page + 1))}
-              disabled={page >= pagination.totalPages}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-40"
-            >
-              Berikutnya
-            </button>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3 border-t border-zinc-100">
+            <p className="text-[11px] text-zinc-400">
+              Halaman <span className="font-semibold text-zinc-600">{pagination.page}</span> dari{" "}
+              <span className="font-semibold text-zinc-600">{pagination.totalPages}</span>
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onChangePage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                ‹ Sebelumnya
+              </button>
+              <button
+                onClick={() => onChangePage(Math.min(pagination.totalPages, page + 1))}
+                disabled={page === pagination.totalPages}
+                className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                Selanjutnya ›
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
@@ -203,10 +221,6 @@ export default function JurnalKeuanganPage() {
         onClose={onCloseModal}
         onSubmit={onSubmitJurnal}
       />
-
-      {notif ? (
-        <Notification message={notif.message} type={notif.type} onClose={() => setNotif(null)} />
-      ) : null}
     </AppLayout>
   );
 }

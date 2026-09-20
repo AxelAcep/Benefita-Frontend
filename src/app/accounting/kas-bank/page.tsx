@@ -34,106 +34,116 @@ export default function KasBankPage() {
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-            <Wallet2 size={22} /> Kas & Bank
-          </h1>
-          <p className="text-sm text-gray-500">
-            Mutasi dan saldo seluruh akun Kas &amp; Bank.
-          </p>
-        </div>
+    <AppLayout
+      breadcrumbs={[
+        { label: "Accounting", href: "/accounting" },
+        { label: "Kas & Bank" },
+      ]}
+    >
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <Wallet2 className="w-3.5 h-3.5 text-emerald-500" />
+              </div>
+              <span className="font-bold text-zinc-800 text-sm">Kas & Bank</span>
+            </div>
 
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Dari Tanggal</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-3 py-2 border border-zinc-200 rounded-xl text-xs text-zinc-700 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
+              />
+              <span className="text-[11px] text-zinc-400">s/d</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-3 py-2 border border-zinc-200 rounded-xl text-xs text-zinc-700 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
+              />
+              <button
+                onClick={onFilter}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors whitespace-nowrap"
+              >
+                Tampilkan
+              </button>
+            </div>
+
+            {data ? (
+              <span className="ml-auto inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600 whitespace-nowrap">
+                Total Saldo Gabungan: {formatRupiah(data.totalSaldoGabungan)}
+              </span>
+            ) : null}
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Sampai Tanggal</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <button
-            onClick={onFilter}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Tampilkan
-          </button>
-          {data ? (
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
-              Total Saldo Gabungan: {formatRupiah(data.totalSaldoGabungan)}
-            </span>
-          ) : null}
         </div>
 
         {loading ? (
-          <p className="py-6 text-center text-gray-400">Memuat data...</p>
+          <p className="py-12 text-center text-xs text-zinc-400">Memuat data...</p>
         ) : data && data.mutasi && data.mutasi.length > 0 ? (
           data.mutasi.map((akunMutasi) => {
             return (
-              <div key={akunMutasi.akun.id} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-3">
-                  <h2 className="text-sm font-semibold text-gray-700">
+              <div
+                key={akunMutasi.akun.id}
+                className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden"
+              >
+                <div className="px-5 py-2.5 bg-zinc-50/60 border-b border-zinc-100 flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-zinc-500">
                     {akunMutasi.akun.kode ? `${akunMutasi.akun.kode} - ${akunMutasi.akun.nama}` : akunMutasi.akun.nama}
-                  </h2>
-                  <span className="text-sm font-semibold text-gray-700">
+                  </p>
+                  <p className="text-xs font-semibold text-zinc-700">
                     Saldo: {formatRupiah(akunMutasi.saldoAkhir)}
-                  </span>
+                  </p>
                 </div>
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
-                    <tr>
-                      <th className="px-4 py-2">No. Jurnal</th>
-                      <th className="px-4 py-2">Tanggal</th>
-                      <th className="px-4 py-2">Keterangan</th>
-                      <th className="px-4 py-2 text-right">Masuk</th>
-                      <th className="px-4 py-2 text-right">Keluar</th>
-                      <th className="px-4 py-2 text-right">Saldo</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {akunMutasi.rows && akunMutasi.rows.length > 0 ? (
-                      akunMutasi.rows.map((row) => {
-                        return (
-                          <tr key={row.noJurnal + row.tanggal}>
-                            <td className="px-4 py-2 text-gray-600">{row.noJurnal}</td>
-                            <td className="px-4 py-2 text-gray-600">{formatTanggal(row.tanggal)}</td>
-                            <td className="px-4 py-2 text-gray-600">{row.keterangan}</td>
-                            <td className="px-4 py-2 text-right text-emerald-600">{formatRupiah(row.masuk)}</td>
-                            <td className="px-4 py-2 text-right text-red-500">{formatRupiah(row.keluar)}</td>
-                            <td className="px-4 py-2 text-right font-medium text-gray-700">
-                              {formatRupiah(row.saldo)}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={6} className="px-4 py-4 text-center text-gray-400">
-                          Belum ada mutasi.
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-zinc-100 bg-zinc-50/60">
+                        <th className="px-5 py-2 text-[10px] font-semibold text-zinc-400 text-left">No. Jurnal</th>
+                        <th className="px-5 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">Tanggal</th>
+                        <th className="px-5 py-2 text-[10px] font-semibold text-zinc-400 text-left">Keterangan</th>
+                        <th className="px-5 py-2 text-[10px] font-semibold text-zinc-400 text-right w-32">Masuk</th>
+                        <th className="px-5 py-2 text-[10px] font-semibold text-zinc-400 text-right w-32">Keluar</th>
+                        <th className="px-5 py-2 text-[10px] font-semibold text-zinc-400 text-right w-32">Saldo</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {akunMutasi.rows && akunMutasi.rows.length > 0 ? (
+                        akunMutasi.rows.map((row) => {
+                          return (
+                            <tr key={row.noJurnal + row.tanggal} className="border-b border-zinc-50">
+                              <td className="px-5 py-2 text-xs text-zinc-600 whitespace-nowrap">{row.noJurnal}</td>
+                              <td className="px-5 py-2 text-xs text-zinc-600 whitespace-nowrap">{formatTanggal(row.tanggal)}</td>
+                              <td className="px-5 py-2 text-xs text-zinc-600">{row.keterangan}</td>
+                              <td className="px-5 py-2 text-xs text-emerald-600 text-right whitespace-nowrap">{formatRupiah(row.masuk)}</td>
+                              <td className="px-5 py-2 text-xs text-red-500 text-right whitespace-nowrap">{formatRupiah(row.keluar)}</td>
+                              <td className="px-5 py-2 text-xs text-zinc-700 font-medium text-right whitespace-nowrap">
+                                {formatRupiah(row.saldo)}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="px-5 py-6 text-center text-xs text-zinc-400">
+                            Belum ada mutasi.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             );
           })
         ) : (
-          <p className="py-6 text-center text-gray-400">
-            Belum ada akun Kas &amp; Bank aktif. Tandai akun sebagai Kas &amp; Bank di Master Akun.
-          </p>
+          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm">
+            <p className="py-12 text-center text-xs text-zinc-400">
+              Belum ada akun Kas &amp; Bank aktif. Tandai akun sebagai Kas &amp; Bank di Master Akun.
+            </p>
+          </div>
         )}
       </div>
     </AppLayout>

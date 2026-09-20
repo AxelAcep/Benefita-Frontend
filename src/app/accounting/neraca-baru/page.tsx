@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Scale } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { useLaporanNeraca } from "@/hooks/use-laporan-keuangan";
+import type { NeracaRow } from "@/lib/services/jurnal-keuangan.service";
 
 function formatRupiah(val: number) {
   return `Rp${val.toLocaleString("id-ID")}`;
@@ -13,47 +14,27 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function NeracaSection({
-  title,
-  rows,
-  total,
-}: {
-  title: string;
-  rows: { akun: { id: number; kode: string | null; nama: string }; saldo: number }[];
-  total: number;
-}) {
-  return (
-    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-      <div className="border-b bg-gray-50 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-700">{title}</h2>
-      </div>
-      <table className="w-full text-sm">
-        <tbody className="divide-y divide-gray-100">
-          {rows && rows.length > 0 ? (
-            rows.map((r) => {
-              return (
-                <tr key={r.akun.id}>
-                  <td className="px-4 py-2 text-gray-600">
-                    {r.akun.kode ? `${r.akun.kode} - ${r.akun.nama}` : r.akun.nama}
-                  </td>
-                  <td className="px-4 py-2 text-right text-gray-700">{formatRupiah(r.saldo)}</td>
-                </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan={2} className="px-4 py-4 text-center text-gray-400">
-                Tidak ada data.
-              </td>
-            </tr>
-          )}
-          <tr className="bg-gray-50 font-semibold text-gray-700">
-            <td className="px-4 py-2">Total {title}</td>
-            <td className="px-4 py-2 text-right">{formatRupiah(total)}</td>
+function NeracaRows({ rows }: { rows: NeracaRow[] }) {
+  return rows && rows.length > 0
+    ? rows.map((r) => {
+        return (
+          <tr key={r.akun.id} className="border-b border-zinc-50">
+            <td className="pl-8 pr-4 py-1.5 text-xs text-zinc-600">
+              {r.akun.kode ? `${r.akun.kode} - ${r.akun.nama}` : r.akun.nama}
+            </td>
+            <td className="px-4 py-1.5 text-xs text-zinc-700 text-right">{formatRupiah(r.saldo)}</td>
           </tr>
-        </tbody>
-      </table>
-    </div>
+        );
+      })
+    : null;
+}
+
+function NeracaSubtotal({ label, total }: { label: string; total: number }) {
+  return (
+    <tr className="bg-zinc-50/60 border-b border-zinc-100">
+      <td className="pl-5 pr-4 py-1.5 text-xs font-semibold text-zinc-700">{label}</td>
+      <td className="px-4 py-1.5 text-xs font-semibold text-zinc-700 text-right">{formatRupiah(total)}</td>
+    </tr>
   );
 }
 
@@ -71,52 +52,165 @@ export default function NeracaBaruPage() {
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="flex items-center gap-2 text-xl font-semibold text-gray-800">
-            <Scale size={22} /> Neraca
-          </h1>
-          <p className="text-sm text-gray-500">
-            Posisi keuangan (Aset = Liabilitas + Modal) per tanggal tertentu.
-          </p>
-        </div>
+    <AppLayout
+      breadcrumbs={[
+        { label: "Accounting", href: "/accounting" },
+        { label: "Neraca" },
+      ]}
+    >
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="px-5 py-3 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <Scale className="w-3.5 h-3.5 text-emerald-500" />
+              </div>
+              <span className="font-bold text-zinc-800 text-sm">Neraca</span>
+            </div>
 
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Per Tanggal</label>
-            <input
-              type="date"
-              value={tanggal}
-              onChange={(e) => setTanggal(e.target.value)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={tanggal}
+                onChange={(e) => setTanggal(e.target.value)}
+                className="px-3 py-2 border border-zinc-200 rounded-xl text-xs text-zinc-700 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
+              />
+              <button
+                onClick={onFilter}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors whitespace-nowrap"
+              >
+                Tampilkan
+              </button>
+            </div>
+
+            {data ? (
+              <span
+                className={`ml-auto inline-block px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${
+                  data.isBalance ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
+                }`}
+              >
+                {data.isBalance ? "Balance" : `Selisih ${formatRupiah(data.selisih)}`}
+              </span>
+            ) : null}
           </div>
-          <button
-            onClick={onFilter}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Tampilkan
-          </button>
-          {data ? (
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                data.isBalance ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
-              }`}
-            >
-              {data.isBalance ? "Balance" : `Selisih ${formatRupiah(data.selisih)}`}
-            </span>
-          ) : null}
         </div>
 
         {loading ? (
-          <p className="py-6 text-center text-gray-400">Memuat data...</p>
+          <p className="py-12 text-center text-xs text-zinc-400">Memuat data...</p>
         ) : data ? (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <NeracaSection title="Aset" rows={data.aset} total={data.totalAset} />
-            <div className="space-y-6">
-              <NeracaSection title="Liabilitas" rows={data.liabilitas} total={data.totalLiabilitas} />
-              <NeracaSection title="Modal" rows={data.modal} total={data.totalModal} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* AKTIVA */}
+            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden self-start">
+              <div className="px-5 py-2.5 bg-zinc-800 border-b border-zinc-100">
+                <p className="text-[11px] font-bold text-white tracking-wide">AKTIVA</p>
+              </div>
+              <table className="w-full">
+                <tbody>
+                  <tr className="bg-zinc-50/60">
+                    <td colSpan={2} className="px-4 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase">
+                      Aktiva Lancar
+                    </td>
+                  </tr>
+                  {data.aktivaLancar && data.aktivaLancar.length > 0 ? (
+                    <NeracaRows rows={data.aktivaLancar} />
+                  ) : (
+                    <tr>
+                      <td colSpan={2} className="pl-8 pr-4 py-1.5 text-xs text-zinc-400">
+                        Tidak ada data.
+                      </td>
+                    </tr>
+                  )}
+                  <NeracaSubtotal label="Total Aktiva Lancar" total={data.totalAktivaLancar} />
+
+                  <tr className="bg-zinc-50/60">
+                    <td colSpan={2} className="px-4 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase">
+                      Aktiva Tetap
+                    </td>
+                  </tr>
+                  {data.aktivaTetap && data.aktivaTetap.length > 0 ? (
+                    <NeracaRows rows={data.aktivaTetap} />
+                  ) : (
+                    <tr>
+                      <td colSpan={2} className="pl-8 pr-4 py-1.5 text-xs text-zinc-400">
+                        Tidak ada data.
+                      </td>
+                    </tr>
+                  )}
+                  <NeracaSubtotal label="Total Aktiva Tetap" total={data.totalAktivaTetap} />
+
+                  <tr className="border-t-2 border-zinc-200">
+                    <td className="px-4 py-2.5 text-xs font-bold text-zinc-800">TOTAL AKTIVA</td>
+                    <td className="px-4 py-2.5 text-xs font-bold text-zinc-800 text-right">
+                      {formatRupiah(data.totalAset)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* PASIVA */}
+            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden self-start">
+              <div className="px-5 py-2.5 bg-zinc-800 border-b border-zinc-100">
+                <p className="text-[11px] font-bold text-white tracking-wide">PASIVA</p>
+              </div>
+              <table className="w-full">
+                <tbody>
+                  <tr className="bg-zinc-50/60">
+                    <td colSpan={2} className="px-4 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase">
+                      Hutang Lancar
+                    </td>
+                  </tr>
+                  {data.hutangLancar && data.hutangLancar.length > 0 ? (
+                    <NeracaRows rows={data.hutangLancar} />
+                  ) : (
+                    <tr>
+                      <td colSpan={2} className="pl-8 pr-4 py-1.5 text-xs text-zinc-400">
+                        Tidak ada data.
+                      </td>
+                    </tr>
+                  )}
+                  <NeracaSubtotal label="Total Hutang Lancar" total={data.totalHutangLancar} />
+
+                  <tr className="bg-zinc-50/60">
+                    <td colSpan={2} className="px-4 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase">
+                      Hutang Jangka Panjang
+                    </td>
+                  </tr>
+                  {data.hutangJangkaPanjang && data.hutangJangkaPanjang.length > 0 ? (
+                    <NeracaRows rows={data.hutangJangkaPanjang} />
+                  ) : (
+                    <tr>
+                      <td colSpan={2} className="pl-8 pr-4 py-1.5 text-xs text-zinc-400">
+                        Tidak ada data.
+                      </td>
+                    </tr>
+                  )}
+                  <NeracaSubtotal label="Total Hutang Jangka Panjang" total={data.totalHutangJangkaPanjang} />
+
+                  <tr className="bg-zinc-50/60">
+                    <td colSpan={2} className="px-4 py-1.5 text-[10px] font-semibold text-zinc-400 uppercase">
+                      Modal
+                    </td>
+                  </tr>
+                  {data.modal && data.modal.length > 0 ? (
+                    <NeracaRows rows={data.modal} />
+                  ) : (
+                    <tr>
+                      <td colSpan={2} className="pl-8 pr-4 py-1.5 text-xs text-zinc-400">
+                        Tidak ada data.
+                      </td>
+                    </tr>
+                  )}
+                  <NeracaSubtotal label="Total Modal" total={data.totalModal} />
+
+                  <tr className="border-t-2 border-zinc-200">
+                    <td className="px-4 py-2.5 text-xs font-bold text-zinc-800">TOTAL KEWAJIBAN &amp; EKUITAS</td>
+                    <td className="px-4 py-2.5 text-xs font-bold text-zinc-800 text-right">
+                      {formatRupiah(data.totalLiabilitas + data.totalModal)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         ) : null}
