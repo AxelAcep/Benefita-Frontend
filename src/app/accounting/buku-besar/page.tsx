@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { BookOpenCheck, X } from "lucide-react";
+import { BookOpenCheck, X, FileDown, Loader2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Notification from "@/components/base/notifications";
 import { useBoolean } from "@/hooks/use-boolean";
 import { useBukuBesarRingkasan, useBukuBesarAkun } from "@/hooks/use-buku-besar";
 import { JENIS_AKUN_OPTIONS, type JenisAkun } from "@/lib/services/accounting.service";
+import { exportBukuBesarAkunPdf } from "@/lib/services/jurnal-keuangan.service";
 
 const JENIS_LABEL: Record<JenisAkun, string> = {
   ASET: "Aset",
@@ -59,6 +61,9 @@ export default function BukuBesarPage() {
   } = useBukuBesarAkun();
 
   const { value: detailOpen, onTrue: onOpenDetail, onFalse: onCloseDetail } = useBoolean(false);
+  const { value: exporting, onTrue: onExportingTrue, onFalse: onExportingFalse } = useBoolean(false);
+  const [selectedAkunId, setSelectedAkunId] = useState<number | null>(null);
+  const [notif, setNotif] = useState<{ message: string; type: "success" | "error"; key: number } | null>(null);
 
   function onFilterJenis(value: JenisAkun | "") {
     setJenisFilter(value);
@@ -71,12 +76,30 @@ export default function BukuBesarPage() {
 
   function onRowClick(akunId: number) {
     onOpenDetail();
+    setSelectedAkunId(akunId);
     fetchDetail(akunId, { startDate, endDate });
   }
 
   function onCloseDetailModal() {
     onCloseDetail();
     resetDetail();
+    setSelectedAkunId(null);
+  }
+
+  async function onExportPdf() {
+    if (!selectedAkunId) return;
+    onExportingTrue();
+    try {
+      await exportBukuBesarAkunPdf(selectedAkunId, { startDate, endDate });
+    } catch (err) {
+      setNotif({
+        message: err instanceof Error ? err.message : "Gagal mengunduh PDF",
+        type: "error",
+        key: Date.now(),
+      });
+    } finally {
+      onExportingFalse();
+    }
   }
 
   return (
@@ -86,6 +109,15 @@ export default function BukuBesarPage() {
         { label: "Buku Besar" },
       ]}
     >
+      {notif ? (
+        <Notification
+          key={notif.key}
+          message={notif.message}
+          type={notif.type}
+          onClose={() => setNotif(null)}
+        />
+      ) : null}
+
       <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
         {/* Toolbar */}
         <div className="px-5 py-3 border-b border-zinc-100 flex flex-wrap items-center gap-3">
@@ -213,12 +245,22 @@ export default function BukuBesarPage() {
               <p className="font-bold text-zinc-800 text-sm">
                 {detail ? `${detail.akun.kode ? detail.akun.kode + " - " : ""}${detail.akun.nama}` : "Detail Akun"}
               </p>
-              <button
-                onClick={onCloseDetailModal}
-                className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600 shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onExportPdf}
+                  disabled={exporting || !detail}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  {exporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
+                  Export PDF
+                </button>
+                <button
+                  onClick={onCloseDetailModal}
+                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600 shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             <div className="px-6 py-4">
               {detailLoading ? (

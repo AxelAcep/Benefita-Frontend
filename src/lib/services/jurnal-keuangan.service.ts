@@ -263,3 +263,57 @@ export async function getKasBank(
   if (!res.ok) throw new Error(data.message || "Gagal mengambil data Kas & Bank");
   return data;
 }
+
+// ─── Export PDF ───────────────────────────────────────────────────
+// Endpoint PDF butuh auth header (fetchWithAuth), jadi gak bisa dibuka
+// langsung lewat <a href>. Fetch sebagai blob, download manual.
+
+async function downloadPdf(url: string, filename: string) {
+  const res = await fetchWithAuth(url, { method: "GET" });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Gagal mengunduh PDF");
+  }
+  const blob = await res.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
+}
+
+export async function exportLabaRugiPdf(startDate: string, endDate: string) {
+  const query = new URLSearchParams({ startDate, endDate });
+  await downloadPdf(
+    `${API_URL}/api/jurnal/laporan/laba-rugi/pdf?${query.toString()}`,
+    `laba-rugi-${startDate}_${endDate}.pdf`,
+  );
+}
+
+export async function exportNeracaPdf(tanggal: string) {
+  const query = new URLSearchParams({ tanggal });
+  await downloadPdf(`${API_URL}/api/jurnal/laporan/neraca/pdf?${query.toString()}`, `neraca-${tanggal}.pdf`);
+}
+
+export async function exportBukuBesarAkunPdf(
+  akunId: number,
+  params: { startDate?: string; endDate?: string } = {},
+) {
+  const query = new URLSearchParams();
+  if (params.startDate) query.append("startDate", params.startDate);
+  if (params.endDate) query.append("endDate", params.endDate);
+  await downloadPdf(
+    `${API_URL}/api/jurnal/buku-besar/akun/${akunId}/pdf?${query.toString()}`,
+    `buku-besar-${akunId}.pdf`,
+  );
+}
+
+export async function exportKasBankPdf(params: { startDate?: string; endDate?: string } = {}) {
+  const query = new URLSearchParams();
+  if (params.startDate) query.append("startDate", params.startDate);
+  if (params.endDate) query.append("endDate", params.endDate);
+  await downloadPdf(`${API_URL}/api/jurnal/kas-bank/pdf?${query.toString()}`, `kas-bank.pdf`);
+}

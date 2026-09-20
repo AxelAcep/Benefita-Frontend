@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, FileDown, Loader2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Notification from "@/components/base/notifications";
+import { useBoolean } from "@/hooks/use-boolean";
 import { useLaporanLabaRugi } from "@/hooks/use-laporan-keuangan";
-import type { LabaRugiRow } from "@/lib/services/jurnal-keuangan.service";
+import { exportLabaRugiPdf, type LabaRugiRow } from "@/lib/services/jurnal-keuangan.service";
 
 function formatRupiah(val: number) {
   return `Rp${val.toLocaleString("id-ID")}`;
@@ -47,6 +49,8 @@ export default function LabaRugiPage() {
   const [startDate, setStartDate] = useState(awalBulanIni());
   const [endDate, setEndDate] = useState(hariIni());
   const { data, loading, fetchData } = useLaporanLabaRugi();
+  const { value: exporting, onTrue: onExportingTrue, onFalse: onExportingFalse } = useBoolean(false);
+  const [notif, setNotif] = useState<{ message: string; type: "success" | "error"; key: number } | null>(null);
 
   useEffect(() => {
     fetchData(startDate, endDate);
@@ -57,6 +61,21 @@ export default function LabaRugiPage() {
     fetchData(startDate, endDate);
   }
 
+  async function onExportPdf() {
+    onExportingTrue();
+    try {
+      await exportLabaRugiPdf(startDate, endDate);
+    } catch (err) {
+      setNotif({
+        message: err instanceof Error ? err.message : "Gagal mengunduh PDF",
+        type: "error",
+        key: Date.now(),
+      });
+    } finally {
+      onExportingFalse();
+    }
+  }
+
   return (
     <AppLayout
       breadcrumbs={[
@@ -64,6 +83,15 @@ export default function LabaRugiPage() {
         { label: "Laporan Laba Rugi" },
       ]}
     >
+      {notif ? (
+        <Notification
+          key={notif.key}
+          message={notif.message}
+          type={notif.type}
+          onClose={() => setNotif(null)}
+        />
+      ) : null}
+
       <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-zinc-100 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
@@ -94,6 +122,15 @@ export default function LabaRugiPage() {
               Tampilkan
             </button>
           </div>
+
+          <button
+            onClick={onExportPdf}
+            disabled={exporting || !data}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors disabled:opacity-50 whitespace-nowrap"
+          >
+            {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+            Export PDF
+          </button>
 
           <span className="ml-auto inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600 whitespace-nowrap">
             Real-time

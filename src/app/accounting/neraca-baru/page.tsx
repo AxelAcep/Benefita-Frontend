@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Scale } from "lucide-react";
+import { Scale, FileDown, Loader2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Notification from "@/components/base/notifications";
+import { useBoolean } from "@/hooks/use-boolean";
 import { useLaporanNeraca } from "@/hooks/use-laporan-keuangan";
-import type { NeracaRow } from "@/lib/services/jurnal-keuangan.service";
+import { exportNeracaPdf, type NeracaRow } from "@/lib/services/jurnal-keuangan.service";
 
 function formatRupiah(val: number) {
   return `Rp${val.toLocaleString("id-ID")}`;
@@ -41,6 +43,8 @@ function NeracaSubtotal({ label, total }: { label: string; total: number }) {
 export default function NeracaBaruPage() {
   const [tanggal, setTanggal] = useState(todayIso());
   const { data, loading, fetchData } = useLaporanNeraca();
+  const { value: exporting, onTrue: onExportingTrue, onFalse: onExportingFalse } = useBoolean(false);
+  const [notif, setNotif] = useState<{ message: string; type: "success" | "error"; key: number } | null>(null);
 
   useEffect(() => {
     fetchData(tanggal);
@@ -51,6 +55,21 @@ export default function NeracaBaruPage() {
     fetchData(tanggal);
   }
 
+  async function onExportPdf() {
+    onExportingTrue();
+    try {
+      await exportNeracaPdf(tanggal);
+    } catch (err) {
+      setNotif({
+        message: err instanceof Error ? err.message : "Gagal mengunduh PDF",
+        type: "error",
+        key: Date.now(),
+      });
+    } finally {
+      onExportingFalse();
+    }
+  }
+
   return (
     <AppLayout
       breadcrumbs={[
@@ -58,6 +77,15 @@ export default function NeracaBaruPage() {
         { label: "Neraca" },
       ]}
     >
+      {notif ? (
+        <Notification
+          key={notif.key}
+          message={notif.message}
+          type={notif.type}
+          onClose={() => setNotif(null)}
+        />
+      ) : null}
+
       <div className="space-y-4">
         <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
           <div className="px-5 py-3 flex flex-wrap items-center gap-3">
@@ -82,6 +110,15 @@ export default function NeracaBaruPage() {
                 Tampilkan
               </button>
             </div>
+
+            <button
+              onClick={onExportPdf}
+              disabled={exporting || !data}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors disabled:opacity-50 whitespace-nowrap"
+            >
+              {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+              Export PDF
+            </button>
 
             <span className="ml-auto inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600 whitespace-nowrap">
               Real-time
