@@ -621,10 +621,13 @@ export const KATEGORI_AKUN_OPTIONS = [
   "KAS_BANK",
   "PIUTANG_USAHA",
   "PIUTANG_LAINNYA",
+  "UANG_MUKA",
+  "BEBAN_DIBAYAR_DIMUKA",
   "AKTIVA_TETAP",
   "HUTANG_LANCAR",
   "HUTANG_JANGKA_PANJANG",
   "MODAL_AKUN",
+  "HARGA_POKOK_JASA",
   "BEBAN_PENJUALAN",
   "BEBAN_ADMINISTRASI",
 ] as const;
@@ -633,13 +636,13 @@ export type KategoriAkun = (typeof KATEGORI_AKUN_OPTIONS)[number];
 
 // Kategori mana yang valid buat tiap jenis akun — dipakai buat filter opsi
 // di form Master Akun (PENDAPATAN gak punya subgrup, BEBAN dipecah
-// Penjualan/Administrasi biar Laba Rugi mirip layout Beban Usaha asli).
+// Harga Pokok Jasa/Penjualan/Administrasi biar Laba Rugi mirip layout asli).
 export const KATEGORI_BY_JENIS: Record<JenisAkun, KategoriAkun[]> = {
-  ASET: ["KAS_BANK", "PIUTANG_USAHA", "PIUTANG_LAINNYA", "AKTIVA_TETAP"],
+  ASET: ["KAS_BANK", "PIUTANG_USAHA", "PIUTANG_LAINNYA", "UANG_MUKA", "BEBAN_DIBAYAR_DIMUKA", "AKTIVA_TETAP"],
   LIABILITAS: ["HUTANG_LANCAR", "HUTANG_JANGKA_PANJANG"],
   MODAL: ["MODAL_AKUN"],
   PENDAPATAN: [],
-  BEBAN: ["BEBAN_PENJUALAN", "BEBAN_ADMINISTRASI"],
+  BEBAN: ["HARGA_POKOK_JASA", "BEBAN_PENJUALAN", "BEBAN_ADMINISTRASI"],
 };
 
 export interface AkunItem {

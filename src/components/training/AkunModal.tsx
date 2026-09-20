@@ -54,10 +54,13 @@ const KATEGORI_LABEL: Record<KategoriAkun, string> = {
   KAS_BANK: "Kas & Bank",
   PIUTANG_USAHA: "Piutang Usaha",
   PIUTANG_LAINNYA: "Piutang Lainnya",
+  UANG_MUKA: "Uang Muka",
+  BEBAN_DIBAYAR_DIMUKA: "Beban Dibayar Dimuka",
   AKTIVA_TETAP: "Aktiva Tetap",
   HUTANG_LANCAR: "Hutang Lancar",
   HUTANG_JANGKA_PANJANG: "Hutang Jangka Panjang",
   MODAL_AKUN: "Modal",
+  HARGA_POKOK_JASA: "Harga Pokok Jasa",
   BEBAN_PENJUALAN: "Beban Penjualan",
   BEBAN_ADMINISTRASI: "Beban Umum & Administrasi",
 };

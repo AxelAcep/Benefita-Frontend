@@ -170,6 +170,37 @@ export default function LabaRugiPage() {
             <table className="w-full border-t border-zinc-100">
               <thead>
                 <tr className="bg-zinc-50/60 border-b border-zinc-100">
+                  <th className="px-4 py-1.5 text-left text-[10px] font-semibold text-zinc-400 uppercase">Harga Pokok Jasa</th>
+                  <th className="px-4 py-1.5 text-right text-[10px] font-semibold text-zinc-400">Nominal</th>
+                  <th className="px-4 py-1.5 text-right text-[10px] font-semibold text-zinc-400 w-20">% Pdptn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.hargaPokok && data.hargaPokok.length > 0 ? (
+                  <LabaRugiRows rows={data.hargaPokok} total={data.totalPendapatan} />
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="px-5 py-4 text-center text-xs text-zinc-400">
+                      Tidak ada data.
+                    </td>
+                  </tr>
+                )}
+                <tr className="bg-zinc-50/60 font-semibold">
+                  <td className="px-4 py-2 text-xs text-zinc-700">Total Harga Pokok Jasa</td>
+                  <td className="px-4 py-2 text-xs text-zinc-700 text-right">{formatRupiah(data.totalHargaPokok)}</td>
+                  <td className="px-4 py-2 text-xs text-zinc-700 text-right">{formatPersen(data.totalHargaPokok, data.totalPendapatan)}</td>
+                </tr>
+                <tr className="bg-zinc-100 font-bold border-y border-zinc-200">
+                  <td className="px-4 py-2 text-xs text-zinc-800">LABA KOTOR</td>
+                  <td className="px-4 py-2 text-xs text-zinc-800 text-right">{formatRupiah(data.labaKotor)}</td>
+                  <td className="px-4 py-2 text-xs text-zinc-800 text-right">{formatPersen(data.labaKotor, data.totalPendapatan)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table className="w-full border-t border-zinc-100">
+              <thead>
+                <tr className="bg-zinc-50/60 border-b border-zinc-100">
                   <th className="px-4 py-1.5 text-left text-[10px] font-semibold text-zinc-400 uppercase">Beban Usaha</th>
                   <th className="px-4 py-1.5 text-right text-[10px] font-semibold text-zinc-400">Nominal</th>
                   <th className="px-4 py-1.5 text-right text-[10px] font-semibold text-zinc-400 w-20">% Pdptn</th>

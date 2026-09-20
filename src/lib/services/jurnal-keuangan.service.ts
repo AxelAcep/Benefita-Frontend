@@ -173,6 +173,9 @@ export interface LabaRugiResponse {
   endDate: string;
   pendapatan: LabaRugiRow[];
   totalPendapatan: number;
+  hargaPokok: LabaRugiRow[];
+  totalHargaPokok: number;
+  labaKotor: number;
   bebanPenjualan: LabaRugiRow[];
   totalBebanPenjualan: number;
   bebanAdministrasi: LabaRugiRow[];
