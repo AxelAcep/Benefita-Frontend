@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { BookText, Plus, Search } from "lucide-react";
+import { BookText, Plus, Search, ChevronDown, ChevronRight } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { useBoolean } from "@/hooks/use-boolean";
@@ -9,6 +9,7 @@ import { useJurnal, useJurnalMutation } from "@/hooks/use-jurnal";
 import { getAkunList, type AkunItem } from "@/lib/services/accounting.service";
 import { JurnalModal } from "@/components/finance/JurnalModal";
 import { useRole } from "@/hooks/use-role";
+import type { JurnalTransaksiItem } from "@/lib/services/jurnal-keuangan.service";
 
 const PAGE_SIZE = 10;
 
@@ -37,6 +38,23 @@ function awalBulanIni() {
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
 }
 
+function akunLabel(akun: { kode: string | null; nama: string }) {
+  return akun.kode ? `${akun.kode} - ${akun.nama}` : akun.nama;
+}
+
+// Ringkasan "Dari Akun -> Ke Akun" buat entry 2 baris (Simple). Entry
+// Advanced (3+ baris) gak punya satu pasangan tunggal yang mewakili,
+// jadi cukup dikasih jumlah akun — detail lengkapnya di baris expand.
+function ringkasanAkun(item: JurnalTransaksiItem) {
+  if (!item.baris || item.baris.length !== 2) {
+    return `${item.baris?.length ?? 0} akun terlibat`;
+  }
+  const kredit = item.baris.find((b) => Number(b.kredit) > 0);
+  const debit = item.baris.find((b) => Number(b.debit) > 0);
+  if (!kredit || !debit) return `${item.baris.length} akun terlibat`;
+  return `${akunLabel(kredit.akun)} → ${akunLabel(debit.akun)}`;
+}
+
 function hariIni() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -54,9 +72,14 @@ export default function JurnalKeuanganPage() {
 
   const [akunList, setAkunList] = useState<AkunItem[]>([]);
   const [notif, setNotif] = useState<NotifState | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   function showNotif(message: string, type: "success" | "error") {
     setNotif({ message, type, key: Date.now() });
+  }
+
+  function onToggleExpand(id: number) {
+    setExpandedId((prev) => (prev === id ? null : id));
   }
 
   useEffect(() => {
@@ -167,56 +190,88 @@ export default function JurnalKeuanganPage() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[900px]">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50/60">
+                <th className="px-2 py-2 w-8"></th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">No. Jurnal</th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">Tanggal</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">Tanggal</th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">Deskripsi</th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-32">Sumber</th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-center w-24">Status</th>
-                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-right w-36">Nominal</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-56">Dari Akun → Ke Akun</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">Sumber</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-right w-32">Nominal</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-xs text-zinc-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-xs text-zinc-400">
                     Memuat data...
                   </td>
                 </tr>
               ) : data && data.length > 0 ? (
                 data.map((item) => {
+                  const isExpanded = expandedId === item.id;
                   return (
-                    <tr key={item.id} className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors">
-                      <td className="px-4 py-3 text-xs text-zinc-700 font-medium align-top whitespace-nowrap">
-                        {item.noJurnal}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
-                        {formatTanggal(item.tanggal)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-zinc-600 align-top">{item.deskripsi}</td>
-                      <td className="px-4 py-3 text-xs text-zinc-400 align-top">{item.sumber}</td>
-                      <td className="px-4 py-3 text-center align-top">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${
-                            item.status === "CLOSED"
-                              ? "bg-zinc-100 text-zinc-500"
-                              : "bg-emerald-50 text-emerald-600"
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-zinc-700 font-semibold text-right align-top whitespace-nowrap">
-                        {formatRupiah(item.totalNominal)}
-                      </td>
-                    </tr>
+                    <React.Fragment key={item.id}>
+                      <tr
+                        onClick={() => onToggleExpand(item.id)}
+                        className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors cursor-pointer"
+                      >
+                        <td className="px-2 py-3 align-top text-zinc-400">
+                          {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-zinc-700 font-medium align-top whitespace-nowrap">
+                          {item.noJurnal}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-zinc-600 align-top whitespace-nowrap">
+                          {formatTanggal(item.tanggal)}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-zinc-600 align-top">{item.deskripsi}</td>
+                        <td className="px-4 py-3 text-xs text-zinc-600 align-top">{ringkasanAkun(item)}</td>
+                        <td className="px-4 py-3 text-xs text-zinc-400 align-top">{item.sumber}</td>
+                        <td className="px-4 py-3 text-xs text-zinc-700 font-semibold text-right align-top whitespace-nowrap">
+                          {formatRupiah(item.totalNominal)}
+                        </td>
+                      </tr>
+                      {isExpanded ? (
+                        <tr className="border-b border-zinc-100 bg-zinc-50/40">
+                          <td colSpan={7} className="px-4 py-3">
+                            <table className="w-full max-w-2xl ml-8">
+                              <thead>
+                                <tr className="text-[10px] font-semibold text-zinc-400">
+                                  <th className="text-left pb-1">Akun</th>
+                                  <th className="text-right pb-1 w-32">Debit</th>
+                                  <th className="text-right pb-1 w-32">Kredit</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {item.baris && item.baris.length > 0
+                                  ? item.baris.map((b) => {
+                                      return (
+                                        <tr key={b.id} className="text-xs">
+                                          <td className="py-1 text-zinc-700">{akunLabel(b.akun)}</td>
+                                          <td className="py-1 text-right text-zinc-600">
+                                            {Number(b.debit) > 0 ? formatRupiah(b.debit) : "-"}
+                                          </td>
+                                          <td className="py-1 text-right text-zinc-600">
+                                            {Number(b.kredit) > 0 ? formatRupiah(b.kredit) : "-"}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })
+                                  : null}
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </React.Fragment>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-xs text-zinc-400">
+                  <td colSpan={7} className="px-4 py-12 text-center text-xs text-zinc-400">
                     Belum ada data jurnal.
                   </td>
                 </tr>
