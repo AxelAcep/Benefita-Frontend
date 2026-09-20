@@ -9,15 +9,14 @@ import {
   JurnalTransaksiItem,
   JurnalBarisInput,
   ModeJurnal,
-  StatusJurnal,
 } from "@/lib/services/jurnal-keuangan.service";
 import { Pagination } from "@/lib/services/accounting.service";
 
 interface UseJurnalParams {
   page?: number;
   limit?: number;
-  status?: StatusJurnal;
-  periode?: string;
+  startDate?: string;
+  endDate?: string;
   search?: string;
 }
 

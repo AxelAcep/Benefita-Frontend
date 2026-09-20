@@ -32,12 +32,23 @@ function formatTanggal(val: string) {
   });
 }
 
+function awalBulanIni() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+}
+
+function hariIni() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function JurnalKeuanganPage() {
   const { isFinance } = useRole();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState(awalBulanIni());
+  const [endDate, setEndDate] = useState(hariIni());
 
-  const { data, pagination, loading, refetch } = useJurnal({ page, limit: PAGE_SIZE });
+  const { data, pagination, loading, refetch } = useJurnal({ page, limit: PAGE_SIZE, startDate, endDate });
   const { loading: saving, create } = useJurnalMutation();
   const { value: modalOpen, onTrue: onOpenModal, onFalse: onCloseModal } = useBoolean(false);
 
@@ -63,12 +74,17 @@ export default function JurnalKeuanganPage() {
   function onSearch(v: string) {
     setSearch(v);
     setPage(1);
-    refetch({ page: 1, search: v || undefined });
+    refetch({ page: 1, search: v || undefined, startDate, endDate });
+  }
+
+  function onFilterTanggal() {
+    setPage(1);
+    refetch({ page: 1, search: search || undefined, startDate, endDate });
   }
 
   function onChangePage(newPage: number) {
     setPage(newPage);
-    refetch({ page: newPage });
+    refetch({ page: newPage, startDate, endDate });
   }
 
   async function onSubmitJurnal(payload: Parameters<typeof create>[0]) {
@@ -114,6 +130,28 @@ export default function JurnalKeuanganPage() {
               onChange={(e) => onSearch(e.target.value)}
               className="w-64 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-xs text-zinc-700 outline-none focus:border-emerald-300 transition-all"
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-2.5 py-1.5 border border-zinc-200 rounded-lg text-[11px] text-zinc-600 outline-none focus:border-emerald-300 transition-all"
+            />
+            <span className="text-[11px] text-zinc-400">s/d</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-2.5 py-1.5 border border-zinc-200 rounded-lg text-[11px] text-zinc-600 outline-none focus:border-emerald-300 transition-all"
+            />
+            <button
+              onClick={onFilterTanggal}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors whitespace-nowrap"
+            >
+              Terapkan
+            </button>
           </div>
 
           {isFinance ? (

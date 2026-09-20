@@ -58,6 +58,8 @@ const KATEGORI_LABEL: Record<KategoriAkun, string> = {
   HUTANG_LANCAR: "Hutang Lancar",
   HUTANG_JANGKA_PANJANG: "Hutang Jangka Panjang",
   MODAL_AKUN: "Modal",
+  BEBAN_PENJUALAN: "Beban Penjualan",
+  BEBAN_ADMINISTRASI: "Beban Umum & Administrasi",
 };
 
 // ---------------------------------------------------------------------------

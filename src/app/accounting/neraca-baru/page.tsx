@@ -18,7 +18,7 @@ function NeracaRows({ rows }: { rows: NeracaRow[] }) {
   return rows && rows.length > 0
     ? rows.map((r) => {
         return (
-          <tr key={r.akun.id} className="border-b border-zinc-50">
+          <tr key={r.akun.id ?? r.akun.nama} className="border-b border-zinc-50">
             <td className="pl-8 pr-4 py-1.5 text-xs text-zinc-600">
               {r.akun.kode ? `${r.akun.kode} - ${r.akun.nama}` : r.akun.nama}
             </td>
@@ -83,9 +83,12 @@ export default function NeracaBaruPage() {
               </button>
             </div>
 
+            <span className="ml-auto inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600 whitespace-nowrap">
+              Real-time
+            </span>
             {data ? (
               <span
-                className={`ml-auto inline-block px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${
+                className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${
                   data.isBalance ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
                 }`}
               >

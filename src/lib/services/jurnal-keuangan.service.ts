@@ -14,8 +14,9 @@ import type { JenisAkun, Pagination } from "./accounting.service";
 // ─────────────────────────────────────────────
 
 export type ModeJurnal = "SIMPLE" | "ADVANCED";
+// Real-time: semua jurnal statusnya POSTED, gak ada lagi CLOSED (tutup buku
+// dihapus). Field ini dipertahankan di tipe biar kompatibel sama data lama.
 export type StatusJurnal = "POSTED" | "CLOSED";
-export type StatusPeriode = "OPEN" | "CLOSED";
 
 export interface AkunRingkas {
   id: number;
@@ -65,14 +66,14 @@ export interface JurnalBarisInput {
 // ─── Fitur 2: Jurnal Keuangan ──────────────────────────────────────
 
 export async function getJurnalList(
-  params: { page?: number; limit?: number; status?: StatusJurnal; periode?: string; search?: string } = {},
+  params: { page?: number; limit?: number; startDate?: string; endDate?: string; search?: string } = {},
 ): Promise<JurnalListResponse> {
-  const { page = 1, limit = 10, status, periode, search } = params;
+  const { page = 1, limit = 10, startDate, endDate, search } = params;
   const query = new URLSearchParams();
   query.append("page", String(page));
   query.append("limit", String(limit));
-  if (status) query.append("status", status);
-  if (periode) query.append("periode", periode);
+  if (startDate) query.append("startDate", startDate);
+  if (endDate) query.append("endDate", endDate);
   if (search) query.append("search", search);
 
   const res = await fetchWithAuth(`${API_URL}/api/jurnal?${query.toString()}`, { method: "GET" });
@@ -160,35 +161,7 @@ export async function getBukuBesarAkun(
   return data;
 }
 
-export interface PeriodeItem {
-  periode: string;
-  status: StatusPeriode;
-  labaRugiBersih: string | null;
-  closedAt: string | null;
-}
-
-export async function getPeriodeList(): Promise<{ data: PeriodeItem[] }> {
-  const res = await fetchWithAuth(`${API_URL}/api/jurnal/periode`, { method: "GET" });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Gagal mengambil daftar periode");
-  return data;
-}
-
-export async function tutupBuku(periode: string): Promise<{
-  message: string;
-  data: { periodeRow: PeriodeItem; labaRugiBersih: number; totalPendapatan: number; totalBeban: number };
-}> {
-  const res = await fetchWithAuth(`${API_URL}/api/jurnal/tutup-buku`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ periode }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Gagal menutup buku");
-  return data;
-}
-
-// ─── Fitur 4: Laba Rugi ─────────────────────────────────────────────
+// ─── Fitur 4: Laba Rugi (real-time, filter by date range) ──────────
 
 export interface LabaRugiRow {
   akun: AkunRingkas;
@@ -196,20 +169,23 @@ export interface LabaRugiRow {
 }
 
 export interface LabaRugiResponse {
-  startPeriode: string;
-  endPeriode: string;
-  rows: LabaRugiRow[];
+  startDate: string;
+  endDate: string;
+  pendapatan: LabaRugiRow[];
   totalPendapatan: number;
+  bebanPenjualan: LabaRugiRow[];
+  totalBebanPenjualan: number;
+  bebanAdministrasi: LabaRugiRow[];
+  totalBebanAdministrasi: number;
   totalBeban: number;
   labaRugiBersih: number;
-  status: "DRAFT" | "FINAL";
 }
 
 export async function getLaporanLabaRugi(
-  startPeriode: string,
-  endPeriode: string,
+  startDate: string,
+  endDate: string,
 ): Promise<{ data: LabaRugiResponse }> {
-  const query = new URLSearchParams({ startPeriode, endPeriode });
+  const query = new URLSearchParams({ startDate, endDate });
   const res = await fetchWithAuth(`${API_URL}/api/jurnal/laporan/laba-rugi?${query.toString()}`, { method: "GET" });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Gagal mengambil laporan laba rugi");
@@ -219,7 +195,9 @@ export async function getLaporanLabaRugi(
 // ─── Fitur 5: Neraca ────────────────────────────────────────────────
 
 export interface NeracaRow {
-  akun: { id: number; kode: string | null; nama: string };
+  // id null buat baris sintetis "Laba (Rugi) Berjalan" (dihitung live, gak
+  // ngacu ke satu Akun tertentu).
+  akun: { id: number | null; kode: string | null; nama: string };
   saldo: number;
 }
 
@@ -234,6 +212,7 @@ export interface NeracaResponse {
   hutangJangkaPanjang: NeracaRow[];
   totalHutangJangkaPanjang: number;
   modal: NeracaRow[];
+  labaBerjalan: number;
   totalAset: number;
   totalLiabilitas: number;
   totalModal: number;

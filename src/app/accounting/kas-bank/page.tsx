@@ -19,13 +19,22 @@ function formatTanggal(val: string) {
   });
 }
 
+function awalBulanIni() {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+}
+
+function hariIni() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function KasBankPage() {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(awalBulanIni());
+  const [endDate, setEndDate] = useState(hariIni());
   const { data, loading, fetchData } = useKasBank();
 
   useEffect(() => {
-    fetchData();
+    fetchData({ startDate, endDate });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
