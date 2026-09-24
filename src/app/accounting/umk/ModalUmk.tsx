@@ -228,15 +228,17 @@ export default function ModalUmk({
             />
           </div>
 
-          <label className="flex items-center gap-2 text-xs font-medium text-zinc-600">
-            <input
-              type="checkbox"
-              checked={form.isDocumented}
-              onChange={(e) => setForm({ ...form, isDocumented: e.target.checked })}
-              className="h-4 w-4 rounded border-zinc-300 text-emerald-500 focus:ring-emerald-400"
-            />
-            Sudah didokumentasikan (isDocumented)
-          </label>
+          {editId ? (
+            <label className="flex items-center gap-2 text-xs font-medium text-zinc-600">
+              <input
+                type="checkbox"
+                checked={form.isDocumented}
+                onChange={(e) => setForm({ ...form, isDocumented: e.target.checked })}
+                className="h-4 w-4 rounded border-zinc-300 text-emerald-500 focus:ring-emerald-400"
+              />
+              Sudah didokumentasikan (isDocumented)
+            </label>
+          ) : null}
 
           <div className="flex justify-end gap-3 pt-2">
             <button
