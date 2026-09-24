@@ -510,6 +510,7 @@ export async function getUmk(
     endYear?: number;
     picId?: string;
     search?: string;
+    isDocumented?: boolean;
   } = {},
 ): Promise<UmkResponse> {
   const {
@@ -523,6 +524,7 @@ export async function getUmk(
     endYear,
     picId,
     search,
+    isDocumented,
   } = params;
 
   const queryParams = new URLSearchParams();
@@ -544,6 +546,9 @@ export async function getUmk(
   }
   if (search) {
     queryParams.append("search", search);
+  }
+  if (isDocumented !== undefined) {
+    queryParams.append("isDocumented", String(isDocumented));
   }
 
   const url = `${API_URL}/api/accounting/umk?${queryParams.toString()}`;
