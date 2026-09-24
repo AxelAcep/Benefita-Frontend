@@ -8,6 +8,8 @@ import {
   Loader2,
   Check,
   Ban,
+  Pencil,
+  X,
   ArrowDownCircle,
   ArrowUpCircle,
 } from "lucide-react";
@@ -88,16 +90,43 @@ export default function PengeluaranPemasukanPage() {
     new Date().toISOString().split("T")[0],
   );
   const [buktiFile, setBuktiFile] = useState<File | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
 
-  const { create, approve, reject, loading: isMutating } =
+  const { create, update, approve, reject, loading: isMutating } =
     useRequestKeuanganMutation();
 
   useEffect(() => {
+    if (editId) return; // pas edit, akunOptions gak perlu direset ulang tiap jenis dipilih manual
     setAkunId("");
     getAkunList({ jenis: JENIS_REQUEST_TO_AKUN[jenis], isActive: true, limit: 100 })
       .then((res) => setAkunOptions(res.data))
       .catch(() => setAkunOptions([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jenis]);
+
+  function resetForm() {
+    setJenis("PENGELUARAN");
+    setAkunId("");
+    setDeskripsi("");
+    setNominal("");
+    setTanggal(new Date().toISOString().split("T")[0]);
+    setBuktiFile(null);
+    setEditId(null);
+  }
+
+  function onOpenEdit(row: RequestKeuanganItem) {
+    setEditId(row.id);
+    setJenis(row.jenis);
+    getAkunList({ jenis: JENIS_REQUEST_TO_AKUN[row.jenis], isActive: true, limit: 100 })
+      .then((res) => setAkunOptions(res.data))
+      .catch(() => setAkunOptions([]));
+    setAkunId(row.akunId ?? "");
+    setDeskripsi(row.deskripsi);
+    setNominal(String(row.nominal));
+    setTanggal(row.tanggal.slice(0, 10));
+    setBuktiFile(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   async function handleSubmitRequest(e: React.FormEvent) {
     e.preventDefault();
@@ -111,22 +140,32 @@ export default function PengeluaranPemasukanPage() {
     }
 
     try {
-      await create({
-        jenis,
-        akunId: akunId ? Number(akunId) : undefined,
-        deskripsi: deskripsi.trim(),
-        nominal: Number(nominal),
-        tanggal,
-        buktiFile: buktiFile ?? undefined,
-      });
-      setDeskripsi("");
-      setNominal("");
-      setBuktiFile(null);
-      showNotif("Request berhasil diajukan", "success");
+      if (editId) {
+        await update(editId, {
+          jenis,
+          akunId: akunId ? Number(akunId) : null,
+          deskripsi: deskripsi.trim(),
+          nominal: Number(nominal),
+          tanggal,
+          buktiFile: buktiFile ?? undefined,
+        });
+        showNotif("Request berhasil diperbarui", "success");
+      } else {
+        await create({
+          jenis,
+          akunId: akunId ? Number(akunId) : undefined,
+          deskripsi: deskripsi.trim(),
+          nominal: Number(nominal),
+          tanggal,
+          buktiFile: buktiFile ?? undefined,
+        });
+        showNotif("Request berhasil diajukan", "success");
+      }
+      resetForm();
       refetch();
     } catch (err) {
       showNotif(
-        err instanceof Error ? err.message : "Gagal mengajukan request",
+        err instanceof Error ? err.message : "Gagal menyimpan request",
         "error",
       );
     }
@@ -235,8 +274,17 @@ export default function PengeluaranPemasukanPage() {
               <Wallet className="w-3.5 h-3.5 text-emerald-500" />
             </div>
             <span className="font-bold text-zinc-800 text-sm">
-              Ajukan Pengeluaran / Pemasukan
+              {editId ? "Edit Request Pengeluaran / Pemasukan" : "Ajukan Pengeluaran / Pemasukan"}
             </span>
+            {editId ? (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="ml-auto flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-zinc-700"
+              >
+                <X className="w-3 h-3" /> Batal edit
+              </button>
+            ) : null}
           </div>
 
           <form onSubmit={handleSubmitRequest} className="px-6 py-5 space-y-4">
@@ -363,7 +411,7 @@ export default function PengeluaranPemasukanPage() {
                 ) : (
                   <Send className="w-3.5 h-3.5" />
                 )}
-                Ajukan Request
+                {editId ? "Update Request" : "Ajukan Request"}
               </button>
             </div>
           </form>
@@ -515,6 +563,14 @@ export default function PengeluaranPemasukanPage() {
                       <td className="px-4 py-3 align-top">
                         {row.status === "PENDING" && isFinance ? (
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => onOpenEdit(row)}
+                              title="Edit"
+                              className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:underline"
+                            >
+                              <Pencil className="w-3 h-3" />
+                              Edit
+                            </button>
                             <button
                               onClick={() => handleApprove(row)}
                               title="Approve"

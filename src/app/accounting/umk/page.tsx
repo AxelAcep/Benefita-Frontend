@@ -201,6 +201,7 @@ export default function UmkPage() {
     "Realisasi",
     "Sisa",
     "Tgl Penyerahan",
+    "Dokumentasi",
     "Aksi",
   ];
 
@@ -521,6 +522,17 @@ export default function UmkPage() {
                         {formatTanggal(row.tglPenyerahanUang)}
                       </td>
                       <td className="px-4 py-3">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${
+                            row.isDocumented
+                              ? "bg-emerald-50 text-emerald-600"
+                              : "bg-zinc-100 text-zinc-500"
+                          }`}
+                        >
+                          {row.isDocumented ? "Terdokumentasi" : "Belum"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
                         <button
                           onClick={() => handleOpenEdit(row.id)}
                           className="text-xs text-emerald-600 font-semibold hover:underline"
@@ -533,7 +545,7 @@ export default function UmkPage() {
                   {data.length === 0 && (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={10}
                         className="px-4 py-8 text-center text-xs text-zinc-400"
                       >
                         Tidak ada data ditemukan

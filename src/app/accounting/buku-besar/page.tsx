@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { BookOpenCheck, X, FileDown, Loader2 } from "lucide-react";
+import { BookOpenCheck, X, FileDown, Loader2, Search } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { useBoolean } from "@/hooks/use-boolean";
@@ -52,6 +52,7 @@ export default function BukuBesarPage() {
   const [jenisFilter, setJenisFilter] = useState<JenisAkun | "">("");
   const [startDate, setStartDate] = useState(awalBulanIni());
   const [endDate, setEndDate] = useState(hariIni());
+  const [search, setSearch] = useState("");
   const { data, loading, refetch } = useBukuBesarRingkasan({ startDate, endDate });
   const {
     data: detail,
@@ -67,11 +68,16 @@ export default function BukuBesarPage() {
 
   function onFilterJenis(value: JenisAkun | "") {
     setJenisFilter(value);
-    refetch({ jenis: value || undefined, startDate, endDate });
+    refetch({ jenis: value || undefined, startDate, endDate, search: search || undefined });
   }
 
   function onFilterTanggal() {
-    refetch({ jenis: jenisFilter || undefined, startDate, endDate });
+    refetch({ jenis: jenisFilter || undefined, startDate, endDate, search: search || undefined });
+  }
+
+  function onSearch(value: string) {
+    setSearch(value);
+    refetch({ jenis: jenisFilter || undefined, startDate, endDate, search: value || undefined });
   }
 
   function onRowClick(akunId: number) {
@@ -126,6 +132,17 @@ export default function BukuBesarPage() {
               <BookOpenCheck className="w-3.5 h-3.5 text-emerald-500" />
             </div>
             <span className="font-bold text-zinc-800 text-sm">Buku Besar</span>
+          </div>
+
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-300" />
+            <input
+              type="text"
+              placeholder="Cari nama atau kode akun..."
+              value={search}
+              onChange={(e) => onSearch(e.target.value)}
+              className="w-56 pl-7 pr-3 py-1.5 border border-zinc-200 rounded-lg text-[11px] text-zinc-700 outline-none focus:border-emerald-300 transition-all"
+            />
           </div>
 
           <select

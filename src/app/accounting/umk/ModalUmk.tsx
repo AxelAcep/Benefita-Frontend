@@ -30,6 +30,7 @@ export default function ModalUmk({
     tglPenyerahanUang: "",
     realisasiUmk: 0,
     ketUmk: "",
+    isDocumented: false,
   });
 
   const { data: pegawaiList, loading: loadingPegawai } = usePegawai();
@@ -50,6 +51,7 @@ export default function ModalUmk({
               tglPenyerahanUang: data.tglPenyerahanUang || "",
               realisasiUmk: data.realisasiUmk || 0,
               ketUmk: data.ketUmk || "",
+              isDocumented: data.isDocumented,
             });
           } catch (err) {
             console.error("Gagal fetch detail UMK:", err);
@@ -68,6 +70,7 @@ export default function ModalUmk({
           tglPenyerahanUang: "",
           realisasiUmk: 0,
           ketUmk: "",
+          isDocumented: false,
         });
       }
     }
@@ -84,6 +87,7 @@ export default function ModalUmk({
         tglPenyerahanUang: form.tglPenyerahanUang || undefined,
         realisasiUmk: form.realisasiUmk || 0,
         ketUmk: form.ketUmk || undefined,
+        isDocumented: form.isDocumented,
       };
       if (editId) {
         await updateUmk(editId, payload);
@@ -223,6 +227,16 @@ export default function ModalUmk({
               placeholder="Keterangan tambahan..."
             />
           </div>
+
+          <label className="flex items-center gap-2 text-xs font-medium text-zinc-600">
+            <input
+              type="checkbox"
+              checked={form.isDocumented}
+              onChange={(e) => setForm({ ...form, isDocumented: e.target.checked })}
+              className="h-4 w-4 rounded border-zinc-300 text-emerald-500 focus:ring-emerald-400"
+            />
+            Sudah didokumentasikan (isDocumented)
+          </label>
 
           <div className="flex justify-end gap-3 pt-2">
             <button

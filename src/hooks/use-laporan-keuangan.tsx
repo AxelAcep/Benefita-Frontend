@@ -60,7 +60,7 @@ export function useKasBank() {
   const { value: loading, onTrue: onLoadingTrue, onFalse: onLoadingFalse } = useBoolean(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchData = useCallback(async (params?: { startDate?: string; endDate?: string }) => {
+  const fetchData = useCallback(async (params?: { startDate?: string; endDate?: string; search?: string }) => {
     onLoadingTrue();
     setError(null);
     try {

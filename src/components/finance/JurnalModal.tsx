@@ -3,12 +3,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { X, Plus, Trash2, Save, Loader2 } from "lucide-react";
 import type { AkunItem } from "@/lib/services/accounting.service";
-import type { ModeJurnal, JurnalBarisInput } from "@/lib/services/jurnal-keuangan.service";
+import type { ModeJurnal, JurnalBarisInput, JurnalTransaksiItem } from "@/lib/services/jurnal-keuangan.service";
 
 interface JurnalModalProps {
   open: boolean;
   akunList: AkunItem[];
   saving: boolean;
+  editData?: JurnalTransaksiItem | null;
   onClose: () => void;
   onSubmit: (payload: {
     tanggal: string;
@@ -42,7 +43,8 @@ const inputCls =
 
 const labelCls = "block text-[11px] font-semibold text-zinc-500 mb-1.5";
 
-export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: JurnalModalProps) {
+export function JurnalModal({ open, akunList, saving, editData, onClose, onSubmit }: JurnalModalProps) {
+  const isEdit = !!editData;
   const [mode, setMode] = useState<ModeJurnal>("SIMPLE");
   const [tanggal, setTanggal] = useState(todayIso());
   const [deskripsi, setDeskripsi] = useState("");
@@ -57,7 +59,27 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
   const [rows, setRows] = useState<AdvancedRow[]>([emptyRow(), emptyRow()]);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    if (editData) {
+      // Edit selalu ditampilkan di mode Advanced — data existing (2 baris
+      // Simple atau 3+ baris Advanced) sama-sama valid direpresentasikan
+      // sebagai daftar baris apa adanya, gak perlu nebak ulang "Dari/Ke".
+      setMode("ADVANCED");
+      setTanggal(editData.tanggal.slice(0, 10));
+      setDeskripsi(editData.deskripsi);
+      setDariAkunId("");
+      setKeAkunId("");
+      setNominal("");
+      setRows(
+        editData.baris.map((b) => ({
+          akunId: String(b.akunId),
+          debit: Number(b.debit) > 0 ? String(Number(b.debit)) : "",
+          kredit: Number(b.kredit) > 0 ? String(Number(b.kredit)) : "",
+          keterangan: b.keterangan || "",
+        })),
+      );
+    } else {
       setMode("SIMPLE");
       setTanggal(todayIso());
       setDeskripsi("");
@@ -65,9 +87,9 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
       setKeAkunId("");
       setNominal("");
       setRows([emptyRow(), emptyRow()]);
-      setErrorMsg(null);
     }
-  }, [open]);
+    setErrorMsg(null);
+  }, [open, editData]);
 
   const totalDebit = useMemo(() => {
     if (mode === "SIMPLE") return Number(nominal) || 0;
@@ -155,7 +177,9 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
           <div>
-            <p className="font-bold text-zinc-800 text-sm">Tambah Jurnal Keuangan</p>
+            <p className="font-bold text-zinc-800 text-sm">
+              {isEdit ? `Edit Jurnal ${editData?.noJurnal}` : "Tambah Jurnal Keuangan"}
+            </p>
             <p className="text-[11px] text-zinc-400 mt-0.5">
               Catat transaksi double-entry (debit = kredit).
             </p>
@@ -169,26 +193,28 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setMode("SIMPLE")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                mode === "SIMPLE" ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
-              }`}
-            >
-              Simple
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("ADVANCED")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                mode === "ADVANCED" ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
-              }`}
-            >
-              Advanced
-            </button>
-          </div>
+          {!isEdit ? (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setMode("SIMPLE")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  mode === "SIMPLE" ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+                }`}
+              >
+                Simple
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("ADVANCED")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  mode === "ADVANCED" ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
+                }`}
+              >
+                Advanced
+              </button>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -371,7 +397,7 @@ export function JurnalModal({ open, akunList, saving, onClose, onSubmit }: Jurna
             ) : (
               <>
                 <Save className="w-3.5 h-3.5" />
-                Simpan
+                {isEdit ? "Update" : "Simpan"}
               </>
             )}
           </button>

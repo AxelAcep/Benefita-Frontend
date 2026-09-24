@@ -479,6 +479,7 @@ export interface UmkItem {
     id: string;
     nama: string;
   };
+  isDocumented: boolean;
 }
 
 export interface UmkResponse {
@@ -560,6 +561,7 @@ export async function createUmk(payload: {
   tglPenyerahanUang?: string;
   realisasiUmk?: number;
   ketUmk?: string;
+  isDocumented?: boolean;
 }): Promise<{ message: string; data: UmkItem }> {
   const url = `${API_URL}/api/accounting/umk`;
   const res = await fetchWithAuth(url, {
@@ -581,6 +583,7 @@ export async function updateUmk(
     tglPenyerahanUang?: string;
     realisasiUmk?: number;
     ketUmk?: string;
+    isDocumented?: boolean;
   },
 ): Promise<{ message: string; data: UmkItem }> {
   const url = `${API_URL}/api/accounting/umk/${id}`;
@@ -844,6 +847,32 @@ export async function createRequestKeuangan(payload: {
   const res = await fetchWithAuth(url, { method: "POST", body: formData });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Gagal mengajukan request");
+  return data;
+}
+
+export async function updateRequestKeuangan(
+  id: number,
+  payload: {
+    jenis?: JenisRequestKeuangan;
+    akunId?: number | null;
+    deskripsi?: string;
+    nominal?: number;
+    tanggal?: string;
+    buktiFile?: File;
+  },
+): Promise<{ message: string; data: RequestKeuanganItem }> {
+  const formData = new FormData();
+  if (payload.jenis) formData.append("jenis", payload.jenis);
+  if (payload.akunId !== undefined) formData.append("akunId", payload.akunId ? String(payload.akunId) : "");
+  if (payload.deskripsi !== undefined) formData.append("deskripsi", payload.deskripsi);
+  if (payload.nominal !== undefined) formData.append("nominal", String(payload.nominal));
+  if (payload.tanggal !== undefined) formData.append("tanggal", payload.tanggal);
+  if (payload.buktiFile) formData.append("buktiFile", payload.buktiFile);
+
+  const url = `${API_URL}/api/accounting/request-keuangan/${id}`;
+  const res = await fetchWithAuth(url, { method: "PUT", body: formData });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal memperbarui request");
   return data;
 }
 

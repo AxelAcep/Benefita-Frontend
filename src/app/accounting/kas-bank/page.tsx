@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Wallet2, FileDown, Loader2 } from "lucide-react";
+import { Wallet2, FileDown, Loader2, Search } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { useBoolean } from "@/hooks/use-boolean";
@@ -34,6 +34,7 @@ function hariIni() {
 export default function KasBankPage() {
   const [startDate, setStartDate] = useState(awalBulanIni());
   const [endDate, setEndDate] = useState(hariIni());
+  const [search, setSearch] = useState("");
   const { data, loading, fetchData } = useKasBank();
   const { value: exporting, onTrue: onExportingTrue, onFalse: onExportingFalse } = useBoolean(false);
   const [notif, setNotif] = useState<{ message: string; type: "success" | "error"; key: number } | null>(null);
@@ -44,7 +45,12 @@ export default function KasBankPage() {
   }, []);
 
   function onFilter() {
-    fetchData({ startDate: startDate || undefined, endDate: endDate || undefined });
+    fetchData({ startDate: startDate || undefined, endDate: endDate || undefined, search: search || undefined });
+  }
+
+  function onSearch(value: string) {
+    setSearch(value);
+    fetchData({ startDate: startDate || undefined, endDate: endDate || undefined, search: value || undefined });
   }
 
   async function onExportPdf() {
@@ -86,6 +92,17 @@ export default function KasBankPage() {
                 <Wallet2 className="w-3.5 h-3.5 text-emerald-500" />
               </div>
               <span className="font-bold text-zinc-800 text-sm">Kas & Bank</span>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-300" />
+              <input
+                type="text"
+                placeholder="Cari nama atau kode akun..."
+                value={search}
+                onChange={(e) => onSearch(e.target.value)}
+                className="w-56 pl-7 pr-3 py-2 border border-zinc-200 rounded-xl text-xs text-zinc-700 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 transition-all"
+              />
             </div>
 
             <div className="flex items-center gap-2">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { BookText, Plus, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { BookText, Plus, Pencil, Search, ChevronDown, ChevronRight } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { useBoolean } from "@/hooks/use-boolean";
@@ -67,12 +67,13 @@ export default function JurnalKeuanganPage() {
   const [endDate, setEndDate] = useState(hariIni());
 
   const { data, pagination, loading, refetch } = useJurnal({ page, limit: PAGE_SIZE, startDate, endDate });
-  const { loading: saving, create } = useJurnalMutation();
+  const { loading: saving, create, update } = useJurnalMutation();
   const { value: modalOpen, onTrue: onOpenModal, onFalse: onCloseModal } = useBoolean(false);
 
   const [akunList, setAkunList] = useState<AkunItem[]>([]);
   const [notif, setNotif] = useState<NotifState | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [editTarget, setEditTarget] = useState<JurnalTransaksiItem | null>(null);
 
   function showNotif(message: string, type: "success" | "error") {
     setNotif({ message, type, key: Date.now() });
@@ -80,6 +81,17 @@ export default function JurnalKeuanganPage() {
 
   function onToggleExpand(id: number) {
     setExpandedId((prev) => (prev === id ? null : id));
+  }
+
+  function onOpenEdit(item: JurnalTransaksiItem, e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditTarget(item);
+    onOpenModal();
+  }
+
+  function onCloseModalAndReset() {
+    onCloseModal();
+    setEditTarget(null);
   }
 
   useEffect(() => {
@@ -111,9 +123,14 @@ export default function JurnalKeuanganPage() {
   }
 
   async function onSubmitJurnal(payload: Parameters<typeof create>[0]) {
-    await create(payload);
-    showNotif("Jurnal berhasil disimpan.", "success");
-    onCloseModal();
+    if (editTarget) {
+      await update(editTarget.id, payload);
+      showNotif("Jurnal berhasil diperbarui.", "success");
+    } else {
+      await create(payload);
+      showNotif("Jurnal berhasil disimpan.", "success");
+    }
+    onCloseModalAndReset();
     setPage(1);
     refetch({ page: 1 });
   }
@@ -179,7 +196,10 @@ export default function JurnalKeuanganPage() {
 
           {isFinance ? (
             <button
-              onClick={onOpenModal}
+              onClick={() => {
+                setEditTarget(null);
+                onOpenModal();
+              }}
               className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -200,12 +220,13 @@ export default function JurnalKeuanganPage() {
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-56">Dari Akun → Ke Akun</th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-28">Sumber</th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-right w-32">Nominal</th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-center w-16">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-xs text-zinc-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-xs text-zinc-400">
                     Memuat data...
                   </td>
                 </tr>
@@ -233,10 +254,21 @@ export default function JurnalKeuanganPage() {
                         <td className="px-4 py-3 text-xs text-zinc-700 font-semibold text-right align-top whitespace-nowrap">
                           {formatRupiah(item.totalNominal)}
                         </td>
+                        <td className="px-4 py-3 text-center align-top">
+                          {isFinance && item.sumber === "MANUAL" ? (
+                            <button
+                              onClick={(e) => onOpenEdit(item, e)}
+                              title="Edit"
+                              className="text-zinc-400 hover:text-emerald-600 transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          ) : null}
+                        </td>
                       </tr>
                       {isExpanded ? (
                         <tr className="border-b border-zinc-100 bg-zinc-50/40">
-                          <td colSpan={7} className="px-4 py-3">
+                          <td colSpan={8} className="px-4 py-3">
                             <table className="w-full max-w-2xl ml-8">
                               <thead>
                                 <tr className="text-[10px] font-semibold text-zinc-400">
@@ -271,7 +303,7 @@ export default function JurnalKeuanganPage() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-xs text-zinc-400">
+                  <td colSpan={8} className="px-4 py-12 text-center text-xs text-zinc-400">
                     Belum ada data jurnal.
                   </td>
                 </tr>
@@ -311,7 +343,8 @@ export default function JurnalKeuanganPage() {
         open={modalOpen}
         akunList={akunList}
         saving={saving}
-        onClose={onCloseModal}
+        editData={editTarget}
+        onClose={onCloseModalAndReset}
         onSubmit={onSubmitJurnal}
       />
     </AppLayout>

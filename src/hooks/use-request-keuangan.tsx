@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   getRequestKeuanganList,
   createRequestKeuangan,
+  updateRequestKeuangan,
   approveRequestKeuangan,
   rejectRequestKeuangan,
   RequestKeuanganItem,
@@ -113,6 +114,34 @@ export function useRequestKeuanganMutation() {
     [],
   );
 
+  const update = useCallback(
+    async (
+      id: number,
+      payload: {
+        jenis?: JenisRequestKeuangan;
+        akunId?: number | null;
+        deskripsi?: string;
+        nominal?: number;
+        tanggal?: string;
+        buktiFile?: File;
+      },
+    ) => {
+      setLoading(true);
+      setError(null);
+      try {
+        return await updateRequestKeuangan(id, payload);
+      } catch (err) {
+        const e =
+          err instanceof Error ? err : new Error("Gagal memperbarui request");
+        setError(e);
+        throw e;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
   const approve = useCallback(async (id: number) => {
     setLoading(true);
     setError(null);
@@ -142,5 +171,5 @@ export function useRequestKeuanganMutation() {
     }
   }, []);
 
-  return { loading, error, create, approve, reject };
+  return { loading, error, create, update, approve, reject };
 }

@@ -14,13 +14,14 @@ export function useBukuBesarRingkasan(initialParams?: {
   jenis?: JenisAkun;
   startDate?: string;
   endDate?: string;
+  search?: string;
 }) {
   const [data, setData] = useState<BukuBesarRingkasItem[]>([]);
   const { value: loading, onTrue: onLoadingTrue, onFalse: onLoadingFalse } = useBoolean(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchData = useCallback(
-    async (params?: { jenis?: JenisAkun; startDate?: string; endDate?: string }) => {
+    async (params?: { jenis?: JenisAkun; startDate?: string; endDate?: string; search?: string }) => {
       onLoadingTrue();
       setError(null);
       try {

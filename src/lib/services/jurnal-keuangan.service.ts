@@ -105,6 +105,25 @@ export async function createJurnal(payload: {
   return data;
 }
 
+export async function updateJurnal(
+  id: number,
+  payload: {
+    tanggal: string;
+    deskripsi: string;
+    mode: ModeJurnal;
+    baris: JurnalBarisInput[];
+  },
+): Promise<{ message: string; data: JurnalTransaksiItem }> {
+  const res = await fetchWithAuth(`${API_URL}/api/jurnal/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal memperbarui jurnal");
+  return data;
+}
+
 // ─── Fitur 3: Buku Besar & Tutup Buku ──────────────────────────────
 
 export interface BukuBesarRingkasItem {
@@ -116,12 +135,13 @@ export interface BukuBesarRingkasItem {
 }
 
 export async function getBukuBesarRingkasan(
-  params: { jenis?: JenisAkun; startDate?: string; endDate?: string } = {},
+  params: { jenis?: JenisAkun; startDate?: string; endDate?: string; search?: string } = {},
 ): Promise<{ data: BukuBesarRingkasItem[] }> {
   const query = new URLSearchParams();
   if (params.jenis) query.append("jenis", params.jenis);
   if (params.startDate) query.append("startDate", params.startDate);
   if (params.endDate) query.append("endDate", params.endDate);
+  if (params.search) query.append("search", params.search);
 
   const res = await fetchWithAuth(`${API_URL}/api/jurnal/buku-besar/ringkasan?${query.toString()}`, { method: "GET" });
   const data = await res.json();
@@ -256,11 +276,12 @@ export interface KasBankResponse {
 }
 
 export async function getKasBank(
-  params: { startDate?: string; endDate?: string } = {},
+  params: { startDate?: string; endDate?: string; search?: string } = {},
 ): Promise<{ data: KasBankResponse }> {
   const query = new URLSearchParams();
   if (params.startDate) query.append("startDate", params.startDate);
   if (params.endDate) query.append("endDate", params.endDate);
+  if (params.search) query.append("search", params.search);
   const res = await fetchWithAuth(`${API_URL}/api/jurnal/kas-bank?${query.toString()}`, { method: "GET" });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Gagal mengambil data Kas & Bank");

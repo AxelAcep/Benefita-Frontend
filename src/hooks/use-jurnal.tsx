@@ -6,6 +6,7 @@ import {
   getJurnalList,
   getJurnalById,
   createJurnal,
+  updateJurnal,
   JurnalTransaksiItem,
   JurnalBarisInput,
   ModeJurnal,
@@ -132,5 +133,31 @@ export function useJurnalMutation() {
     [], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  return { loading, error, create };
+  const update = useCallback(
+    async (
+      id: number,
+      payload: {
+        tanggal: string;
+        deskripsi: string;
+        mode: ModeJurnal;
+        baris: JurnalBarisInput[];
+      },
+    ) => {
+      onLoadingTrue();
+      setError(null);
+      try {
+        return await updateJurnal(id, payload);
+      } catch (err) {
+        const e =
+          err instanceof Error ? err : new Error("Gagal memperbarui jurnal");
+        setError(e);
+        throw e;
+      } finally {
+        onLoadingFalse();
+      }
+    },
+    [], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  return { loading, error, create, update };
 }
