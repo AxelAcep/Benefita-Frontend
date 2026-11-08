@@ -10,6 +10,7 @@ import {
   KATEGORI_AKUN_OPTIONS,
   KATEGORI_BY_JENIS,
   type JenisAkun,
+  LABEL_KATEGORI_AKUN,
   type KategoriAkun,
 } from "@/lib/services/accounting.service";
 
@@ -50,20 +51,9 @@ const JENIS_LABEL: Record<JenisAkun, string> = {
   BEBAN: "Beban",
 };
 
-const KATEGORI_LABEL: Record<KategoriAkun, string> = {
-  KAS_BANK: "Kas & Bank",
-  PIUTANG_USAHA: "Piutang Usaha",
-  PIUTANG_LAINNYA: "Piutang Lainnya",
-  UANG_MUKA: "Uang Muka",
-  BEBAN_DIBAYAR_DIMUKA: "Beban Dibayar Dimuka",
-  AKTIVA_TETAP: "Aktiva Tetap",
-  HUTANG_LANCAR: "Hutang Lancar",
-  HUTANG_JANGKA_PANJANG: "Hutang Jangka Panjang",
-  MODAL_AKUN: "Modal",
-  HARGA_POKOK_JASA: "Harga Pokok Jasa",
-  BEBAN_PENJUALAN: "Beban Penjualan",
-  BEBAN_ADMINISTRASI: "Beban Umum & Administrasi",
-};
+// Nama tampilan kategori dipakai bareng laporan — sumber tunggalnya di
+// accounting.service.ts, biar gak kelewat tiap ada kategori baru.
+const KATEGORI_LABEL = LABEL_KATEGORI_AKUN;
 
 // ---------------------------------------------------------------------------
 // Small reusable field components (samain gaya sama TUKModal/HotelModal)

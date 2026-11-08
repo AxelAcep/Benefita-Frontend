@@ -6,7 +6,7 @@ import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { useBoolean } from "@/hooks/use-boolean";
 import { useKasBank } from "@/hooks/use-laporan-keuangan";
-import { exportKasBankPdf } from "@/lib/services/jurnal-keuangan.service";
+import { exportKasBankExcel } from "@/lib/services/jurnal-keuangan.service";
 
 function formatRupiah(val: number | string) {
   const num = Number(val);
@@ -53,13 +53,13 @@ export default function KasBankPage() {
     fetchData({ startDate: startDate || undefined, endDate: endDate || undefined, search: value || undefined });
   }
 
-  async function onExportPdf() {
+  async function onExportExcel() {
     onExportingTrue();
     try {
-      await exportKasBankPdf({ startDate: startDate || undefined, endDate: endDate || undefined });
+      await exportKasBankExcel({ startDate: startDate || undefined, endDate: endDate || undefined });
     } catch (err) {
       setNotif({
-        message: err instanceof Error ? err.message : "Gagal mengunduh PDF",
+        message: err instanceof Error ? err.message : "Gagal mengunduh Excel",
         type: "error",
         key: Date.now(),
       });
@@ -128,12 +128,12 @@ export default function KasBankPage() {
             </div>
 
             <button
-              onClick={onExportPdf}
+              onClick={onExportExcel}
               disabled={exporting || !data}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors disabled:opacity-50 whitespace-nowrap"
             >
               {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-              Export PDF
+              Export Excel
             </button>
 
             {data ? (

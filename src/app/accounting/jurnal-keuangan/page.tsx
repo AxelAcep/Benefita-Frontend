@@ -59,6 +59,12 @@ function hariIni() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Harus sama dengan SUMBER_BISA_DIUBAH di
+// Benefita-Backend/src/controllers/jurnal.controller.js. Jurnal hasil import
+// Excel diperlakukan sama persis dengan jurnal yang diinput manual.
+// REQUEST_KEUANGAN gak masuk karena punya alur approval sendiri.
+const SUMBER_BISA_DIEDIT = ["MANUAL", "IMPORT_EXCEL"];
+
 export default function JurnalKeuanganPage() {
   const { isFinance } = useRole();
   const [page, setPage] = useState(1);
@@ -255,7 +261,7 @@ export default function JurnalKeuanganPage() {
                           {formatRupiah(item.totalNominal)}
                         </td>
                         <td className="px-4 py-3 text-center align-top">
-                          {isFinance && item.sumber === "MANUAL" ? (
+                          {isFinance && SUMBER_BISA_DIEDIT.includes(item.sumber) ? (
                             <button
                               onClick={(e) => onOpenEdit(item, e)}
                               title="Edit"

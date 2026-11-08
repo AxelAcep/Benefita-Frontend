@@ -191,24 +191,78 @@ export interface LabaRugiRow {
 export interface LabaRugiResponse {
   startDate: string;
   endDate: string;
-  pendapatan: LabaRugiRow[];
-  totalPendapatan: number;
+
+  pendapatanUsaha: LabaRugiRow[];
+  totalPendapatanUsaha: number;
   hargaPokok: LabaRugiRow[];
   totalHargaPokok: number;
   labaKotor: number;
+
   bebanPenjualan: LabaRugiRow[];
   totalBebanPenjualan: number;
   bebanAdministrasi: LabaRugiRow[];
   totalBebanAdministrasi: number;
+  totalBebanUsaha: number;
+  labaUsaha: number;
+
+  pendapatanLain: LabaRugiRow[];
+  totalPendapatanLain: number;
+  bebanLain: LabaRugiRow[];
+  totalBebanLain: number;
+  totalPendapatanLainBersih: number;
+  labaSebelumPajak: number;
+
+  pajakPenghasilan: LabaRugiRow[];
+  totalPajakPenghasilan: number;
+  labaBersih: number;
+
+  /** @deprecated pakai pendapatanUsaha */
+  pendapatan: LabaRugiRow[];
+  totalPendapatan: number;
   totalBeban: number;
+  /** @deprecated pakai labaBersih */
   labaRugiBersih: number;
+
+  /** Kolom pembanding, terisi kalau `startPembanding`/`endPembanding` dikirim. */
+  pembanding?: LabaRugiResponse;
+}
+
+// ─── Laba Rugi Rinci (beban digabung per grupBeban) ─────────────────
+
+export interface LabaRugiRinciRow {
+  label: string;
+  saldo: number;
+  akun: AkunRingkas[];
+}
+
+export interface LabaRugiRinciResponse extends LabaRugiResponse {
+  hargaPokokRinci: LabaRugiRinciRow[];
+  bebanPenjualanRinci: LabaRugiRinciRow[];
+  bebanAdministrasiRinci: LabaRugiRinciRow[];
+  bebanUsahaRinci: LabaRugiRinciRow[];
+}
+
+export async function getLaporanLabaRugiRinci(
+  startDate: string,
+  endDate: string,
+): Promise<{ data: LabaRugiRinciResponse }> {
+  const query = new URLSearchParams({ startDate, endDate });
+  const res = await fetchWithAuth(`${API_URL}/api/jurnal/laporan/laba-rugi-rinci?${query.toString()}`, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengambil laporan laba rugi rinci");
+  return data;
 }
 
 export async function getLaporanLabaRugi(
   startDate: string,
   endDate: string,
+  pembanding?: { startDate: string; endDate: string },
 ): Promise<{ data: LabaRugiResponse }> {
   const query = new URLSearchParams({ startDate, endDate });
+  if (pembanding) {
+    query.append("startPembanding", pembanding.startDate);
+    query.append("endPembanding", pembanding.endDate);
+  }
   const res = await fetchWithAuth(`${API_URL}/api/jurnal/laporan/laba-rugi?${query.toString()}`, { method: "GET" });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Gagal mengambil laporan laba rugi");
@@ -224,31 +278,132 @@ export interface NeracaRow {
   saldo: number;
 }
 
+/** Sub-bagian ber-subtotal di dalam satu grup Neraca, mis. "Kas dan Bank". */
+export interface NeracaGrup {
+  kategori: string | null;
+  label: string;
+  items: NeracaRow[];
+  total: number;
+}
+
 export interface NeracaResponse {
   tanggal: string;
+
   aktivaLancar: NeracaRow[];
+  aktivaLancarGrup: NeracaGrup[];
   totalAktivaLancar: number;
+
   aktivaTetap: NeracaRow[];
+  aktivaTetapGrup: NeracaGrup[];
   totalAktivaTetap: number;
+
+  aktivaTidakLancarLainnya: NeracaRow[];
+  aktivaTidakLancarLainnyaGrup: NeracaGrup[];
+  totalAktivaTidakLancarLainnya: number;
+
   hutangLancar: NeracaRow[];
+  hutangLancarGrup: NeracaGrup[];
   totalHutangLancar: number;
+
   hutangJangkaPanjang: NeracaRow[];
+  hutangJangkaPanjangGrup: NeracaGrup[];
   totalHutangJangkaPanjang: number;
+
   modal: NeracaRow[];
+  modalGrup: NeracaGrup[];
   labaBerjalan: number;
+
   totalAset: number;
   totalLiabilitas: number;
   totalModal: number;
   isBalance: boolean;
   selisih: number;
+
+  /** Kolom pembanding, terisi kalau `tanggalPembanding` dikirim. */
+  pembanding?: NeracaResponse;
 }
 
-export async function getNeracaSnapshot(tanggal?: string): Promise<{ data: NeracaResponse }> {
+export async function getNeracaSnapshot(
+  tanggal?: string,
+  tanggalPembanding?: string,
+): Promise<{ data: NeracaResponse }> {
   const query = new URLSearchParams();
   if (tanggal) query.append("tanggal", tanggal);
+  if (tanggalPembanding) query.append("tanggalPembanding", tanggalPembanding);
   const res = await fetchWithAuth(`${API_URL}/api/jurnal/laporan/neraca?${query.toString()}`, { method: "GET" });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Gagal mengambil neraca");
+  return data;
+}
+
+// ─── Neraca Saldo (padanan sheet "TB") ──────────────────────────────
+
+export interface NeracaSaldoRow {
+  akun: AkunRingkas & { kategori: string | null; kategoriLabel: string | null };
+  saldoAwal: number;
+  debit: number;
+  kredit: number;
+  saldoAkhir: number;
+  saldoAkhirDebit: number;
+  saldoAkhirKredit: number;
+}
+
+export interface NeracaSaldoResponse {
+  startDate: string;
+  endDate: string;
+  rows: NeracaSaldoRow[];
+  total: {
+    saldoAwal: number;
+    debit: number;
+    kredit: number;
+    saldoAkhirDebit: number;
+    saldoAkhirKredit: number;
+  };
+  selisihMutasi: number;
+  selisihSaldo: number;
+  isBalance: boolean;
+}
+
+export async function getNeracaSaldo(
+  startDate: string,
+  endDate: string,
+): Promise<{ data: NeracaSaldoResponse }> {
+  const query = new URLSearchParams({ startDate, endDate });
+  const res = await fetchWithAuth(`${API_URL}/api/jurnal/laporan/neraca-saldo?${query.toString()}`, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengambil neraca saldo");
+  return data;
+}
+
+// ─── Arus Kas (padanan sheet "CF") ──────────────────────────────────
+
+export interface ArusKasRow {
+  label: string;
+  nilai: number;
+}
+
+export interface ArusKasResponse {
+  startDate: string;
+  endDate: string;
+  saldoAwal: number;
+  penerimaan: ArusKasRow[];
+  totalPenerimaan: number;
+  pengeluaran: ArusKasRow[];
+  totalPengeluaran: number;
+  kenaikanBersih: number;
+  saldoAkhir: number;
+  selisih: number;
+  isBalance: boolean;
+}
+
+export async function getArusKas(
+  startDate: string,
+  endDate: string,
+): Promise<{ data: ArusKasResponse }> {
+  const query = new URLSearchParams({ startDate, endDate });
+  const res = await fetchWithAuth(`${API_URL}/api/jurnal/laporan/arus-kas?${query.toString()}`, { method: "GET" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengambil laporan arus kas");
   return data;
 }
 
@@ -288,56 +443,169 @@ export async function getKasBank(
   return data;
 }
 
-// ─── Export PDF ───────────────────────────────────────────────────
-// Endpoint PDF butuh auth header (fetchWithAuth), jadi gak bisa dibuka
+// ─── Import Jurnal dari Excel ───────────────────────────────────────
+
+export interface ImportJurnalRow {
+  id: number;
+  noJurnal: string;
+  sumber: "Pendapatan" | "Kas-Bank";
+  jenis: string | null;
+  baris: number;
+  buku: string | null;
+  akunKas: string | null;
+  tanggal: string | null;
+  noBukti: string;
+  keterangan: string;
+  nominal: number;
+  akunDebit: string | null;
+  akunKredit: string | null;
+  akunDebitId: number | null;
+  akunDebitNama: string | null;
+  akunKreditId: number | null;
+  akunKreditNama: string | null;
+  /** Nama aturan keyword yang cocok, null kalau tidak ketemu. */
+  aturan: string | null;
+  /** Pindah buku antar kas/bank — akun lawannya harus dipilih user. */
+  transferInternal: boolean;
+  /** Akun debit atau kredit belum terisi; baris ini di-highlight kuning. */
+  anomali: boolean;
+  kodeTidakDikenal: boolean;
+  sudahDiimport: boolean;
+}
+
+export interface ImportJurnalRingkasan {
+  total: number;
+  pendapatan: number;
+  kasBank: number;
+  cocok: number;
+  anomali: number;
+  transferInternal: number;
+  sudahDiimport: number;
+  sheetDitemukan: string[];
+}
+
+export async function previewImportJurnal(
+  file: File,
+): Promise<{ data: { rows: ImportJurnalRow[]; ringkasan: ImportJurnalRingkasan } }> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetchWithAuth(`${API_URL}/api/jurnal/import/preview`, {
+    method: "POST",
+    body: form,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal membaca file");
+  return data;
+}
+
+export interface CommitImportHasil {
+  dibuat: number;
+  dilewati: number;
+  detailDilewati: { noJurnal: string; alasan: string }[];
+}
+
+/** Maksimal baris per request. Lebih dari ini kena 413 Payload Too Large. */
+const UKURAN_BATCH = 400;
+
+/**
+ * Backend cuma butuh 6 field per baris. Field sisanya (nama akun, aturan,
+ * flag UI) cuma dipakai buat tampilan, jangan ikut dikirim — payload-nya
+ * turun sekitar 60%.
+ */
+function ringkasBaris(r: ImportJurnalRow) {
+  return {
+    noJurnal: r.noJurnal,
+    tanggal: r.tanggal,
+    noBukti: r.noBukti,
+    keterangan: r.keterangan,
+    nominal: r.nominal,
+    akunDebit: r.akunDebit,
+    akunKredit: r.akunKredit,
+  };
+}
+
+/**
+ * Kirim per batch supaya gak kena limit body dan progressnya kelihatan.
+ * Batch yang sudah masuk tetap tersimpan walaupun batch berikutnya gagal.
+ */
+export async function commitImportJurnal(
+  rows: ImportJurnalRow[],
+  onProgress?: (terkirim: number, total: number) => void,
+): Promise<{ message: string; data: CommitImportHasil }> {
+  const hasil: CommitImportHasil = { dibuat: 0, dilewati: 0, detailDilewati: [] };
+
+  for (let i = 0; i < rows.length; i += UKURAN_BATCH) {
+    const batch = rows.slice(i, i + UKURAN_BATCH).map(ringkasBaris);
+    const res = await fetchWithAuth(`${API_URL}/api/jurnal/import/commit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows: batch }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(
+        `${data.message || "Gagal menyimpan import"} (berhasil ${hasil.dibuat} jurnal sebelum gagal)`,
+      );
+    }
+    hasil.dibuat += data.data.dibuat;
+    hasil.dilewati += data.data.dilewati;
+    hasil.detailDilewati.push(...data.data.detailDilewati);
+    onProgress?.(Math.min(i + UKURAN_BATCH, rows.length), rows.length);
+  }
+
+  return { message: `${hasil.dibuat} jurnal berhasil diimport`, data: hasil };
+}
+
+// ─── Export Excel ─────────────────────────────────────────────────
+// Endpoint export butuh auth header (fetchWithAuth), jadi gak bisa dibuka
 // langsung lewat <a href>. Fetch sebagai blob, download manual.
 
-async function downloadPdf(url: string, filename: string) {
+async function unduhBerkas(url: string, namaFile: string) {
   const res = await fetchWithAuth(url, { method: "GET" });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || "Gagal mengunduh PDF");
+    throw new Error(data.message || "Gagal mengunduh file");
   }
   const blob = await res.blob();
   const blobUrl = window.URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = blobUrl;
-  link.download = filename;
+  link.download = namaFile;
   document.body.appendChild(link);
   link.click();
   link.remove();
   window.URL.revokeObjectURL(blobUrl);
 }
 
-export async function exportLabaRugiPdf(startDate: string, endDate: string) {
+export async function exportLabaRugiExcel(startDate: string, endDate: string) {
   const query = new URLSearchParams({ startDate, endDate });
-  await downloadPdf(
-    `${API_URL}/api/jurnal/laporan/laba-rugi/pdf?${query.toString()}`,
-    `laba-rugi-${startDate}_${endDate}.pdf`,
+  await unduhBerkas(
+    `${API_URL}/api/jurnal/laporan/laba-rugi/excel?${query.toString()}`,
+    `laba-rugi-${startDate}_${endDate}.xlsx`,
   );
 }
 
-export async function exportNeracaPdf(tanggal: string) {
+export async function exportNeracaExcel(tanggal: string) {
   const query = new URLSearchParams({ tanggal });
-  await downloadPdf(`${API_URL}/api/jurnal/laporan/neraca/pdf?${query.toString()}`, `neraca-${tanggal}.pdf`);
+  await unduhBerkas(`${API_URL}/api/jurnal/laporan/neraca/excel?${query.toString()}`, `neraca-${tanggal}.xlsx`);
 }
 
-export async function exportBukuBesarAkunPdf(
+export async function exportBukuBesarAkunExcel(
   akunId: number,
   params: { startDate?: string; endDate?: string } = {},
 ) {
   const query = new URLSearchParams();
   if (params.startDate) query.append("startDate", params.startDate);
   if (params.endDate) query.append("endDate", params.endDate);
-  await downloadPdf(
-    `${API_URL}/api/jurnal/buku-besar/akun/${akunId}/pdf?${query.toString()}`,
-    `buku-besar-${akunId}.pdf`,
+  await unduhBerkas(
+    `${API_URL}/api/jurnal/buku-besar/akun/${akunId}/excel?${query.toString()}`,
+    `buku-besar-${akunId}.xlsx`,
   );
 }
 
-export async function exportKasBankPdf(params: { startDate?: string; endDate?: string } = {}) {
+export async function exportKasBankExcel(params: { startDate?: string; endDate?: string } = {}) {
   const query = new URLSearchParams();
   if (params.startDate) query.append("startDate", params.startDate);
   if (params.endDate) query.append("endDate", params.endDate);
-  await downloadPdf(`${API_URL}/api/jurnal/kas-bank/pdf?${query.toString()}`, `kas-bank.pdf`);
+  await unduhBerkas(`${API_URL}/api/jurnal/kas-bank/excel?${query.toString()}`, `kas-bank.xlsx`);
 }

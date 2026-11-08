@@ -626,31 +626,96 @@ export const JENIS_AKUN_OPTIONS = [
 export type JenisAkun = (typeof JENIS_AKUN_OPTIONS)[number];
 
 export const KATEGORI_AKUN_OPTIONS = [
+  // Aktiva Lancar
   "KAS_BANK",
   "PIUTANG_USAHA",
   "PIUTANG_LAINNYA",
-  "UANG_MUKA",
+  "PERSEDIAAN",
   "BEBAN_DIBAYAR_DIMUKA",
+  "UANG_MUKA",
+  "AKTIVA_LANCAR_LAINNYA",
+  // Aktiva Tetap & Tidak Lancar
   "AKTIVA_TETAP",
+  "AKUMULASI_PENYUSUTAN",
+  "AKTIVA_TIDAK_LANCAR_LAINNYA",
+  // Hutang Lancar
+  "HUTANG_USAHA",
   "HUTANG_LANCAR",
+  "HUTANG_BIAYA",
+  "HUTANG_PAJAK",
+  "CADANGAN_PROVISI",
+  // Hutang Jangka Panjang
   "HUTANG_JANGKA_PANJANG",
+  // Modal
   "MODAL_AKUN",
+  // Laba Rugi
+  "PENDAPATAN_USAHA",
   "HARGA_POKOK_JASA",
   "BEBAN_PENJUALAN",
   "BEBAN_ADMINISTRASI",
+  "PENDAPATAN_LAIN",
+  "BEBAN_LAIN",
+  "PAJAK_PENGHASILAN",
 ] as const;
 
 export type KategoriAkun = (typeof KATEGORI_AKUN_OPTIONS)[number];
+
+// Nama tampilan tiap kategori — nama penuh, bukan singkatan. Dipakai di
+// form Master Akun dan di judul sub-bagian laporan.
+export const LABEL_KATEGORI_AKUN: Record<KategoriAkun, string> = {
+  KAS_BANK: "Kas dan Bank",
+  PIUTANG_USAHA: "Piutang Usaha",
+  PIUTANG_LAINNYA: "Piutang Lainnya",
+  PERSEDIAAN: "Persediaan",
+  BEBAN_DIBAYAR_DIMUKA: "Beban Dibayar Dimuka",
+  UANG_MUKA: "Uang Muka Pembelian",
+  AKTIVA_LANCAR_LAINNYA: "Aktiva Lancar Lainnya",
+  AKTIVA_TETAP: "Aktiva Tetap",
+  AKUMULASI_PENYUSUTAN: "Akumulasi Penyusutan Aktiva",
+  AKTIVA_TIDAK_LANCAR_LAINNYA: "Aktiva Tidak Lancar Lainnya",
+  HUTANG_USAHA: "Hutang Usaha",
+  HUTANG_LANCAR: "Hutang Lain-Lain",
+  HUTANG_BIAYA: "Hutang Biaya",
+  HUTANG_PAJAK: "Hutang Pajak",
+  CADANGAN_PROVISI: "Cadangan Provisi",
+  HUTANG_JANGKA_PANJANG: "Hutang Jangka Panjang",
+  MODAL_AKUN: "Modal",
+  PENDAPATAN_USAHA: "Pendapatan Usaha",
+  HARGA_POKOK_JASA: "Harga Pokok Usaha",
+  BEBAN_PENJUALAN: "Beban Penjualan",
+  BEBAN_ADMINISTRASI: "Beban Umum dan Administrasi",
+  PENDAPATAN_LAIN: "Pendapatan Lain-Lain",
+  BEBAN_LAIN: "Beban Lain-Lain",
+  PAJAK_PENGHASILAN: "Pajak Penghasilan",
+};
 
 // Kategori mana yang valid buat tiap jenis akun — dipakai buat filter opsi
 // di form Master Akun (PENDAPATAN gak punya subgrup, BEBAN dipecah
 // Harga Pokok Jasa/Penjualan/Administrasi biar Laba Rugi mirip layout asli).
 export const KATEGORI_BY_JENIS: Record<JenisAkun, KategoriAkun[]> = {
-  ASET: ["KAS_BANK", "PIUTANG_USAHA", "PIUTANG_LAINNYA", "UANG_MUKA", "BEBAN_DIBAYAR_DIMUKA", "AKTIVA_TETAP"],
-  LIABILITAS: ["HUTANG_LANCAR", "HUTANG_JANGKA_PANJANG"],
+  ASET: [
+    "KAS_BANK",
+    "PIUTANG_USAHA",
+    "PIUTANG_LAINNYA",
+    "PERSEDIAAN",
+    "BEBAN_DIBAYAR_DIMUKA",
+    "UANG_MUKA",
+    "AKTIVA_LANCAR_LAINNYA",
+    "AKTIVA_TETAP",
+    "AKUMULASI_PENYUSUTAN",
+    "AKTIVA_TIDAK_LANCAR_LAINNYA",
+  ],
+  LIABILITAS: [
+    "HUTANG_USAHA",
+    "HUTANG_LANCAR",
+    "HUTANG_BIAYA",
+    "HUTANG_PAJAK",
+    "CADANGAN_PROVISI",
+    "HUTANG_JANGKA_PANJANG",
+  ],
   MODAL: ["MODAL_AKUN"],
-  PENDAPATAN: [],
-  BEBAN: ["HARGA_POKOK_JASA", "BEBAN_PENJUALAN", "BEBAN_ADMINISTRASI"],
+  PENDAPATAN: ["PENDAPATAN_USAHA", "PENDAPATAN_LAIN"],
+  BEBAN: ["HARGA_POKOK_JASA", "BEBAN_PENJUALAN", "BEBAN_ADMINISTRASI", "BEBAN_LAIN", "PAJAK_PENGHASILAN"],
 };
 
 export interface AkunItem {
@@ -662,6 +727,7 @@ export interface AkunItem {
   isActive: boolean;
   isKasBank: boolean;
   kategori: KategoriAkun | null;
+  grupBeban: string | null;
   createdAt: string;
   updatedAt: string;
 }

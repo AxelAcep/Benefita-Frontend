@@ -7,7 +7,7 @@ import Notification from "@/components/base/notifications";
 import { useBoolean } from "@/hooks/use-boolean";
 import { useBukuBesarRingkasan, useBukuBesarAkun } from "@/hooks/use-buku-besar";
 import { JENIS_AKUN_OPTIONS, type JenisAkun } from "@/lib/services/accounting.service";
-import { exportBukuBesarAkunPdf } from "@/lib/services/jurnal-keuangan.service";
+import { exportBukuBesarAkunExcel } from "@/lib/services/jurnal-keuangan.service";
 
 const JENIS_LABEL: Record<JenisAkun, string> = {
   ASET: "Aset",
@@ -92,14 +92,14 @@ export default function BukuBesarPage() {
     setSelectedAkunId(null);
   }
 
-  async function onExportPdf() {
+  async function onExportExcel() {
     if (!selectedAkunId) return;
     onExportingTrue();
     try {
-      await exportBukuBesarAkunPdf(selectedAkunId, { startDate, endDate });
+      await exportBukuBesarAkunExcel(selectedAkunId, { startDate, endDate });
     } catch (err) {
       setNotif({
-        message: err instanceof Error ? err.message : "Gagal mengunduh PDF",
+        message: err instanceof Error ? err.message : "Gagal mengunduh Excel",
         type: "error",
         key: Date.now(),
       });
@@ -264,12 +264,12 @@ export default function BukuBesarPage() {
               </p>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={onExportPdf}
+                  onClick={onExportExcel}
                   disabled={exporting || !detail}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
                   {exporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
-                  Export PDF
+                  Export Excel
                 </button>
                 <button
                   onClick={onCloseDetailModal}
