@@ -28,22 +28,32 @@ export function usePegawaiList() {
   const [search, setSearch] = useState("");
   const pageSize = 10;
 
-  const fetch = useCallback(async (page: number, q: string) => {
-    setIsLoading(true);
-    try {
-      const res = await getListPegawai({ page, limit: pageSize, search: q });
-      setData(res.data);
-      setMeta(res.meta);
-    } catch (_) {
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   useEffect(() => {
-    const timeout = setTimeout(() => fetch(currentPage, search), 300);
-    return () => clearTimeout(timeout);
-  }, [currentPage, search, fetch]);
+    let batal = false;
+    setIsLoading(true);
+    setError(null);
+
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await getListPegawai({ page: currentPage, limit: pageSize, search });
+        if (batal) return;
+        setData(res.data);
+        setMeta(res.meta);
+      } catch (err) {
+        if (!batal) setError(err instanceof Error ? err.message : "Gagal memuat pegawai.");
+      } finally {
+        if (!batal) setIsLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      batal = true;
+      clearTimeout(timeout);
+    };
+  }, [currentPage, search, refreshCount]);
 
   function onPageChange(page: number) {
     setCurrentPage(page);
@@ -54,13 +64,12 @@ export function usePegawaiList() {
     setCurrentPage(1);
   }
 
-  function refetch() {
-    fetch(currentPage, search);
-  }
+  const refetch = useCallback(() => setRefreshCount((count) => count + 1), []);
 
   return {
     data,
     isLoading,
+    error,
     currentPage,
     totalPages: meta?.totalPage ?? 1,
     totalData: meta?.total ?? 0,
