@@ -87,27 +87,32 @@ export function usePerusahaan(jenisInstansi?: string) {
 
 export function useHakAksesPerusahaan(perusahaanId: string) {
   const [data, setData] = useState<GetHakAksesPerusahaanResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     if (!perusahaanId) return;
-
+    let active = true;
     setLoading(true);
     setError(null);
-
-    getHakAksesPerusahaan(perusahaanId)
-      .then((res) => {
-        setData(res);
+    getHakAksesPerusahaan(perusahaanId).then(
+      (result) => {
+        if (!active) return;
+        setData(result);
         setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
+      },
+      (err: unknown) => {
+        if (!active) return;
+        setData(null);
+        setError(err instanceof Error ? err.message : "Gagal mengambil detail instansi.");
         setLoading(false);
-      });
-  }, [perusahaanId]);
+      },
+    );
+    return () => { active = false; };
+  }, [perusahaanId, revision]);
 
-  return { data, loading, error };
+  return { data, loading, error, refetch: () => setRevision((value) => value + 1) };
 }
 
 export function useLogPerusahaan(
@@ -280,7 +285,6 @@ export function usePenawaran() {
   const [error, setError] = useState<string | null>(null);
 
   const params = useParams();
-  console.log("ROUTE PARAMS:", params);
   const perusahaanId = params?.id as string;
 
   const fetch = useCallback(async () => {

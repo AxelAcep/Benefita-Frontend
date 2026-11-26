@@ -1,15 +1,16 @@
-// hooks/use-perusahaan-vendor.ts
-
-import { useCallback, useEffect, useState } from "react";
-import {
-  getPerusahaanVendorList,
-  type PerusahaanVendorItem,
-  type PerusahaanVendorPagination,
-} from "@/lib/services/perusahaan.service";
+import { useEffect, useState } from "react";
+import { getPerusahaanVendorList } from "@/lib/services/perusahaan.service";
+import type {
+  PerusahaanVendorItem,
+  PerusahaanVendorPagination,
+} from "@/lib/types/perusahaan-vendor";
 
 const PAGE_SIZE = 10;
 
-export function usePerusahaanVendor() {
+export function usePerusahaanVendor(
+  page: number,
+  search: string,
+) {
   const [data, setData] = useState<PerusahaanVendorItem[]>([]);
   const [pagination, setPagination] = useState<PerusahaanVendorPagination>({
     total: 0,
@@ -20,44 +21,28 @@ export function usePerusahaanVendor() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-
-  const fetch = useCallback(async () => {
+  useEffect(() => {
+    let batal = false;
     setLoading(true);
     setError(null);
-    try {
-      const res = await getPerusahaanVendorList({
-        page,
-        limit: PAGE_SIZE,
-        search,
+    getPerusahaanVendorList({ page, limit: PAGE_SIZE, search })
+      .then((result) => {
+        if (batal) return;
+        setData(result.data);
+        setPagination(result.pagination);
+      })
+      .catch((err: unknown) => {
+        if (batal) return;
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+      })
+      .finally(() => {
+        if (!batal) setLoading(false);
       });
-      setData(res.data);
-      setPagination(res.pagination);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
-    } finally {
-      setLoading(false);
-    }
+
+    return () => {
+      batal = true;
+    };
   }, [page, search]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
-
-  const handleSearch = useCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
-  }, []);
-
-  return {
-    data,
-    pagination,
-    loading,
-    error,
-    search,
-    page,
-    setPage,
-    handleSearch,
-  };
+  return { data, pagination, loading, error };
 }

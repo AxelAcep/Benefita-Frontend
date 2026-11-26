@@ -7,8 +7,6 @@ const FINANCE_ROLES = ["SUPER_ADMIN", "ADMIN", "FINANCE"];
 const ADMIN_ONLY_ROUTES = [
   "/karyawan/list-cuti",
   "/karyawan/riwayat-cuti",
-  "/training/judul",
-  "/training/berita",
   "/keuangan/karyawan",
 ];
 

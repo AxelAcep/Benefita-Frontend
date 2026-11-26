@@ -16,16 +16,18 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  Menu,
   TextCursorInput,
   X,
   FileText,
   Database,
+  ShieldCheck,
   BadgeCheck,
 } from "lucide-react";
 import { Icons } from "@/assets";
 // Tambah useAuth di import
 import { useAuth } from "@/context/AuthContext";
+import { usePermission } from "@/context/PermissionContext";
+import { useSidebar } from "@/context/SidebarContext";
 
 // Di dalam component Sidebar(), tambah:
 // ---------------------------------------------------------------------------
@@ -43,6 +45,8 @@ interface NavItem {
   href?: string;
   icon: React.ElementType;
   children?: NavChild[];
+  /** Modul pada matriks izin; menu disembunyikan kalau tidak punya read. */
+  modul?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -52,11 +56,13 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     label: "Dashboard",
+    modul: "dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
     label: "Perusahaan",
+    modul: "perusahaan",
     icon: Building2,
     children: [
       {
@@ -69,10 +75,6 @@ const navItems: NavItem[] = [
       },
       { label: "Daftar Perusahaan TBK", href: "/perusahaan/tbk" },
       { label: "Daftar Perusahaan PROPER", href: "/perusahaan/proper" },
-      {
-        label: "Daftar Perusahaan PROPER 2x Kali Biru",
-        href: "/perusahaan/proper-2kali-biru",
-      },
       { label: "Daftar Perusahaan ISO", href: "/perusahaan/iso" },
       { label: "Daftar Perusahaan Customer", href: "/perusahaan/customer" },
       { label: "Daftar Perusahaan Prioritas", href: "/perusahaan/prioritas" },
@@ -83,10 +85,12 @@ const navItems: NavItem[] = [
         href: "/perusahaan/berdasarkan-alamat",
       },
       { label: "Daftar Jabatan Teknis", href: "/perusahaan/jabatan-teknis" },
+      { label: "Kebutuhan Training", href: "/perusahaan/kebutuhan-training" },
     ],
   },
   {
     label: "BDO & Aktivitas",
+    modul: "bdo",
     icon: Activity,
     children: [
       { label: "Akun Perusahaan (BDO)", href: "/bdo/akun-perusahaan" },
@@ -121,6 +125,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "Peserta & Sertifikasi",
+    modul: "peserta",
     icon: Users,
     children: [
       { label: "Peserta Final", href: "/peserta/final" },
@@ -156,6 +161,7 @@ const navItems: NavItem[] = [
   // },
   {
     label: "Accounting",
+    modul: "accounting",
     icon: ChartColumnIncreasing,
     children: [
       { label: "Beranda", href: "/accounting/beranda" },
@@ -209,6 +215,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "Dokumen",
+    modul: "dokumen",
     icon: FileText,
     children: [
       { label: "Permintaan Nomor Surat (Umum)", href: "/dokumen/umum" },
@@ -224,6 +231,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "Training",
+    modul: "training",
     icon: GraduationCap,
     children: [
       { label: "Kebutuhan Training per Customer", href: "/training/customer" },
@@ -237,6 +245,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "LSP",
+    modul: "training",
     icon: BadgeCheck,
     children: [
       { label: "Input TUK", href: "/training/tuk" },
@@ -250,11 +259,13 @@ const navItems: NavItem[] = [
   },
   {
     label: "PROPER",
+    modul: "perusahaan",
     href: "/proper",
     icon: Leaf,
   },
   {
     label: "Karyawan & Aktivitas",
+    modul: "karyawan",
     icon: UserCog,
     children: [
       { label: "Update Data", href: "/karyawan/update-data" },
@@ -265,8 +276,15 @@ const navItems: NavItem[] = [
   },
   {
     label: "Database",
+    modul: "database",
     href: "/database",
     icon: Database,
+  },
+  {
+    label: "Pengaturan",
+    modul: "pengaturan",
+    icon: ShieldCheck,
+    children: [{ label: "Hak Akses", href: "/pengaturan/hak-akses" }],
   },
 ];
 
@@ -277,6 +295,7 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { logout: handleLogout } = useAuth();
+  const { permissions } = usePermission();
 
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
@@ -289,7 +308,16 @@ export default function Sidebar() {
     return {};
   });
 
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const { desktopOpen, mobileOpen, close } = useSidebar();
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") close();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen, close]);
 
   useEffect(() => {
     localStorage.setItem("openMenus", JSON.stringify(openMenus));
@@ -410,7 +438,7 @@ export default function Sidebar() {
     }
     nav.addEventListener("scroll", onScroll);
     return () => nav.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [desktopOpen, mobileOpen]);
 
   function NavContent({ onLinkClick }: { onLinkClick?: () => void }) {
     return (
@@ -420,6 +448,11 @@ export default function Sidebar() {
           className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto"
         >
           {navItems.map((item) => {
+            // Menu induk disembunyikan kalau modulnya tidak punya read.
+            if (item.modul && permissions[item.modul]?.read !== true) {
+              return null;
+            }
+
             const Icon = item.icon;
             const active = isParentActive(item);
             const isOpen = openMenus[item.label] ?? active;
@@ -489,6 +522,7 @@ export default function Sidebar() {
         <div className="px-2 py-3 border-t border-zinc-200 space-y-0.5">
           <Link
             href="/karyawan/profil"
+            onClick={onLinkClick}
             className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-600 hover:text-emerald-600"
             prefetch={false}
           >
@@ -511,8 +545,8 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-[250px] bg-white">
-        <div className="flex justify-center pb-4 pt-4">
+      {desktopOpen && <aside id="desktop-sidebar" aria-label="Navigasi utama" className="hidden md:flex flex-col fixed left-0 top-0 z-40 h-screen w-[220px] bg-white">
+        <div className="flex items-center justify-between gap-3 px-4 pb-4 pt-4">
           <div className="w-full max-w-[10rem]">
             <Image
               src={Icons.BenefitaText}
@@ -521,32 +555,32 @@ export default function Sidebar() {
               priority
             />
           </div>
+          <button type="button" onClick={close} aria-label="Tutup sidebar" className="shrink-0 rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-emerald-600">
+            <X aria-hidden="true" className="size-4" />
+          </button>
         </div>
+        {/* Tanpa onLinkClick: di desktop sidebar tetap terbuka setelah
+            pindah menu. Yang menutupnya hanya tombol X di atas. */}
         <NavContent />
-      </aside>
+      </aside>}
 
       {/* Mobile */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2 bg-white rounded"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
-
       {mobileOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/50"
-            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            onClick={close}
           />
-          <aside className="fixed left-0 top-0 h-screen w-[220px] bg-white z-50 flex flex-col">
+          <aside id="mobile-sidebar" aria-label="Navigasi utama" className="fixed left-0 top-0 h-screen w-[220px] bg-white z-50 flex flex-col md:hidden">
             <button
-              onClick={() => setMobileOpen(false)}
+              type="button"
+              aria-label="Tutup sidebar"
+              onClick={close}
               className="self-end p-3"
             >
               <X className="w-5 h-5" />
             </button>
-            <NavContent onLinkClick={() => setMobileOpen(false)} />
+            <NavContent onLinkClick={close} />
           </aside>
         </>
       )}

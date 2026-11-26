@@ -1,32 +1,17 @@
+import type { GetPerusahaanCustomerResponse, PerusahaanCustomerParams } from "@/lib/types/perusahaan-customer";
+import type { GetPerusahaanIsoResponse, PerusahaanIsoParams } from "@/lib/types/perusahaan-iso";
+import type { GetPerusahaanPrioritasResponse, PerusahaanPrioritasParams } from "@/lib/types/perusahaan-prioritas";
+import type { GetPerusahaanVendorResponse, PerusahaanVendorParams } from "@/lib/types/perusahaan-vendor";
+import type { GetPerusahaanByAlamatResponse, PerusahaanByAlamatParams } from "@/lib/types/perusahaan-berdasarkan-alamat";
+import type { GetPerusahaanProperResponse, PerusahaanProperParams } from "@/lib/types/perusahaan-proper";
+import { apiGetResponse, apiList, apiGet, apiPost, apiPut, apiDelete } from "@/lib/api/client";
+import type { GetPerusahaanTbkResponse } from "@/lib/types/perusahaan-tbk";
 import { fetchWithAuth } from "@/lib/services/login.service";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export interface Perusahaan {
-  id: number;
-  nama: string;
-  alamatPusat: string;
-  noTelp: string | null;
-}
-
-export interface PaginationMeta {
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
-export interface GetPerusahaanParams {
-  search?: string;
-  page?: number;
-  pageSize?: number;
-  jenisInstansi?: string;
-}
-
-export interface GetPerusahaanResponse {
-  data: Perusahaan[];
-  meta: PaginationMeta;
-}
+export type { Perusahaan, PaginationMeta, GetPerusahaanParams, GetPerusahaanResponse } from "@/lib/types/database-daftar";
+export { getPerusahaan } from "./database-daftar.service";
 
 export type CreatePerusahaanPayload = {
   noInduk: string;
@@ -103,40 +88,6 @@ export type CreatePerusahaanResponse = {
   message: string;
   data: any;
 };
-
-export async function getPerusahaan(
-  params: GetPerusahaanParams = {},
-): Promise<GetPerusahaanResponse> {
-  const query = new URLSearchParams();
-  if (params.search) query.append("search", params.search);
-  if (params.page) query.append("page", params.page.toString());
-  if (params.pageSize) query.append("pageSize", params.pageSize.toString());
-  if (params.jenisInstansi) query.append("jenisInstansi", params.jenisInstansi);
-
-  const url = `${API_URL}/api/database/perusahaan?${query.toString()}`;
-
-  const res = await fetchWithAuth(url);
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json.message || "Gagal mengambil data perusahaan.");
-  }
-
-  return {
-    data: json.data.map((item: any) => ({
-      id: item.noInduk,
-      nama: item.company,
-      alamatPusat: item.alamat,
-      noTelp: item.telp ?? null,
-    })),
-    meta: {
-      total: json.pagination.total,
-      totalPages: json.pagination.totalPages,
-      page: json.pagination.currentPage,
-      pageSize: json.pagination.pageSize,
-    },
-  };
-}
 
 export async function createPerusahaan(
   payload: CreatePerusahaanPayload,
@@ -591,7 +542,10 @@ export async function deleteContactPerson(
 
 export interface DailyActivityItem {
   id: string;
-  pegawaiId: string;
+  nama: string;
+  followUp: string | null;
+  sumberId: number | null;
+  pegawaiId: string | null;
   perusahaanId: string;
   kontak: string;
   jenisTraining: string;
@@ -605,7 +559,7 @@ export interface DailyActivityItem {
     id: string;
     nama: string;
     jabatan: string;
-  };
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -635,7 +589,8 @@ export interface GetOneDailyActivityResponse {
 }
 
 export interface DailyActivityPayload {
-  pegawaiId: string;
+  nama?: string;
+  pegawaiId?: string;
   kontak: string;
   jenisTraining: string;
   keterangan: string;
@@ -664,106 +619,23 @@ export async function getDailyActivityList(
   noInduk: string,
   params?: GetDailyActivityListParams,
 ): Promise<GetDailyActivityListResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.set("page", String(params.page));
-  if (params?.limit) query.set("limit", String(params.limit));
-  if (params?.search) query.set("search", params.search);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity?${query.toString()}`,
-    { method: "GET" },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil data daily activity.");
-  return data;
+  const result = await apiList<DailyActivityItem>(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity`, { ...params });
+  const { data, ...meta } = result;
+  return { message: "", data, meta };
 }
 
-// ─────────────────────────────────────────────
-// GET ONE
-// ─────────────────────────────────────────────
-
-export async function getOneDailyActivity(
-  noInduk: string,
-  id: string,
-): Promise<GetOneDailyActivityResponse> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity/${id}`,
-    { method: "GET" },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil data daily activity.");
-  return data;
+export async function getOneDailyActivity(noInduk: string, id: string): Promise<GetOneDailyActivityResponse> {
+  return { message: "", data: await apiGet<DailyActivityItem>(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity/${encodeURIComponent(id)}`) };
 }
-
-// ─────────────────────────────────────────────
-// CREATE
-// ─────────────────────────────────────────────
-
-export async function createDailyActivity(
-  noInduk: string,
-  payload: DailyActivityPayload,
-): Promise<CreateDailyActivityResponse> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal menambahkan daily activity.");
-  return data;
+export async function createDailyActivity(noInduk: string, payload: DailyActivityPayload): Promise<CreateDailyActivityResponse> {
+  return { message: "Daily activity berhasil ditambahkan.", data: await apiPost<DailyActivityItem>(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity`, payload) };
 }
-
-// ─────────────────────────────────────────────
-// UPDATE
-// ─────────────────────────────────────────────
-
-export async function updateDailyActivity(
-  noInduk: string,
-  id: string,
-  payload: Partial<DailyActivityPayload>,
-): Promise<UpdateDailyActivityResponse> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity/${id}`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal memperbarui daily activity.");
-  return data;
+export async function updateDailyActivity(noInduk: string, id: string, payload: Partial<DailyActivityPayload>): Promise<UpdateDailyActivityResponse> {
+  return { message: "Daily activity berhasil diperbarui.", data: await apiPut<DailyActivityItem>(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity/${encodeURIComponent(id)}`, payload) };
 }
-
-// ─────────────────────────────────────────────
-// DELETE
-// ─────────────────────────────────────────────
-
-export async function deleteDailyActivity(
-  noInduk: string,
-  id: string,
-): Promise<{ message: string }> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity/${id}`,
-    { method: "DELETE" },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal menghapus daily activity.");
-  return data;
+export async function deleteDailyActivity(noInduk: string, id: string): Promise<{ message: string }> {
+  await apiDelete(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity/${encodeURIComponent(id)}`);
+  return { message: "Daily activity berhasil dihapus." };
 }
 
 export interface GetHakAksesPerusahaanResponse {
@@ -885,9 +757,13 @@ export interface PosPerusahaan {
   id: string;
   nama: string;
   jabatan: string;
-  acc: string;
+  // Kosong pada data hasil migrasi tabpos: sumber lamanya tidak punya
+  // kolom ACC.
+  acc: string | null;
   followUp: string | null;
   noInduk: string;
+  posisi?: string | null;
+  tanggalKirim?: string | null;
 }
 
 // ── CREATE ──
@@ -974,6 +850,13 @@ export interface Penawaran {
   tanggal: string;
   filePath: string | null;
   perusahaanId?: string;
+  // Kolom surat penawaran, terisi pada data hasil migrasi
+  // tabSurat_Marketing. Penawaran yang dibuat lewat aplikasi belum
+  // mengisinya.
+  noSurat?: string | null;
+  keterangan?: string | null;
+  tujuan?: string | null;
+  pengirim?: string | null;
 }
 
 // ── CREATE ──
@@ -1017,7 +900,9 @@ export async function getPenawaran(
 
 // ── GET BY ID ──
 export async function getPenawaranById(id: string): Promise<Penawaran> {
-  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran/${id}`, {
+  // Jalurnya "detail/:id", bukan "/:id": pola yang terakhir sudah dipakai
+  // pengambilan per perusahaan.
+  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran/detail/${id}`, {
     method: "GET",
   });
   if (!res.ok) {
@@ -1170,57 +1055,7 @@ export async function updateStatusPermohonan(
   return res.json();
 }
 
-// ── TYPES ──
-export interface LogPerubahanItem {
-  id: string;
-  diubahOleh: string;
-  tanggal: string;
-  field: string;
-  perusahaan: {
-    company: string;
-  };
-}
-
-export interface LogPerubahanMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface LogPerubahanResponse {
-  data: LogPerubahanItem[];
-  meta: LogPerubahanMeta;
-}
-
-// ── SERVICE ──
-export async function getLogPerubahan(params: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}): Promise<LogPerubahanResponse> {
-  const { page = 1, limit = 10, search = "" } = params;
-
-  const query = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-    search,
-  });
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perubahan-summary?${query}`,
-    {
-      method: "GET",
-    },
-  );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil log perubahan.");
-  }
-
-  return { data: data.data, meta: data.meta };
-}
+export type { LogPerubahanItem, LogPerubahanMeta, LogPerubahanResponse } from "@/lib/types/log-perubahan";
 
 export interface LiniBisnisItem {
   id: number;
@@ -1232,202 +1067,78 @@ export interface LiniBisnisResponse {
 }
 
 // ── SERVICE ──
-export async function getLiniBisnis(): Promise<LiniBisnisResponse> {
-  const res = await fetchWithAuth(`${API_URL}/api/database/lini-bisnis`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data lini bisnis.");
-  }
-
-  return { data: data.data };
+export function getLiniBisnis(): Promise<LiniBisnisResponse> {
+  return apiGetResponse<LiniBisnisResponse>(
+    "/api/database/lini-bisnis",
+    undefined,
+    "Gagal mengambil data lini bisnis.",
+  );
 }
 
 // ─────────────────────────────────────────────
 // PERUSAHAAN TBK — kategoriCpn mengandung "Tbk" (posisi/kapitalisasi bebas)
 // ─────────────────────────────────────────────
 
-export interface PerusahaanTbkItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  acc: string | null;
-  alamat: string | null;
-  telp: string | null;
-  updateTerakhir: string | null;
-  liniBisnis: string | null;
-  tglTerakhirTraining: string | null;
-}
+export type {
+  GetPerusahaanTbkResponse,
+  PerusahaanTbkItem,
+  PerusahaanTbkPagination,
+} from "@/lib/types/perusahaan-tbk";
 
-export interface PerusahaanTbkPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanTbkResponse {
-  data: PerusahaanTbkItem[];
-  pagination: PerusahaanTbkPagination;
-}
-
-export async function getPerusahaanTbkList(params?: {
+export function getPerusahaanTbkList(params?: {
   page?: number;
   limit?: number;
   search?: string;
   sort?: "asc" | "desc";
-}): Promise<GetPerusahaanTbkResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.sort) query.append("sort", params.sort);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-tbk?${query.toString()}`,
-    { method: "GET" },
+}, signal?: AbortSignal): Promise<GetPerusahaanTbkResponse> {
+  return apiGetResponse<GetPerusahaanTbkResponse>(
+    "/api/database/perusahaan-tbk",
+    params,
+    "Gagal mengambil data perusahaan Tbk.",
+    signal,
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data perusahaan Tbk.");
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
 // PERUSAHAAN PROPER — perusahaan yang punya riwayat rating PROPER
 // ─────────────────────────────────────────────
 
-export type PeringkatProper =
-  | "EMAS"
-  | "HIJAU"
-  | "BIRU"
-  | "MERAH"
-  | "HITAM"
-  | "DITUNDA"
-  | "MASALAH"
-  | "TUTUP"
-  | "DITANGGUHKAN"
-  | "MERAH_MUDA";
+export type {
+  GetPerusahaanProperResponse,
+  PerusahaanProperItem,
+  PerusahaanProperPagination,
+  PeringkatProper,
+} from "@/lib/types/perusahaan-proper";
 
-export interface PerusahaanProperItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  acc: string | null;
-  alamat: string | null;
-  telp: string | null;
-  email: string | null;
-  updatter: string | null;
-  updateTerakhir: string | null;
-  kategoriCpn: string | null;
-  liniBisnis: string | null;
-  tahunPeringkat: string | null;
-}
-
-export interface PerusahaanProperPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanProperResponse {
-  data: PerusahaanProperItem[];
-  pagination: PerusahaanProperPagination;
-}
-
-export async function getPerusahaanProperList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sort?: "asc" | "desc";
-  peringkat?: PeringkatProper | "";
-  liniBisnisId?: number | "";
-}): Promise<GetPerusahaanProperResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.sort) query.append("sort", params.sort);
-  if (params?.peringkat) query.append("peringkat", params.peringkat);
-  if (params?.liniBisnisId) query.append("liniBisnisId", String(params.liniBisnisId));
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-proper?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanProperList(
+  params?: PerusahaanProperParams,
+  signal?: AbortSignal,
+): Promise<GetPerusahaanProperResponse> {
+  return apiGetResponse<GetPerusahaanProperResponse>(
+    "/api/database/perusahaan-proper",
+    params,
+    "Gagal mengambil data perusahaan Proper.",
+    signal,
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data perusahaan Proper.");
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
 // PERUSAHAAN ISO — kategoriCpn mengandung "ISO"
 // ─────────────────────────────────────────────
 
-export interface PerusahaanIsoItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  alamat: string | null;
-  telp: string | null;
-  updatter: string | null;
-  updateTerakhir: string | null;
-  kategoriCpn: string | null;
-  liniBisnis: string | null;
-  tahunPeringkat: string | null;
-  env: string | null;
-  csr: string | null;
-  tsm: string | null;
-  epm: string | null;
-}
+export type {
+  PerusahaanIsoItem,
+  PerusahaanIsoPagination,
+  GetPerusahaanIsoResponse,
+} from "@/lib/types/perusahaan-iso";
 
-export interface PerusahaanIsoPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanIsoResponse {
-  data: PerusahaanIsoItem[];
-  pagination: PerusahaanIsoPagination;
-}
-
-export async function getPerusahaanIsoList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sort?: "asc" | "desc";
-  liniBisnisId?: number | "";
-}): Promise<GetPerusahaanIsoResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.sort) query.append("sort", params.sort);
-  if (params?.liniBisnisId) query.append("liniBisnisId", String(params.liniBisnisId));
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-iso?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanIsoList(params?: PerusahaanIsoParams, signal?: AbortSignal): Promise<GetPerusahaanIsoResponse> {
+  return apiGetResponse<GetPerusahaanIsoResponse>(
+    "/api/database/perusahaan-iso",
+    params,
+    "Gagal mengambil data perusahaan ISO.",
+    signal,
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data perusahaan ISO.");
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
@@ -1440,60 +1151,18 @@ export async function getPerusahaanIsoList(params?: {
 
 export const PRIORITAS_LETTER_OPTIONS = ["A", "B", "C", "D", "E"] as const;
 
-export interface PerusahaanPrioritasItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  alamat: string | null;
-  telp: string | null;
-  email: string | null;
-  prioritasMa: string | null;
-  prioritasAe: string | null;
-  updatter: string | null;
-  updateTerakhir: string | null;
-  env: string | null;
-  csr: string | null;
-}
+export type {
+  PerusahaanPrioritasItem,
+  PerusahaanPrioritasPagination,
+  GetPerusahaanPrioritasResponse,
+} from "@/lib/types/perusahaan-prioritas";
 
-export interface PerusahaanPrioritasPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanPrioritasResponse {
-  data: PerusahaanPrioritasItem[];
-  pagination: PerusahaanPrioritasPagination;
-}
-
-export async function getPerusahaanPrioritasList(params: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  prioritasMa?: string;
-  prioritasAe?: string;
-}): Promise<GetPerusahaanPrioritasResponse> {
-  const query = new URLSearchParams();
-
-  if (params.page) query.append("page", String(params.page));
-  if (params.limit) query.append("limit", String(params.limit));
-  if (params.search) query.append("search", params.search);
-  if (params.prioritasMa) query.append("prioritasMa", params.prioritasMa);
-  if (params.prioritasAe) query.append("prioritasAe", params.prioritasAe);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-prioritas?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanPrioritasList(params: PerusahaanPrioritasParams): Promise<GetPerusahaanPrioritasResponse> {
+  return apiGetResponse<GetPerusahaanPrioritasResponse>(
+    "/api/database/perusahaan-prioritas",
+    params,
+    "Gagal mengambil data perusahaan prioritas.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(
-      data.message || "Gagal mengambil data perusahaan prioritas.",
-    );
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
@@ -1502,98 +1171,36 @@ export async function getPerusahaanPrioritasList(params: {
 // beneran keisi), jadi wajar kalau hasilnya sedikit.
 // ─────────────────────────────────────────────
 
-export interface PerusahaanVendorItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  acc: string[];
-  status: string | null;
-  expired: string | null;
-}
+export type {
+  PerusahaanVendorItem,
+  PerusahaanVendorPagination,
+  GetPerusahaanVendorResponse,
+} from "@/lib/types/perusahaan-vendor";
 
-export interface PerusahaanVendorPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanVendorResponse {
-  data: PerusahaanVendorItem[];
-  pagination: PerusahaanVendorPagination;
-}
-
-export async function getPerusahaanVendorList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}): Promise<GetPerusahaanVendorResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-vendor?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanVendorList(params?: PerusahaanVendorParams): Promise<GetPerusahaanVendorResponse> {
+  return apiGetResponse<GetPerusahaanVendorResponse>(
+    "/api/database/perusahaan-vendor",
+    params,
+    "Gagal mengambil data perusahaan vendor.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data perusahaan vendor.");
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
 // PERUSAHAAN BY ALAMAT — semua perusahaan, diurutkan berdasarkan alamat
 // ─────────────────────────────────────────────
 
-export interface PerusahaanByAlamatItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  alamat: string | null;
-  alamatFactory: string | null;
-  acc: string | null;
-}
+export type {
+  PerusahaanByAlamatItem,
+  PerusahaanByAlamatPagination,
+  GetPerusahaanByAlamatResponse,
+} from "@/lib/types/perusahaan-berdasarkan-alamat";
 
-export interface PerusahaanByAlamatPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanByAlamatResponse {
-  data: PerusahaanByAlamatItem[];
-  pagination: PerusahaanByAlamatPagination;
-}
-
-export async function getPerusahaanByAlamatList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}): Promise<GetPerusahaanByAlamatResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-by-alamat?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanByAlamatList(params?: PerusahaanByAlamatParams): Promise<GetPerusahaanByAlamatResponse> {
+  return apiGetResponse<GetPerusahaanByAlamatResponse>(
+    "/api/database/perusahaan-by-alamat",
+    params,
+    "Gagal mengambil data perusahaan berdasarkan alamat.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(
-      data.message || "Gagal mengambil data perusahaan berdasarkan alamat.",
-    );
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
@@ -1601,73 +1208,27 @@ export async function getPerusahaanByAlamatList(params?: {
 // pelatihan pertama/terakhir, rating PROPER, PIC ENV/CSR/TSM/EPM
 // ─────────────────────────────────────────────
 
-export interface PelatihanRange {
-  tglMulai: string | null;
-  tglSelesai: string | null;
-}
-
-export interface PerusahaanCustomerItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  env: string | null;
-  csr: string | null;
-  tsm: string | null;
-  epm: string | null;
-  proper: string | null;
-  pelatihanPertama: PelatihanRange;
-  pelatihanTerakhir: PelatihanRange;
-}
-
-export interface PerusahaanCustomerPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanCustomerResponse {
-  data: PerusahaanCustomerItem[];
-  pagination: PerusahaanCustomerPagination;
-}
+export type {
+  PelatihanRange,
+  PerusahaanCustomerItem,
+  PerusahaanCustomerPagination,
+  GetPerusahaanCustomerResponse,
+} from "@/lib/types/perusahaan-customer";
 
 export async function getPelatihanTahunOptions(): Promise<number[]> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/pelatihan-tahun-options`,
-    { method: "GET" },
+  const { data } = await apiGetResponse<{ data: number[] }>(
+    "/api/database/pelatihan-tahun-options",
+    undefined,
+    "Gagal mengambil opsi tahun pelatihan.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil opsi tahun pelatihan.");
-  }
-
-  return data.data;
+  return data;
 }
 
-export async function getPerusahaanCustomerList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  tahun?: number | "";
-}): Promise<GetPerusahaanCustomerResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.tahun) query.append("tahun", String(params.tahun));
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-customer?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanCustomerList(params?: PerusahaanCustomerParams, signal?: AbortSignal): Promise<GetPerusahaanCustomerResponse> {
+  return apiGetResponse<GetPerusahaanCustomerResponse>(
+    "/api/database/perusahaan-customer",
+    params,
+    "Gagal mengambil data perusahaan customer.",
+    signal,
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(
-      data.message || "Gagal mengambil data perusahaan customer.",
-    );
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }

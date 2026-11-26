@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  getPesertaUjiList,
-  type PesertaUji,
-  type PesertaUjiPagination,
-} from "@/lib/services/peserta-uji.service";
+import { getPesertaUjiList } from "@/lib/services/peserta-uji.service";
+import type { PesertaUji } from "@/lib/types/peserta-uji";
+
+/** Bentuk paginasi yang dipakai ReportPagination. */
+interface Paginasi {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 const PAGE_SIZE = 10;
 
@@ -19,7 +24,7 @@ interface FixedParams {
  */
 export function usePesertaUjiReport(fixed: FixedParams) {
   const [data, setData] = useState<PesertaUji[]>([]);
-  const [pagination, setPagination] = useState<PesertaUjiPagination>({
+  const [pagination, setPagination] = useState<Paginasi>({
     total: 0,
     page: 1,
     limit: PAGE_SIZE,
@@ -47,7 +52,12 @@ export function usePesertaUjiReport(fixed: FixedParams) {
         statusHasil: fixed.statusHasil,
       });
       setData(res.data);
-      setPagination(res.pagination);
+      setPagination({
+        total: res.total,
+        page: res.page,
+        limit: res.limit,
+        totalPages: res.totalPages,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {

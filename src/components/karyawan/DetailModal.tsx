@@ -7,6 +7,7 @@ interface DetailModalProps {
   item: RiwayatIzinItem | null;
   onClose: () => void;
   isView?: boolean;
+  isProcessing?: boolean;
   onTerima?: (id: string) => void;
   onTolak?: (id: string, alasanTolak: string) => void;
 }
@@ -47,10 +48,11 @@ export function DetailModal({
   item,
   onClose,
   isView = false,
+  isProcessing = false,
   onTerima,
   onTolak,
 }: DetailModalProps) {
-  const { fetch, data: detail, loading } = useGetDetailPengajuan();
+  const { fetch, data: detail, loading, error } = useGetDetailPengajuan();
   const [alasanTolak, setAlasanTolak] = useState("");
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export function DetailModal({
   if (!item) return null;
 
   const handleTolak = () => {
-    if (!alasanTolak.trim()) return;
+    if (isProcessing || !alasanTolak.trim()) return;
     onTolak?.(item.id, alasanTolak.trim());
   };
 
@@ -71,7 +73,7 @@ export function DetailModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
-      onClick={onClose}
+      onClick={isProcessing ? undefined : onClose}
     >
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-xl relative"
@@ -81,7 +83,7 @@ export function DetailModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
           <p className="font-bold text-zinc-800 text-sm">Detail Pengajuan</p>
           <button
-            onClick={onClose}
+            onClick={isProcessing ? undefined : onClose}
             className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600"
           >
             <svg
@@ -193,6 +195,8 @@ export function DetailModal({
             <p className="text-xs font-bold text-emerald-500 mb-3">Lampiran</p>
             {loading ? (
               <p className="text-xs text-zinc-400">Memuat lampiran...</p>
+            ) : error ? (
+              <p className="text-xs text-red-600" role="alert">{error}</p>
             ) : detail?.bukti && detail.bukti.length > 0 ? (
               <div className="space-y-2">
                 {detail.bukti.map((b) => (
@@ -270,16 +274,17 @@ export function DetailModal({
           <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-zinc-100">
             <button
               onClick={handleTolak}
-              disabled={!alasanTolak.trim()}
+              disabled={isProcessing || !alasanTolak.trim()}
               className="px-4 py-2 rounded-lg text-xs font-semibold border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Tolak
             </button>
             <button
+              disabled={isProcessing}
               onClick={() => onTerima?.(item.id)}
               className="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
             >
-              Terima
+              {isProcessing ? "Memproses..." : "Terima"}
             </button>
           </div>
         )}

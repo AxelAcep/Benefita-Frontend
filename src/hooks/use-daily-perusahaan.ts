@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getDailyActivityList,
   getOneDailyActivity,
@@ -15,62 +15,50 @@ import {
 // HOOK: GET LIST (Paginated + Search)
 // ─────────────────────────────────────────────
 
-export function useGetDailyActivityList(
-  noInduk: string,
-  params?: GetDailyActivityListParams,
-) {
+export function useGetDailyActivityList(noInduk: string, params?: GetDailyActivityListParams) {
   const [data, setData] = useState<GetDailyActivityListResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const request = useRef(0);
   const fetch = useCallback(async () => {
+    const current = ++request.current;
     setIsLoading(true);
     setError(null);
     try {
       const result = await getDailyActivityList(noInduk, params);
-      setData(result);
-    } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan.");
+      if (current === request.current) setData(result);
+    } catch (err: unknown) {
+      if (current === request.current) { setData(null); setError(err instanceof Error ? err.message : "Gagal mengambil daily."); }
     } finally {
-      setIsLoading(false);
+      if (current === request.current) setIsLoading(false);
     }
   }, [noInduk, params?.page, params?.limit, params?.search]);
-
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
-
+  useEffect(() => { fetch(); return () => { request.current++; }; }, [fetch]);
   return { data, isLoading, error, refetch: fetch };
 }
-
-// ─────────────────────────────────────────────
-// HOOK: GET ONE
-// ─────────────────────────────────────────────
 
 export function useGetOneDailyActivity(noInduk: string, id: string | null) {
   const [data, setData] = useState<DailyActivityItem | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const request = useRef(0);
   const fetch = useCallback(async () => {
-    if (!id) return;
-    setIsLoading(true);
+    const current = ++request.current;
+    setData(null);
     setError(null);
+    if (!id) { setIsLoading(false); return; }
+    setIsLoading(true);
     try {
       const result = await getOneDailyActivity(noInduk, id);
-      setData(result.data);
-    } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan.");
+      if (current === request.current) setData(result.data);
+    } catch (err: unknown) {
+      if (current === request.current) setError(err instanceof Error ? err.message : "Gagal mengambil detail daily.");
     } finally {
-      setIsLoading(false);
+      if (current === request.current) setIsLoading(false);
     }
   }, [noInduk, id]);
-
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
-
-  return { data, isLoading, error, refetch: fetch };
+  useEffect(() => { fetch(); return () => { request.current++; }; }, [fetch]);
+  return { data: data?.id === id ? data : null, isLoading, error, refetch: fetch };
 }
 
 // ─────────────────────────────────────────────

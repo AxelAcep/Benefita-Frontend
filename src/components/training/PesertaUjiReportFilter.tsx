@@ -89,59 +89,11 @@ export function PesertaUjiReportFilter({
   );
 }
 
-export function ReportPagination({
-  page,
-  limit,
-  total,
-  totalPages,
-  onPageChange,
-}: {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  onPageChange: (p: number) => void;
-}) {
-  return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3 border-t border-zinc-100">
-      <p className="text-[11px] text-zinc-400">
-        Menampilkan{" "}
-        <span className="font-semibold text-zinc-600">
-          {total === 0 ? 0 : (page - 1) * limit + 1}–
-          {Math.min(page * limit, total)}
-        </span>{" "}
-        dari <span className="font-semibold text-zinc-600">{total}</span> data
-      </p>
-
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPageChange(Math.max(1, page - 1))}
-          disabled={page === 1}
-          className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-        >
-          ‹ Sebelumnya
-        </button>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-              p === page
-                ? "bg-emerald-500 text-white"
-                : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-            }`}
-          >
-            {p}
-          </button>
-        ))}
-        <button
-          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-          disabled={page === totalPages}
-          className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-        >
-          Selanjutnya ›
-        </button>
-      </div>
-    </div>
-  );
-}
+/**
+ * Pindah ke @/components/base/table-pagination, yang hanya merender
+ * sejumlah halaman di sekitar halaman aktif. Versi di sini dulu merender
+ * seluruh tombol halaman sekaligus.
+ *
+ * Diteruskan supaya pemakai lama tidak ikut berubah.
+ */
+export { TablePagination as ReportPagination } from "@/components/base/table-pagination";

@@ -265,13 +265,20 @@ export interface PegawaiDropdownItem {
 export async function getPegawaiMarketingSales(): Promise<
   PegawaiDropdownItem[]
 > {
-  const res = await fetch(`${API_URL}/api/user/dropdown/sales`); // endpoint backend
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Gagal mengambil data pegawai");
-  }
+  // Dulu memakai fetch telanjang tanpa token karena endpointnya memang
+  // terbuka. Endpoint itu sudah ditutup; dipakai hanya di halaman detail
+  // database yang ada di balik login.
+  const res = await fetchWithAuth(`${API_URL}/api/user/dropdown/sales`, {
+    method: "GET",
+  });
+
   const data = await res.json();
-  return data.data; // asumsikan response { data: PegawaiDropdownItem[] }
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data pegawai");
+  }
+
+  return data.data;
 }
 
 export interface PegawaiDetail {
@@ -310,51 +317,4 @@ export async function getUserDetail(id: string): Promise<UserDetail> {
   return data.data; // Mengembalikan object UserDetail yang berisi gabungan User & Pegawai
 }
 
-export interface PegawaiLoginItem {
-  id: string;
-  nama: string;
-  user: {
-    lastOnlineAt: string | null;
-    lastIpAddress: string | null;
-  } | null;
-}
-
-export interface PegawaiLoginMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface PegawaiLoginResponse {
-  data: PegawaiLoginItem[];
-  meta: PegawaiLoginMeta;
-}
-
-export async function getPegawaiLogin(params: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}): Promise<PegawaiLoginResponse> {
-  const { page = 1, limit = 10, search = "" } = params;
-
-  const query = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-    search,
-  });
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/user/pegawai-login?${query}`,
-    {
-      method: "GET",
-    },
-  );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data pegawai login");
-  }
-
-  return { data: data.data, meta: data.meta };
-}
+export type { PegawaiLoginItem, PegawaiLoginMeta, PegawaiLoginResponse } from "@/lib/types/pegawai-login";

@@ -415,10 +415,21 @@ export interface LaporanHasilUsahaResponse {
   };
 }
 
+export interface LaporanHasilUsahaParams {
+  page?: number;
+  limit?: number;
+  sortBy?: "kode" | "keterangan" | "anggaran" | "realisasi";
+  order?: "asc" | "desc";
+  startMonth?: number;
+  startYear?: number;
+  endMonth?: number;
+  endYear?: number;
+}
+
 // ─── API Call ─────────────────────────────────────────────────
 
 export async function getLaporanHasilUsaha(
-  params: GetPendapatanParams = {},
+  params: LaporanHasilUsahaParams = {},
 ): Promise<LaporanHasilUsahaResponse> {
   const {
     page = 1,

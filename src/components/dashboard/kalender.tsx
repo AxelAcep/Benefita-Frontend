@@ -1,5 +1,6 @@
 "use client";
 
+import { Can } from "@/components/base/can";
 import { useState, useMemo, Fragment } from "react";
 import {
   Search,
@@ -240,13 +241,17 @@ export default function KalenderTraining() {
                 className="pl-7 pr-2.5 py-1.5 text-xs border border-zinc-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400 w-32"
               />
             </form>
-            <Link
-              href="/training/jadwal/tambah"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Tambah Jadwal
-            </Link>
+            <Can modul="training" aksi="read">
+              <Can modul="training" aksi="create">
+                <Link
+                  href="/training/jadwal/tambah"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors whitespace-nowrap"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Tambah Jadwal
+                </Link>
+              </Can>
+            </Can>
           </div>
         </div>
       </div>

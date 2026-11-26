@@ -7,6 +7,7 @@ import {
   toggleAkunStatus,
   AkunItem,
   JenisAkun,
+  KategoriAkun,
   Pagination,
 } from "@/lib/services/accounting.service";
 
@@ -87,6 +88,8 @@ export function useAkunMutation() {
       nama: string;
       jenis: JenisAkun;
       saldoAwal?: number;
+      isKasBank?: boolean;
+      kategori?: KategoriAkun | "";
     }) => {
       setLoading(true);
       setError(null);
@@ -111,6 +114,8 @@ export function useAkunMutation() {
         nama?: string;
         jenis?: JenisAkun;
         saldoAwal?: number;
+        isKasBank?: boolean;
+        kategori?: KategoriAkun | "";
       },
     ) => {
       setLoading(true);

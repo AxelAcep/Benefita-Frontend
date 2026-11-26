@@ -1,46 +1,36 @@
-// hooks/useProperList.ts
+import { useEffect, useState } from "react";
+import { getProperList } from "@/lib/services/proper.service";
+import type { ProperListResponse } from "@/lib/types/proper-ringkasan";
 
-import { useState, useEffect } from "react";
-import {
-  getProperList,
-  ProperListResponse,
-} from "@/lib/services/proper.service";
-
-interface UseProperListResult {
-  data: ProperListResponse | null;
-  loading: boolean;
-  error: string | null;
-  refetch: () => void;
-}
-
-export function useProperList(tahun: number): UseProperListResult {
+export function useProperList(tahun: number) {
   const [data, setData] = useState<ProperListResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await getProperList(tahun);
-      setData(result);
-    } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan saat mengambil data proper");
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let batal = false;
+    setLoading(true);
+    setError(null);
+
+    getProperList(tahun)
+      .then((result) => {
+        if (!batal) setData(result);
+      })
+      .catch((err: unknown) => {
+        if (batal) return;
+        setData(null);
+        setError(
+          err instanceof Error ? err.message : "Gagal mengambil data proper",
+        );
+      })
+      .finally(() => {
+        if (!batal) setLoading(false);
+      });
+
+    return () => {
+      batal = true;
+    };
   }, [tahun]);
 
-  return {
-    data,
-    loading,
-    error,
-    refetch: fetchData,
-  };
+  return { data, loading, error };
 }

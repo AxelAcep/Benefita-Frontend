@@ -1,148 +1,62 @@
-// services/pengajuan-judul-training.service.ts
+/**
+ * Service Pengajuan Judul Training.
+ *
+ * Perakitan URL, pengiriman token, dan penanganan error ada di
+ * @/lib/api/client — di sini tinggal endpoint dan tipenya.
+ *
+ * Catatan: backend belum punya route hapus untuk pengajuan judul.
+ */
+import { apiGet, apiList, apiPost, apiPut } from "@/lib/api/client";
+import type {
+  CreatePengajuanRequest,
+  PengajuanJudulTraining,
+  PengajuanListItem,
+  UpdatePengajuanRequest,
+} from "@/lib/types/pengajuan-judul";
+import type { ListParams, ListResult } from "@/lib/api/client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// Tipe pindah ke @/lib/types/pengajuan-judul. Diekspor ulang di sini supaya
+// file lama yang mengimpor dari service tidak ikut rusak.
+export type {
+  CreatePengajuanRequest,
+  PengajuanJudulTraining,
+  PengajuanListItem,
+  UpdatePengajuanRequest,
+};
 
-import { fetchWithAuth } from "./login.service";
+const BASE = "/api/training/pengajuan-judul";
 
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
+export const getPengajuan = (
+  params: ListParams = {},
+): Promise<ListResult<PengajuanListItem>> =>
+  apiList<PengajuanListItem>(BASE, params, "Gagal mengambil data pengajuan");
 
-export interface PengajuanJudulTraining {
-  id: string;
-  judulTraining: string;
-  jumlahHari: number;
-  namaKontak: string | null;
-  kontak: string | null;
-  jumlahPeserta: number | null;
-  responMA: "PENDING" | "DISETUJUI" | "DITOLAK";
-  tanggalPengajuan: string;
-  perusahaanId: string | null;
-  inputOleh: {
-    id: string;
-    nama: string;
-    jabatan?: string | null;
-  };
-}
-
-export interface PengajuanListItem {
-  id: string;
-  judulTraining: string;
-  jumlahHari: number;
-  jumlahPeserta: number | null;
-  namaKontak: string | null;
-  kontak: string | null;
-  responMA: string;
-  tanggalPengajuan: string;
-  perusahaan: string | null;
-  inputOleh: {
-    id: string;
-    nama: string;
-  };
-}
-
-export interface PengajuanPagination {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface GetPengajuanResponse {
-  data: PengajuanListItem[];
-  pagination: PengajuanPagination;
-}
-
-export interface CreatePengajuanRequest {
-  judulTraining: string;
-  jumlahHari: number;
-  perusahaanId?: string;
-  namaKontak?: string;
-  kontak?: string;
-  jumlahPeserta?: number;
-}
-
-export interface UpdatePengajuanRequest {
-  judulTraining?: string;
-  jumlahHari?: number;
-  perusahaanId?: string;
-  namaKontak?: string;
-  kontak?: string;
-  jumlahPeserta?: number;
-  responMA?: string;
-}
-
-// ─────────────────────────────────────────────
-// API SERVICE
-// ─────────────────────────────────────────────
-
-export async function getPengajuan(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}): Promise<GetPengajuanResponse> {
-  const query = new URLSearchParams();
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/pengajuan-judul?${query.toString()}`,
-    { method: "GET" },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil data pengajuan");
-
-  return data;
-}
-
-export async function getPengajuanById(
+export const getPengajuanById = (
   id: string,
-): Promise<PengajuanJudulTraining> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/pengajuan-judul/${id}`,
-    { method: "GET" },
+): Promise<PengajuanJudulTraining> =>
+  apiGet<PengajuanJudulTraining>(
+    `${BASE}/${id}`,
+    undefined,
+    "Gagal mengambil detail pengajuan",
   );
 
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil detail pengajuan");
-
-  return data.data;
-}
-
-export async function createPengajuan(
+export const createPengajuan = (
   payload: CreatePengajuanRequest,
-): Promise<PengajuanJudulTraining> {
-  const res = await fetchWithAuth(`${API_URL}/api/training/pengajuan-judul`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+): Promise<PengajuanListItem> =>
+  apiPost<PengajuanListItem>(BASE, payload, "Gagal membuat pengajuan");
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Gagal membuat pengajuan");
-
-  return data.data;
-}
-
-export async function updatePengajuan(
+export const updatePengajuan = (
   id: string,
   payload: UpdatePengajuanRequest,
-): Promise<PengajuanJudulTraining> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/pengajuan-judul/${id}`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    },
-  );
+): Promise<PengajuanListItem> =>
+  apiPut<PengajuanListItem>(`${BASE}/${id}`, payload, "Gagal mengubah pengajuan");
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Gagal mengupdate pengajuan");
+/** Dibentuk untuk useResource. Tanpa `remove`: endpoint hapus belum ada. */
+export const pengajuanService = {
+  list: getPengajuan,
+  create: createPengajuan,
+  update: updatePengajuan,
+};
 
-  return data.data;
-}
+export const approvePengajuan = (id: string, payload: { responMA: "DISETUJUI" | "DITOLAK"; catatanMA: string }) =>
+  apiPut<PengajuanListItem>(`${BASE}/${id}/approval`, payload, "Gagal menyimpan keputusan pengajuan.");
