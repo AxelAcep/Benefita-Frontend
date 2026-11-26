@@ -366,7 +366,7 @@ export default function NeracaContainer() {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         mode={modalMode}
-        initialData={modalInitialData ? { ...modalInitialData, kode: modalInitialData.jenisBiaya?.kode } : undefined}
+        initialData={modalInitialData ?? undefined}
         kodeOptions={
           jenisBiaya?.map((jb) => ({ kode: jb.kode, ket: jb.ket })) || []
         }

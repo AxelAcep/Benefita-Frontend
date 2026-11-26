@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import type { CreateNeracaPayload, NeracaItem } from "@/lib/services/accounting.service";
 
 interface KodeOption {
   kode: string;
@@ -12,17 +13,9 @@ interface ModalNeracaProps {
   isOpen: boolean;
   onClose: () => void;
   mode: "create" | "edit";
-  initialData?: {
-    id?: number;
-    tanggal?: string;
-    kode?: string;
-    uraian?: string;
-    bukti?: string;
-    debit?: number;
-    kredit?: number;
-  };
+  initialData?: NeracaItem;
   kodeOptions: KodeOption[];
-  onSubmit: (payload: any) => Promise<void>;
+  onSubmit: (payload: CreateNeracaPayload) => Promise<void>;
 }
 
 export default function ModalNeraca({
@@ -47,7 +40,7 @@ export default function ModalNeraca({
   useEffect(() => {
     if (mode === "edit" && initialData) {
       setTanggal(initialData.tanggal?.split("T")[0] || "");
-      setKode(initialData.kode || "");
+      setKode(initialData.jenisBiaya?.kode ?? "");
       setUraian(initialData.uraian || "");
       setBukti(initialData.bukti || "");
       // Determine tipe based on debit/kredit
