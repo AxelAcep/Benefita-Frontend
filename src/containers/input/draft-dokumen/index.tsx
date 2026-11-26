@@ -25,7 +25,7 @@ export default function DraftDokumen({ jenis }: { jenis: JenisDokumen }) {
       {m.error && (
         <div role="alert" className="text-sm text-red-700">
           <p>{m.error}</p>
-          {idPeserta && <button type="button" onClick={m.retry} className="mt-2 font-medium underline">Coba lagi</button>}
+          {m.canRetry && <button type="button" onClick={m.retry} className="mt-2 font-medium underline">Coba lagi</button>}
         </div>
       )}
       {m.peserta && <DraftDokumenForm key={`${jenis}:${m.peserta.id}`} peserta={m.peserta} jenis={jenis} />}

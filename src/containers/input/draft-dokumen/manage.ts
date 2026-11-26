@@ -11,9 +11,10 @@ export function useDraftDokumen(noJadwal: string, idPeserta?: string) {
     error: string | null;
   } | null>(null);
   const key = JSON.stringify([noJadwal, idPeserta, revision]);
+  const valid = Boolean(idPeserta && /^\d+$/.test(idPeserta));
 
   useEffect(() => {
-    if (!idPeserta) return;
+    if (!idPeserta || !valid) return;
     let current = true;
     getPesertaTrainingById(idPeserta).then(
       (peserta) => {
@@ -33,13 +34,14 @@ export function useDraftDokumen(noJadwal: string, idPeserta?: string) {
       },
     );
     return () => { current = false; };
-  }, [idPeserta, key, noJadwal]);
+  }, [idPeserta, key, noJadwal, valid]);
 
   const result = state?.key === key ? state : null;
   return {
     peserta: result?.peserta ?? null,
-    error: idPeserta ? result?.error ?? null : "Nomor peserta tidak ditemukan.",
-    loading: Boolean(idPeserta && !result),
+    error: valid ? result?.error ?? null : "Nomor peserta tidak valid.",
+    loading: valid && !result,
+    canRetry: valid,
     retry: () => setRevision((value) => value + 1),
   };
 }
