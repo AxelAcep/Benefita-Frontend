@@ -28,8 +28,7 @@ export const pengajuanSchema = z.object({
   perusahaanId: z.string().optional(),
   namaKontak: z.string().optional(),
   kontak: z.string().optional(),
-  jumlahPeserta: angkaTidakNegatif("Jumlah peserta"),
-  responMA: z.string().optional(),
+  jumlahPeserta: z.string().max(255).optional(),
 });
 
 export type PengajuanFormValues = z.infer<typeof pengajuanSchema>;
@@ -41,7 +40,6 @@ const NILAI_KOSONG: PengajuanFormValues = {
   namaKontak: "",
   kontak: "",
   jumlahPeserta: "",
-  responMA: "",
 };
 
 export interface PengajuanFormProps {
@@ -91,7 +89,6 @@ export function PengajuanForm({
             <TextInput
               label="Jumlah Peserta"
               optional
-              type="number"
               inputMode="numeric"
               placeholder="Estimasi peserta"
               error={errors.jumlahPeserta?.message}
@@ -136,12 +133,6 @@ export function PengajuanForm({
             />
           </div>
 
-          <TextArea
-            label="Respons MA"
-            optional
-            placeholder="Masukkan respons MA..."
-            {...register("responMA")}
-          />
         </>
       )}
     </FormModal>

@@ -11,10 +11,12 @@ import {
   type PengajuanListItem,
 } from "@/lib/types/pengajuan-judul";
 import { PengajuanForm } from "./form";
+import { ApprovalForm } from "./approval-form";
 import { UKURAN_HALAMAN, usePengajuanManage } from "./manage";
 
 function tanggal(iso: string) {
   return new Date(iso).toLocaleDateString("id-ID", {
+    timeZone: "Asia/Jakarta",
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -65,8 +67,8 @@ export default function PengajuanJudulContainer() {
       sortable: true,
       headerClassName: "text-center",
       className: "text-center",
-      render: (v) =>
-        v != null ? String(v) : <span className="text-zinc-300">-</span>,
+      render: (v, row) =>
+        row.jumlahPesertaTeks || (v != null ? String(v) : <span className="text-zinc-300">-</span>),
     },
     {
       key: "inputOleh",
@@ -88,7 +90,7 @@ export default function PengajuanJudulContainer() {
       render: (_v, row) => {
         const status = row.responMA || "PENDING";
         return (
-          <span
+          <div><span
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
               WARNA_RESPON_MA[status] ?? WARNA_RESPON_MA.PENDING
             }`}
@@ -96,7 +98,7 @@ export default function PengajuanJudulContainer() {
             {/* Dulu tabel menampilkan nilai mentah dari backend, sementara
                 warnanya memakai label. Sekarang dua-duanya pakai label. */}
             {LABEL_RESPON_MA[status] ?? status}
-          </span>
+          </span>{row.catatanMA && <p className="mt-1 max-w-xs whitespace-normal text-xs text-zinc-500">{row.catatanMA}</p>}</div>
         );
       },
     },
@@ -105,14 +107,14 @@ export default function PengajuanJudulContainer() {
       label: "",
       render: (_v, row) => (
         <Can modul="training" aksi="update">
-          <button
+          <div className="flex items-center gap-2">{row.canEdit && <button
             onClick={() => m.openEdit(row)}
             aria-label={`Edit ${row.judulTraining}`}
             title="Edit"
             className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-500 transition-colors"
           >
             <Pencil className="w-3.5 h-3.5" />
-          </button>
+          </button>}{row.canApprove && <button className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700" onClick={() => m.openApproval(row)}>Tinjau</button>}</div>
         </Can>
       ),
     },
@@ -170,6 +172,7 @@ export default function PengajuanJudulContainer() {
           />
         </Can>
       </div>
+      {m.reviewing && <ApprovalForm key={m.reviewing.id} row={m.reviewing} onClose={m.closeApproval} onSubmit={m.submitApproval} isLoading={m.isReviewing} />}
     </AppLayout>
   );
 }

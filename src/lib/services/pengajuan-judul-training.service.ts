@@ -57,3 +57,6 @@ export const pengajuanService = {
   create: createPengajuan,
   update: updatePengajuan,
 };
+
+export const approvePengajuan = (id: string, payload: { responMA: "DISETUJUI" | "DITOLAK"; catatanMA: string }) =>
+  apiPut<PengajuanListItem>(`${BASE}/${id}/approval`, payload, "Gagal menyimpan keputusan pengajuan.");

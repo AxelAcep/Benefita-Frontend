@@ -1,28 +1,16 @@
 import { useState } from "react";
-import { DATA_CONTOH } from "./data-contoh";
+import { usePerusahaanKantorPusat } from "@/hooks/use-perusahaan-kantor-pusat";
 
 export function usePerusahaanKantorPusatManage() {
   const PAGE_SIZE = 10;
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState<"semua" | "customer">("semua");
+  const [filterType, setFilterType] = useState<"semua" | "customer">("customer");
   const [appliedFilter, setAppliedFilter] = useState<"semua" | "customer">(
-    "semua",
+    "customer",
   );
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = DATA_CONTOH.filter((d) => {
-    const matchFilter = appliedFilter === "semua" || d.type === "customer";
-    const matchSearch =
-      d.perusahaan.toLowerCase().includes(search.toLowerCase()) ||
-      d.noInduk.toLowerCase().includes(search.toLowerCase());
-    return matchFilter && matchSearch;
-  });
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
+  const result = usePerusahaanKantorPusat(currentPage, search, appliedFilter, PAGE_SIZE);
 
   function handleTerapkan() {
     setAppliedFilter(filterType);
@@ -39,12 +27,14 @@ export function usePerusahaanKantorPusatManage() {
     changeSearch,
     currentPage,
     setCurrentPage,
-    paginated,
-    totalPages,
+    paginated: result.data,
+    totalPages: result.totalPages,
     PAGE_SIZE,
     filterType,
     setFilterType,
     handleTerapkan,
-    total: filtered.length,
+    total: result.total,
+    loading: result.loading,
+    error: result.error,
   };
 }

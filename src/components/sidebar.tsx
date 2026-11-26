@@ -89,6 +89,7 @@ const navItems: NavItem[] = [
         href: "/perusahaan/berdasarkan-alamat",
       },
       { label: "Daftar Jabatan Teknis", href: "/perusahaan/jabatan-teknis" },
+      { label: "Kebutuhan Training", href: "/perusahaan/kebutuhan-training" },
     ],
   },
   {

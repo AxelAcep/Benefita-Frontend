@@ -2,8 +2,18 @@
 
 import React from "react";
 import AppLayout from "@/components/app-layout";
+import Anchor from "@/components/base/anchor";
 import TablePagination from "@/components/base/table-pagination";
 import { usePerusahaanKantorPusatManage } from "./manage";
+
+function formatUpdate(date: string | null, name: string | null) {
+  const stamp = date ? new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Jakarta", year: "2-digit", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date(date)) : [];
+  const part = (type: string) => stamp.find((item) => item.type === type)?.value ?? "";
+  const label = date ? `${part("year")}${part("month")}${part("day")}` : "";
+  return [label, name].filter(Boolean).join("-") || "–";
+}
 
 export default function PerusahaanKantorPusatContainer() {
   const {
@@ -18,6 +28,8 @@ export default function PerusahaanKantorPusatContainer() {
     setFilterType,
     handleTerapkan,
     total,
+    loading,
+    error,
   } = usePerusahaanKantorPusatManage();
 
   return (
@@ -118,47 +130,49 @@ export default function PerusahaanKantorPusatContainer() {
               </tr>
             </thead>
             <tbody>
-              {paginated.length === 0 ? (
+              {loading || error || paginated.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={9}
                     className="px-4 py-12 text-center text-xs text-zinc-400"
                   >
-                    Tidak ada data tersedia.
+                    <span role={error ? "alert" : "status"} className={error ? "text-red-600" : undefined}>
+                      {loading ? "Memuat data..." : error || "Tidak ada data tersedia."}
+                    </span>
                   </td>
                 </tr>
               ) : (
                 paginated.map((row, i) => (
                   <tr
-                    key={row.id}
+                    key={row.noInduk}
                     className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-xs text-zinc-400">
                       {(currentPage - 1) * PAGE_SIZE + i + 1}
                     </td>
                     <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline">
-                      {row.noInduk}
+                      <Anchor name={row.noInduk} route={`/database/perusahaan/${encodeURIComponent(row.noInduk)}`} />
                     </td>
                     <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline max-w-[140px] truncate overflow-hidden whitespace-nowrap">
-                      {row.perusahaan}
+                      <Anchor name={row.perusahaan} route={`/database/perusahaan/${encodeURIComponent(row.noInduk)}`} />
                     </td>
                     <td className="px-3 py-3 text-center text-xs font-semibold text-zinc-600">
-                      {row.acc}
+                      {row.acc || "–"}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.tglTerakhirTraining}
+                      {row.tglTerakhirTraining || "–"}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600 max-w-[200px]">
-                      {row.alamat}
+                      {row.alamat || "–"}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.noTelepon}
+                      {row.noTelepon || "–"}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.update}
+                      {formatUpdate(row.updateTerakhir, row.updateOleh)}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.lineOfBiz}
+                      {row.lineOfBiz || "–"}
                     </td>
                   </tr>
                 ))

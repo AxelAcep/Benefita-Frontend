@@ -28,11 +28,15 @@ export interface PermintaanNomorSurat {
   tanggalKirim: string;
   tipe: TipeSurat;
   tujuanNoInduk: string | null;
-  pengirimId: string;
+  pengirimId: string | null;
+  pengirimNama?: string | null;
+  tujuanNama?: string | null;
+  canEdit: boolean;
+  canDelete: boolean;
   createdAt: string;
   updatedAt: string;
   tujuan?: TabPerusahaan | null;
-  pengirim: Pegawai;
+  pengirim: Pegawai | null;
 }
 
 export interface PermintaanSuratPagination {
@@ -50,16 +54,11 @@ export interface GetPermintaanSuratResponse {
 
 export interface CreatePermintaanSuratRequest {
   keterangan: string;
-  tanggalKirim?: string;
   tujuanNoInduk: string;
-  pengirimId: string;
   tipe: TipeSurat;
 }
 
 export interface UpdatePermintaanSuratRequest {
   keterangan?: string;
-  tanggalKirim?: string;
   tujuanNoInduk?: string;
-  pengirimId?: string;
-  tipe?: TipeSurat;
 }

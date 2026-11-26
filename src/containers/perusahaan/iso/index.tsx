@@ -5,6 +5,7 @@ import { LayoutGrid, ArrowUp, ArrowDown } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Anchor from "@/components/base/anchor";
 import TablePagination from "@/components/base/table-pagination";
+import TableLoading from "@/components/base/table-loading";
 import { usePerusahaanIsoManage } from "./manage";
 
 // ---------------------------------------------------------------------------
@@ -212,16 +213,9 @@ export default function PerusahaanIsoContainer() {
               </tr>
             </thead>
 
-            <tbody>
+            <tbody aria-busy={loading}>
               {loading ? (
-                <tr>
-                  <td
-                    colSpan={13}
-                    className="px-4 py-12 text-center text-xs text-zinc-400"
-                  >
-                    Memuat data...
-                  </td>
-                </tr>
+                <TableLoading columns={13} />
               ) : error || data.length === 0 ? (
                 <tr>
                   <td
@@ -295,7 +289,7 @@ export default function PerusahaanIsoContainer() {
           </table>
         </div>
 
-        {!error && (
+        {!error && !loading && (
           <TablePagination
             page={page}
             limit={pagination.pageSize}

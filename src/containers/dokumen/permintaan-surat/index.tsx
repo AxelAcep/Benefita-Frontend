@@ -7,6 +7,7 @@ import { DataTable, type ColumnDef } from "@/components/base/data-table";
 import Notification from "@/components/base/notifications";
 import type { PermintaanNomorSurat, TipeSurat } from "@/lib/types/surat";
 import { SuratForm } from "./form";
+import { Can } from "@/components/base/can";
 import { useSuratManage } from "./manage";
 
 const LABEL_TIPE: Record<TipeSurat, string> = {
@@ -26,20 +27,20 @@ export default function PermintaanSuratContainer({ tipe }: { tipe: TipeSurat }) 
     {
       key: "tujuan",
       label: "Tujuan",
-      render: (_value, row) => row.tujuan?.company || row.tujuanNoInduk || "-",
+      render: (_value, row) => row.tujuanNama || row.tujuan?.company || row.tujuanNoInduk || "-",
     },
     {
       key: "tanggalKirim",
-      label: "Tgl. Kirim",
-      render: (_value, row) => new Date(row.tanggalKirim).toLocaleDateString("id-ID"),
+      label: "Tanggal",
+      render: (_value, row) => new Date(row.tanggalKirim).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" }),
     },
-    { key: "pengirim", label: "Pengirim", render: (_value, row) => row.pengirim?.nama ?? "-" },
+    { key: "pengirim", label: "Pengirim", render: (_value, row) => row.pengirimNama || row.pengirim?.nama || "-" },
     {
       key: "aksi",
       label: "Aksi",
       render: (_value, row) => (
         <div className="flex items-center gap-2">
-          <button
+          {row.canEdit && <Can modul="dokumen" aksi="update"><button
             type="button"
             aria-label={`Edit ${row.noSurat}`}
             title="Edit"
@@ -47,8 +48,8 @@ export default function PermintaanSuratContainer({ tipe }: { tipe: TipeSurat }) 
             className="text-zinc-500 hover:text-emerald-600"
           >
             <Pencil className="w-4 h-4" />
-          </button>
-          <button
+          </button></Can>}
+          {row.canDelete && <Can modul="dokumen" aksi="delete"><button
             type="button"
             aria-label={`Hapus ${row.noSurat}`}
             title="Hapus"
@@ -56,7 +57,7 @@ export default function PermintaanSuratContainer({ tipe }: { tipe: TipeSurat }) 
             className="text-zinc-500 hover:text-red-600"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
+          </button></Can>}
         </div>
       ),
     },
@@ -98,14 +99,14 @@ export default function PermintaanSuratContainer({ tipe }: { tipe: TipeSurat }) 
         isLoading={m.loading}
         emptyMessage={m.error ? "Data gagal dimuat." : undefined}
         actionSlot={
-          <button
+          <Can modul="dokumen" aksi="create"><button
             type="button"
             onClick={() => m.openForm(null)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
             Buat Permintaan
-          </button>
+          </button></Can>
         }
       />
 
@@ -121,7 +122,7 @@ export default function PermintaanSuratContainer({ tipe }: { tipe: TipeSurat }) 
       <ConfirmModal
         isOpen={!!m.hapusTarget}
         title="Hapus Permintaan Nomor Surat"
-        message={`Permintaan surat ${m.namaHapus} akan dihapus permanen.`}
+        message={`Surat ${m.namaHapus} akan dihapus dari daftar. Nomornya tetap tercatat dan tidak dipakai ulang.`}
         onConfirm={m.confirmDelete}
         onCancel={m.cancelDelete}
         loading={m.isDeleting}

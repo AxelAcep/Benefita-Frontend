@@ -22,13 +22,14 @@ export default function RekapHarianContainer() {
       key: jam,
       label: `${jam}:00`,
       className: "text-center",
-      render: (_value, row) => row.jam[jam],
+      render: (_value, row) => row.jam[jam] ?? 0,
     })),
+    { key: "diLuarJam", label: "Di luar 08–17", className: "text-center" },
     {
       key: "total",
       label: "Total",
       className: "text-center font-semibold",
-      render: (_value, row) => JAM.reduce((total, jam) => total + row.jam[jam], 0),
+      render: (_value, row) => JAM.reduce((total, jam) => total + (row.jam[jam] ?? 0), row.diLuarJam),
     },
   ];
 
@@ -36,22 +37,22 @@ export default function RekapHarianContainer() {
     <AppLayout breadcrumbs={[{ label: "BDO" }, { label: JUDUL }]}>
       <div className="mb-4">
         <h1 className="text-lg font-semibold">{JUDUL}</h1>
-        <p className="text-sm text-zinc-500">Data contoh tersedia untuk 2 April 2026.</p>
+        <p className="text-sm text-zinc-500">Jumlah aktivitas kontak per AE menurut jam WIB, termasuk aktivitas di luar pukul 08–17.</p>
       </div>
+      {m.error && <p role="alert" className="mb-3 text-sm text-red-600">{m.error}</p>}
       <DataTable
         columns={columns}
-        data={m.data}
+        data={m.error ? [] : m.data}
+        isLoading={m.loading}
         totalData={m.total}
         currentPage={m.page}
         totalPages={m.totalPages}
         pageSize={m.pageSize}
-        onPageChange={m.setPage}
+        onPageChange={m.loading ? undefined : m.setPage}
         searchValue={m.search}
         onSearchChange={m.changeSearch}
         searchPlaceholder="Cari nama AE..."
-        emptyMessage={
-          m.tersedia ? "Tidak ada nama yang cocok." : `Tidak ada data contoh untuk ${m.labelTanggal}.`
-        }
+        emptyMessage={m.error || `Tidak ada aktivitas untuk ${m.labelTanggal}.`}
         filterSlot={
           <>
             <label htmlFor="rekap-tanggal" className="text-xs font-medium text-zinc-600">

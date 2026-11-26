@@ -10,6 +10,11 @@ export interface PengajuanJudulTraining {
   namaKontak: string | null;
   kontak: string | null;
   jumlahPeserta: number | null;
+  jumlahPesertaTeks?: string | null;
+  catatanMA?: string | null;
+  tanggalKeputusan?: string | null;
+  canEdit: boolean;
+  canApprove: boolean;
   responMA: ResponMA;
   tanggalPengajuan: string;
   perusahaanId: string | null;
@@ -30,6 +35,11 @@ export interface PengajuanListItem {
   judulTraining: string;
   jumlahHari: number;
   jumlahPeserta: number | null;
+  jumlahPesertaTeks?: string | null;
+  catatanMA?: string | null;
+  tanggalKeputusan?: string | null;
+  canEdit: boolean;
+  canApprove: boolean;
   namaKontak: string | null;
   kontak: string | null;
   responMA: string;
@@ -47,7 +57,7 @@ export interface CreatePengajuanRequest {
   perusahaanId?: string;
   namaKontak?: string;
   kontak?: string;
-  jumlahPeserta?: number;
+  jumlahPeserta?: number | string | null;
 }
 
 export interface UpdatePengajuanRequest {
@@ -56,8 +66,7 @@ export interface UpdatePengajuanRequest {
   perusahaanId?: string;
   namaKontak?: string;
   kontak?: string;
-  jumlahPeserta?: number;
-  responMA?: string;
+  jumlahPeserta?: number | string | null;
 }
 
 export const WARNA_RESPON_MA: Record<string, string> = {

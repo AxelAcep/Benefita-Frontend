@@ -1,12 +1,11 @@
 export interface PerusahaanKantorPusat {
-  id: number;
   noInduk: string;
   perusahaan: string;
-  type: "semua" | "customer";
-  acc: string;
-  tglTerakhirTraining: string;
-  alamat: string;
-  noTelepon: string;
-  update: string;
-  lineOfBiz: string;
+  acc: string | null;
+  tglTerakhirTraining: string | null;
+  alamat: string | null;
+  noTelepon: string | null;
+  updateTerakhir: string | null;
+  updateOleh: string | null;
+  lineOfBiz: string | null;
 }

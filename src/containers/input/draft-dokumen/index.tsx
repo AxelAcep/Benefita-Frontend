@@ -8,17 +8,18 @@ import { useDraftDokumen } from "./manage";
 
 export default function DraftDokumen({ jenis }: { jenis: JenisDokumen }) {
   const { id: noJadwal, idPeserta } = useParams<{ id: string; idPeserta?: string }>();
-  const m = useDraftDokumen(noJadwal, idPeserta);
+  const m = useDraftDokumen(noJadwal, idPeserta, jenis);
   const halamanInput = `/input/${encodeURIComponent(noJadwal)}`;
-  const judul = jenis === "invoice" ? "Draf Invoice" : "Draf Kwitansi";
+  const judul = jenis === "invoice" ? "Invoice" : "Kwitansi";
 
   return (
     <AppLayout breadcrumbs={[{ label: "Input Data", href: halamanInput }, { label: judul }]}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold">{judul}</h1>
-          <p className="text-sm text-zinc-600">Perubahan draf tidak disimpan. Penerbitan dokumen resmi belum tersedia.</p>
+          <p className="text-sm text-zinc-600">Simpan dokumen untuk menerbitkan nomor dan mencetak data yang tersimpan.</p>
         </div>
+        <button type="button" onClick={m.retry} className="text-sm font-medium text-emerald-700 underline">Muat ulang</button>
         <Link href={halamanInput} className="text-sm font-medium text-emerald-700 hover:underline">Kembali ke Input</Link>
       </div>
       {m.loading && <p role="status" className="text-sm text-zinc-500">Memuat data peserta...</p>}
@@ -28,7 +29,7 @@ export default function DraftDokumen({ jenis }: { jenis: JenisDokumen }) {
           {m.canRetry && <button type="button" onClick={m.retry} className="mt-2 font-medium underline">Coba lagi</button>}
         </div>
       )}
-      {m.peserta && <DraftDokumenForm key={`${jenis}:${m.peserta.id}`} peserta={m.peserta} jenis={jenis} />}
+      {m.data && idPeserta && <DraftDokumenForm key={`${jenis}:${idPeserta}:${m.data.dokumen?.versi ?? 0}`} data={m.data} noJadwal={noJadwal} idPeserta={idPeserta} jenis={jenis} />}
     </AppLayout>
   );
 }

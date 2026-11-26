@@ -3,6 +3,7 @@
 import React from "react";
 import { BadgeCheck } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Anchor from "@/components/base/anchor";
 
 import TablePagination from "@/components/base/table-pagination";
 import { usePerusahaanBnspManage } from "./manage";
@@ -35,7 +36,7 @@ function Cell({ val }: { val: number | null }) {
 // ---------------------------------------------------------------------------
 
 export default function PerusahaanBnspContainer() {
-  const { search, changeSearch, page, setPage, limit, offset, total, totalPages, rows } =
+  const { search, changeSearch, page, setPage, limit, offset, total, totalPages, rows, loading, error } =
     usePerusahaanBnspManage();
 
   return (
@@ -145,40 +146,42 @@ export default function PerusahaanBnspContainer() {
             </thead>
 
             <tbody>
-              {rows.length === 0 ? (
+              {loading || error || rows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={16}
                     className="px-4 py-12 text-center text-xs text-zinc-400"
                   >
-                    Tidak ada data tersedia.
+                    <span role={error ? "alert" : "status"} className={error ? "text-red-600" : undefined}>
+                      {loading ? "Memuat data..." : error || "Tidak ada data tersedia."}
+                    </span>
                   </td>
                 </tr>
               ) : (
                 rows.map((row, i) => (
                   <tr
-                    key={row.id}
+                    key={row.noInduk}
                     className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-xs text-zinc-400">
                       {offset + i + 1}
                     </td>
                     <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap max-w-[140px] truncate overflow-hidden">
-                      {row.perusahaan}
+                      <Anchor name={row.perusahaan} route={`/database/perusahaan/${encodeURIComponent(row.noInduk)}`} />
                     </td>
                     {/* Acc ENV */}
                     <td
                       style={ACC_ENV_STYLE}
                       className="px-3 py-3 text-center text-xs font-semibold w-20"
                     >
-                      {row.accEnv}
+                      {row.accEnv || "–"}
                     </td>
                     {/* Acc EPM */}
                     <td
                       style={ACC_EPM_STYLE}
                       className="px-3 py-3 text-center text-xs font-semibold w-20"
                     >
-                      {row.accEpm}
+                      {row.accEpm || "–"}
                     </td>
                     <Cell val={row.pppu} />
                     <Cell val={row.poippu} />

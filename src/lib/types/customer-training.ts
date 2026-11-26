@@ -19,6 +19,8 @@ export interface EntriAkun {
 }
 
 export interface CustomerTraining {
+  jenisInstansi: string;
+  kebutuhanTrainingMentah: string | null;
   noInduk: string;
   perusahaan: string | null;
   totalPeserta: number;

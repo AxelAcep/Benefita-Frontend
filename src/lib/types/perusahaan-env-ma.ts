@@ -1,11 +1,11 @@
 export interface PerusahaanENVMA {
-  id: number;
   noInduk: string;
   perusahaan: string;
-  prioAE: string;
-  alamat: string;
-  noTelepon: string;
-  email: string;
-  lineOfBiz: string;
-  proper: string;
+  jenisInstansi: string;
+  ae: string;
+  alamat: string | null;
+  noTelepon: string | null;
+  email: string | null;
+  lineOfBiz: string | null;
+  proper: string | null;
 }

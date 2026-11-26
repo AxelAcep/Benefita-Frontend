@@ -51,13 +51,13 @@ export function SuratForm({ open, initialData, isLoading, error, onClose, onSubm
             control={control}
             name="tujuanNoInduk"
             render={({ field, fieldState }) => (
-              <Field label="Perusahaan Tujuan">
+              <Field label="Tujuan Surat">
                 <PerusahaanSelect
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(noInduk, company) => field.onChange(noInduk || company)}
                   disabled={isLoading}
                   error={fieldState.error?.message}
-                  placeholder="Pilih perusahaan tujuan..."
+                  placeholder="Pilih perusahaan atau ketik tujuan surat..."
                 />
               </Field>
             )}

@@ -3,6 +3,8 @@
 import React from "react";
 import { TableProperties } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Anchor from "@/components/base/anchor";
+import TableLoading from "@/components/base/table-loading";
 import TablePagination from "@/components/base/table-pagination";
 import { usePerusahaanJabatanTeknisManage } from "./manage";
 
@@ -15,13 +17,13 @@ export default function PerusahaanJabatanTeknisContainer() {
     paginated,
     totalPages,
     PAGE_SIZE,
-    total,
+    total, loading, error,
   } = usePerusahaanJabatanTeknisManage();
 
   return (
     <AppLayout
       breadcrumbs={[
-        { label: "Vendor", href: "/vendor" },
+        { label: "Perusahaan" },
         { label: "Daftar Jabatan Teknis" },
       ]}
 
@@ -95,14 +97,18 @@ export default function PerusahaanJabatanTeknisContainer() {
               </tr>
             </thead>
 
-            <tbody>
-              {paginated.length === 0 ? (
+            <tbody aria-busy={loading}>
+              {loading ? (
+                <TableLoading columns={7} />
+              ) : error || paginated.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
                     className="px-4 py-12 text-center text-xs text-zinc-400"
                   >
-                    Tidak ada data tersedia.
+                    <span role={error ? "alert" : "status"} className={error ? "text-red-600" : undefined}>
+                      {error || "Tidak ada data tersedia."}
+                    </span>
                   </td>
                 </tr>
               ) : (
@@ -116,11 +122,11 @@ export default function PerusahaanJabatanTeknisContainer() {
                     </td>
 
                     <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                      {row.noInduk}
+                      <Anchor name={row.noInduk} route={`/database/${row.jenisInstansi === "RUMAH_SAKIT" ? "rumah-sakit" : "perusahaan"}/${encodeURIComponent(row.noInduk)}`} />
                     </td>
 
                     <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                      {row.perusahaan}
+                      <Anchor name={row.perusahaan} route={`/database/${row.jenisInstansi === "RUMAH_SAKIT" ? "rumah-sakit" : "perusahaan"}/${encodeURIComponent(row.noInduk)}`} />
                     </td>
 
                     <td className="px-4 py-3 text-xs text-zinc-600">
@@ -128,11 +134,11 @@ export default function PerusahaanJabatanTeknisContainer() {
                     </td>
 
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.jabatan}
+                      {row.jabatan || "–"}
                     </td>
 
                     <td className="px-4 py-3 text-xs text-zinc-600 whitespace-nowrap">
-                      {row.noTelepon === "-" ? (
+                      {!row.noTelepon || row.noTelepon === "-" ? (
                         <span className="text-zinc-300">–</span>
                       ) : (
                         row.noTelepon
@@ -140,7 +146,7 @@ export default function PerusahaanJabatanTeknisContainer() {
                     </td>
 
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.email === "-" ? (
+                      {!row.email || row.email === "-" ? (
                         <span className="text-zinc-300">–</span>
                       ) : (
                         row.email
@@ -153,13 +159,13 @@ export default function PerusahaanJabatanTeknisContainer() {
           </table>
         </div>
 
-        <TablePagination
+        {!loading && !error && <TablePagination
           page={currentPage}
           limit={PAGE_SIZE}
           total={total}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-        />
+        />}
       </div>
     </AppLayout>
   );

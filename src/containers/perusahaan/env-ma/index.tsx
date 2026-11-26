@@ -3,6 +3,8 @@
 import React from "react";
 import { TableProperties } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import Anchor from "@/components/base/anchor";
+import TableLoading from "@/components/base/table-loading";
 import TablePagination from "@/components/base/table-pagination";
 import { usePerusahaanEnvMaManage } from "./manage";
 
@@ -15,7 +17,8 @@ export default function PerusahaanEnvMaContainer() {
     paginated,
     totalPages,
     PAGE_SIZE,
-    total,
+    total, loading, error,
+    liniBisnisId, changeLiniBisnis, liniBisnisOptions, optionsError,
   } = usePerusahaanEnvMaManage();
 
   return (
@@ -38,9 +41,19 @@ export default function PerusahaanEnvMaContainer() {
                 <TableProperties className="w-3.5 h-3.5 text-emerald-500" />
               </div>
               <span className="font-bold text-zinc-800 text-sm">
-                Daftar Perusahaan ENV : MA
+                Daftar Perusahaan Bebas (MA, dll)
               </span>
             </div>
+
+            <label className="flex items-center gap-2 text-xs text-zinc-600">
+              Line Bisnis
+              <select value={liniBisnisId} onChange={(e) => changeLiniBisnis(e.target.value)}
+                className="max-w-64 rounded-lg border border-zinc-200 px-2 py-1.5">
+                <option value="">Semua lini bisnis</option>
+                {liniBisnisOptions.map((item) => <option key={item.id} value={item.id}>{item.nama}</option>)}
+              </select>
+            </label>
+            {optionsError && <span role="alert" className="text-xs text-red-600">{optionsError}</span>}
 
             {/* Search — pushed to the right */}
             <div className="relative ml-auto">
@@ -76,7 +89,7 @@ export default function PerusahaanEnvMaContainer() {
                   No ↕
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
-                  Prio AE
+                  AE
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left w-24">
                   No Induk
@@ -102,48 +115,52 @@ export default function PerusahaanEnvMaContainer() {
               </tr>
             </thead>
 
-            <tbody>
-              {paginated.length === 0 ? (
+            <tbody aria-busy={loading}>
+              {loading ? (
+                <TableLoading columns={9} />
+              ) : error || paginated.length === 0 ? (
                 <tr>
                   <td
                     colSpan={9}
                     className="px-4 py-12 text-center text-xs text-zinc-400"
                   >
-                    Tidak ada data tersedia.
+                    <span role={error ? "alert" : "status"} className={error ? "text-red-600" : undefined}>
+                      {error || "Tidak ada data tersedia."}
+                    </span>
                   </td>
                 </tr>
               ) : (
                 paginated.map((row, i) => (
                   <tr
-                    key={row.id}
+                    key={row.noInduk}
                     className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors align-top"
                   >
                     <td className="px-4 py-3 text-xs text-zinc-400">
                       {(currentPage - 1) * PAGE_SIZE + i + 1}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600 whitespace-nowrap">
-                      {row.prioAE}
+                      {row.ae}
                     </td>
                     <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                      {row.noInduk}
+                      <Anchor name={row.noInduk} route={`/database/${row.jenisInstansi === "RUMAH_SAKIT" ? "rumah-sakit" : "perusahaan"}/${encodeURIComponent(row.noInduk)}`} />
                     </td>
                     <td className="px-4 py-3 text-xs text-emerald-600 font-semibold cursor-pointer hover:underline whitespace-nowrap">
-                      {row.perusahaan}
+                      <Anchor name={row.perusahaan} route={`/database/${row.jenisInstansi === "RUMAH_SAKIT" ? "rumah-sakit" : "perusahaan"}/${encodeURIComponent(row.noInduk)}`} />
                     </td>
                     <td className="px-3 py-3 text-xs text-zinc-600 leading-relaxed">
-                      {row.alamat}
+                      {row.alamat || "–"}
                     </td>
                     <td className="px-3 py-3 text-xs text-zinc-600 whitespace-nowrap">
-                      {row.noTelepon}
+                      {row.noTelepon || "–"}
                     </td>
                     <td className="px-3 py-3 text-xs text-zinc-600">
-                      {row.email}
+                      {row.email || "–"}
                     </td>
                     <td className="px-3 py-3 text-xs text-zinc-600">
-                      {row.lineOfBiz}
+                      {row.lineOfBiz || "–"}
                     </td>
                     <td className="px-3 py-3 text-xs text-zinc-600">
-                      {row.proper === "-" ? (
+                      {!row.proper || row.proper === "-" ? (
                         <span className="text-zinc-300 select-none">–</span>
                       ) : (
                         row.proper
@@ -156,13 +173,13 @@ export default function PerusahaanEnvMaContainer() {
           </table>
         </div>
 
-        <TablePagination
+        {!loading && !error && <TablePagination
           page={currentPage}
           limit={PAGE_SIZE}
           total={total}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-        />
+        />}
       </div>
     </AppLayout>
   );

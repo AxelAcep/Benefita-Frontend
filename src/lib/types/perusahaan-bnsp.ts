@@ -1,9 +1,8 @@
 export interface PerusahaanBNSP {
-  id: number;
   noInduk: string;
   perusahaan: string;
-  accEnv: string;
-  accEpm: string;
+  accEnv: string | null;
+  accEpm: string | null;
   pppu: number | null;
   poippu: number | null;
   pppa: number | null;

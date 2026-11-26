@@ -5,6 +5,7 @@ import { ArrowUp, ArrowDown } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Anchor from "@/components/base/anchor";
 import TablePagination from "@/components/base/table-pagination";
+import TableLoading from "@/components/base/table-loading";
 import { usePerusahaanTbkManage } from "./manage";
 
 function formatTanggal(iso: string | null) {
@@ -117,16 +118,9 @@ export default function PerusahaanTbkContainer() {
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody aria-busy={loading}>
               {loading ? (
-                <tr>
-                  <td
-                    colSpan={9}
-                    className="px-4 py-12 text-center text-xs text-zinc-400"
-                  >
-                    Memuat data...
-                  </td>
-                </tr>
+                <TableLoading columns={9} />
               ) : error || data.length === 0 ? (
                 <tr>
                   <td
@@ -179,7 +173,7 @@ export default function PerusahaanTbkContainer() {
           </table>
         </div>
 
-        {!error && (
+        {!error && !loading && (
           <TablePagination
             page={page}
             limit={pagination.pageSize}

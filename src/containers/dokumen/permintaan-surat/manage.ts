@@ -1,10 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { useDaftarSurat } from "@/hooks/use-daftar-surat";
 import { useKonfirmasiHapus } from "@/hooks/use-konfirmasi-hapus";
-import { getUserDetail } from "@/lib/services/login.service";
 import type { PermintaanNomorSurat, TipeSurat } from "@/lib/types/surat";
 import type { SuratFormValues } from "./form";
 
@@ -16,7 +14,6 @@ interface Notif {
 
 export function useSuratManage(tipe: TipeSurat) {
   const surat = useDaftarSurat(tipe);
-  const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [editRow, setEditRow] = useState<PermintaanNomorSurat | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,10 +47,7 @@ export function useSuratManage(tipe: TipeSurat) {
         await surat.update(editRow.id, data);
         showNotif("Permintaan surat berhasil diperbarui.", "success");
       } else {
-        if (!user) throw new Error("Sesi pengguna tidak tersedia.");
-        const { pegawaiId } = await getUserDetail(user.id);
-        if (!pegawaiId) throw new Error("Data pengirim tidak ditemukan.");
-        await surat.create({ ...data, tipe, pengirimId: pegawaiId });
+        await surat.create({ ...data, tipe });
         showNotif("Permintaan surat berhasil dibuat.", "success");
       }
       closeForm();

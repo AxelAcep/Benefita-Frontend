@@ -11,6 +11,8 @@ import type {
   PengajuanListItem,
 } from "@/lib/types/pengajuan-judul";
 import type { PengajuanFormValues } from "./form";
+import { approvePengajuan } from "@/lib/services/pengajuan-judul-training.service";
+import type { ApprovalValues } from "./approval-form";
 
 export const UKURAN_HALAMAN = 10;
 
@@ -30,8 +32,7 @@ function keForm(row: PengajuanJudulTraining): PengajuanFormValues {
     perusahaanId: row.perusahaanId ?? "",
     namaKontak: row.namaKontak ?? "",
     kontak: row.kontak ?? "",
-    jumlahPeserta: keTeks(row.jumlahPeserta),
-    responMA: row.responMA ?? "",
+    jumlahPeserta: row.jumlahPesertaTeks ?? keTeks(row.jumlahPeserta),
   };
 }
 
@@ -42,6 +43,8 @@ const keAngka = (v: string | undefined): number | undefined => {
 };
 
 export function usePengajuanManage() {
+  const [reviewing, setReviewing] = useState<PengajuanListItem | null>(null);
+  const [isReviewing, setIsReviewing] = useState(false);
   const resource = usePengajuan(UKURAN_HALAMAN);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -77,11 +80,10 @@ export function usePengajuanManage() {
       const payload = {
         judulTraining: data.judulTraining,
         jumlahHari: keAngka(data.jumlahHari) ?? 0,
-        perusahaanId: data.perusahaanId || undefined,
-        namaKontak: data.namaKontak || undefined,
-        kontak: data.kontak || undefined,
-        jumlahPeserta: keAngka(data.jumlahPeserta),
-        responMA: data.responMA || undefined,
+        perusahaanId: data.perusahaanId || "",
+        namaKontak: data.namaKontak || "",
+        kontak: data.kontak || "",
+        jumlahPeserta: data.jumlahPeserta || null,
       };
 
       if (editId !== null) {
@@ -103,8 +105,24 @@ export function usePengajuanManage() {
     }
   };
 
+  const submitApproval = async (data: ApprovalValues) => {
+    if (!reviewing) return;
+    setIsReviewing(true);
+    try {
+      await approvePengajuan(reviewing.id, data);
+      await resource.refetch();
+      setReviewing(null);
+      showNotif("Keputusan pengajuan berhasil disimpan", "success");
+    } catch (error) {
+      showNotif(error instanceof Error ? error.message : "Gagal menyimpan keputusan", "error");
+    } finally { setIsReviewing(false); }
+  };
+
   return {
     ...resource,
+    reviewing, isReviewing, submitApproval,
+    openApproval: (row: PengajuanListItem) => { if (row.canApprove) setReviewing(row); },
+    closeApproval: () => { if (!isReviewing) setReviewing(null); },
     isEdit: editId !== null,
     modalOpen,
     // Null saat mode tambah, dan juga selama detail belum tiba — supaya

@@ -5,6 +5,7 @@ import { LayoutGrid } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Anchor from "@/components/base/anchor";
 import TablePagination from "@/components/base/table-pagination";
+import TableLoading from "@/components/base/table-loading";
 import { usePerusahaanCustomerManage } from "./manage";
 import type { PelatihanRange } from "@/lib/types/perusahaan-customer";
 
@@ -242,16 +243,9 @@ export default function PerusahaanCustomerContainer() {
               </tr>
             </thead>
 
-            <tbody>
+            <tbody aria-busy={loading}>
               {loading ? (
-                <tr>
-                  <td
-                    colSpan={12}
-                    className="px-4 py-16 text-center text-xs text-zinc-400"
-                  >
-                    Memuat data...
-                  </td>
-                </tr>
+                <TableLoading columns={12} />
               ) : error || data.length === 0 ? (
                 <tr>
                   <td
@@ -325,7 +319,7 @@ export default function PerusahaanCustomerContainer() {
           </table>
         </div>
 
-        {!error && (
+        {!error && !loading && (
           <TablePagination
             page={page}
             limit={pagination.pageSize}

@@ -334,13 +334,13 @@ export default function TableListPeserta({
                         onClick={() => aksiHandlers.onCetakKwitansi?.(row)}
                         className="text-[11px] text-emerald-600 font-semibold hover:underline text-left"
                       >
-                        Draf Kwitansi
+                        Kwitansi
                       </button>
                       <button
                         onClick={() => aksiHandlers.onCetakInvoice?.(row)}
                         className="text-[11px] text-emerald-600 font-semibold hover:underline text-left"
                       >
-                        Draf Invoice
+                        Invoice
                       </button>
                       <button
                         onClick={() => aksiHandlers.onPesertaFinal?.(row)}

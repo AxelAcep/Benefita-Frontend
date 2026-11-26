@@ -141,8 +141,9 @@ export function apiGetResponse<T>(
   path: string,
   params?: ListParams,
   pesanGagal = "Gagal mengambil data.",
+  signal?: AbortSignal,
 ): Promise<T> {
-  return request<T>(path, { method: "GET" }, pesanGagal, params);
+  return request<T>(path, { method: "GET", signal }, pesanGagal, params);
 }
 
 export async function apiGet<T>(

@@ -1,9 +1,10 @@
 export interface JabatanTeknis {
-  id: number;
+  id: string;
   noInduk: string;
   perusahaan: string;
+  jenisInstansi: string;
   nama: string;
-  jabatan: string;
-  noTelepon: string;
-  email: string;
+  jabatan: string | null;
+  noTelepon: string | null;
+  email: string | null;
 }

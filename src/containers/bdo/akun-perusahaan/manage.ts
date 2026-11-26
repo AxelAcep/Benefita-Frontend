@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { DATA_CONTOH } from "./data";
+import { useEffect, useState } from "react";
+import { useAkunPerusahaan } from "@/hooks/use-bdo-laporan";
+import { getAkunOpsi } from "@/lib/services/bdo-laporan.service";
 
 export const AKUN = {
   ENV: { kode: "accEnv", kontak: "diKontakTerakhirEnv", jumlah: "enviro", label: "Enviro" },
@@ -27,14 +28,17 @@ export function useAkunPerusahaanManage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  const kodeTersedia = [...new Set(DATA_CONTOH.map((row) => row[AKUN[draft.kategori].kode]))].sort();
-  const query = search.trim().toLowerCase();
-  const filtered = DATA_CONTOH.filter((row) => {
-    if (filter.kode && row[AKUN[filter.kategori].kode] !== filter.kode) return false;
-
-    return row.perusahaan.toLowerCase().includes(query) || row.noInduk.toLowerCase().includes(query);
-  });
-  const start = (page - 1) * PAGE_SIZE;
+  const [kodeTersedia, setKodeTersedia] = useState<string[]>([]);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+  useEffect(() => {
+    let batal = false;
+    setKodeTersedia([]);
+    setOptionsError(null);
+    getAkunOpsi(draft.kategori).then((data) => { if (!batal) setKodeTersedia(data); })
+      .catch((err: unknown) => { if (!batal) setOptionsError(err instanceof Error ? err.message : "Gagal mengambil kode akun."); });
+    return () => { batal = true; };
+  }, [draft.kategori]);
+  const result = useAkunPerusahaan(page, search, filter.kategori, filter.kode);
 
   return {
     draft,
@@ -58,8 +62,7 @@ export function useAkunPerusahaanManage() {
     page,
     setPage,
     pageSize: PAGE_SIZE,
-    data: filtered.slice(start, start + PAGE_SIZE),
-    total: filtered.length,
-    totalPages: Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)),
+    data: result.data, total: result.pagination.total, totalPages: result.pagination.totalPages,
+    loading: result.loading, error: result.error, optionsError,
   };
 }

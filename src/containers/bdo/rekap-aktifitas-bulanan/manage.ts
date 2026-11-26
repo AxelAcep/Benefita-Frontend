@@ -1,50 +1,21 @@
 "use client";
-
 import { useState } from "react";
-import { BULAN_CONTOH, DATA_CONTOH } from "./data";
-
-const PAGE_SIZE = 10;
+import { useRekapBulanan } from "@/hooks/use-bdo-laporan";
 
 export function useRekapBulananManage() {
-  const [draftBulan, setDraftBulan] = useState(BULAN_CONTOH);
-  const [bulan, setBulan] = useState(BULAN_CONTOH);
+  const [draftBulan, setDraftBulan] = useState(() => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Jakarta" }).format(new Date()).slice(0, 7));
+  const [bulan, setBulan] = useState(draftBulan);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-
+  const result = useRekapBulanan(page, search, bulan);
   const [tahun, nomorBulan] = bulan.split("-").map(Number);
-  const jumlahHari = new Date(tahun, nomorBulan, 0).getDate();
-  const hari = Array.from({ length: jumlahHari }, (_, index) => index + 1);
-  const labelBulan = new Date(tahun, nomorBulan - 1, 1)
-    .toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-
-  const query = search.trim().toLowerCase();
-  const tersedia = bulan === BULAN_CONTOH;
-  const filtered = tersedia
-    ? DATA_CONTOH.filter(({ nama }) => nama.toLowerCase().includes(query))
-    : [];
-  const start = (page - 1) * PAGE_SIZE;
-
+  const hari = Array.from({ length: new Date(tahun, nomorBulan, 0).getDate() }, (_, i) => i + 1);
   return {
-    draftBulan,
-    setDraftBulan,
-    terapkanBulan() {
-      if (!draftBulan) return;
-      setBulan(draftBulan);
-      setPage(1);
-    },
-    labelBulan,
+    ...result, total: result.pagination.total, totalPages: result.pagination.totalPages,
+    page, pageSize: 10, setPage, search, draftBulan, setDraftBulan,
+    labelBulan: new Date(`${bulan}-01T00:00:00+07:00`).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", month: "long", year: "numeric" }),
+    changeSearch(value: string) { setSearch(value); setPage(1); },
+    terapkanBulan() { if (draftBulan) { setBulan(draftBulan); setPage(1); } },
     hari,
-    tersedia,
-    data: filtered.slice(start, start + PAGE_SIZE),
-    total: filtered.length,
-    totalPages: Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)),
-    page,
-    pageSize: PAGE_SIZE,
-    setPage,
-    search,
-    changeSearch(value: string) {
-      setSearch(value);
-      setPage(1);
-    },
   };
 }

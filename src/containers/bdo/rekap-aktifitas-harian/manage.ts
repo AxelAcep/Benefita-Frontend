@@ -1,50 +1,18 @@
 "use client";
-
 import { useState } from "react";
-import { DATA_CONTOH, TANGGAL_CONTOH } from "./data";
-
-const PAGE_SIZE = 10;
-
-const formatTanggal = new Intl.DateTimeFormat("id-ID", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
+import { useRekapHarian } from "@/hooks/use-bdo-laporan";
 
 export function useRekapHarianManage() {
-  const [draftTanggal, setDraftTanggal] = useState(TANGGAL_CONTOH);
-  const [tanggal, setTanggal] = useState(TANGGAL_CONTOH);
+  const [draftTanggal, setDraftTanggal] = useState(() => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Jakarta" }).format(new Date()));
+  const [tanggal, setTanggal] = useState(draftTanggal);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-
-  const query = search.trim().toLowerCase();
-  const tersedia = tanggal === TANGGAL_CONTOH;
-  const filtered = tersedia
-    ? DATA_CONTOH.filter(({ nama }) => nama.toLowerCase().includes(query))
-    : [];
-  const start = (page - 1) * PAGE_SIZE;
-
+  const result = useRekapHarian(page, search, tanggal);
   return {
-    draftTanggal,
-    setDraftTanggal,
-    terapkanTanggal() {
-      if (!draftTanggal) return;
-      setTanggal(draftTanggal);
-      setPage(1);
-    },
-    labelTanggal: formatTanggal.format(new Date(tanggal)),
-    tersedia,
-    data: filtered.slice(start, start + PAGE_SIZE),
-    total: filtered.length,
-    totalPages: Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)),
-    page,
-    pageSize: PAGE_SIZE,
-    setPage,
-    search,
-    changeSearch(value: string) {
-      setSearch(value);
-      setPage(1);
-    },
+    ...result, total: result.pagination.total, totalPages: result.pagination.totalPages,
+    page, pageSize: 10, setPage, search, draftTanggal, setDraftTanggal,
+    labelTanggal: new Date(`${tanggal}T00:00:00+07:00`).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "long", year: "numeric" }),
+    changeSearch(value: string) { setSearch(value); setPage(1); },
+    terapkanTanggal() { if (draftTanggal) { setTanggal(draftTanggal); setPage(1); } },
   };
 }

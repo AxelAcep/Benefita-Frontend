@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import TableLoading from "@/components/base/table-loading";
 
 export interface ColumnDef<T> {
   key: string;
@@ -169,17 +170,9 @@ export function DataTable<T = any>({
                   ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody aria-busy={isLoading}>
                 {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="border-b border-zinc-50">
-                      {columns.map((col) => (
-                        <td key={col.key} className="px-4 py-3">
-                          <div className="h-3.5 w-full animate-pulse rounded bg-zinc-100" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
+                  <TableLoading columns={columns.length} />
                 ) : data.length === 0 ? (
                   <tr>
                     <td
@@ -227,7 +220,7 @@ export function DataTable<T = any>({
             <div className="flex items-center gap-1">
               <button
                 onClick={() => onPageChange?.(currentPage - 1)}
-                disabled={currentPage === 1}
+                disabled={isLoading || currentPage === 1}
                 className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
               >
                 ‹ Sebelumnya
@@ -239,6 +232,7 @@ export function DataTable<T = any>({
                   <button
                     key={p}
                     onClick={() => onPageChange?.(p as number)}
+                    disabled={isLoading}
                     className={cn(
                       "w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors",
                       p === currentPage
@@ -252,7 +246,7 @@ export function DataTable<T = any>({
               )}
               <button
                 onClick={() => onPageChange?.(currentPage + 1)}
-                disabled={currentPage === totalPages}
+                disabled={isLoading || currentPage === totalPages}
                 className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
               >
                 Selanjutnya ›
@@ -266,4 +260,4 @@ export function DataTable<T = any>({
   );
 }
 
-export default DataTable; 
+export default DataTable;

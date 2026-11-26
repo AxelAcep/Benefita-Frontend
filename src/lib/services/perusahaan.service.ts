@@ -1090,11 +1090,12 @@ export function getPerusahaanTbkList(params?: {
   limit?: number;
   search?: string;
   sort?: "asc" | "desc";
-}): Promise<GetPerusahaanTbkResponse> {
+}, signal?: AbortSignal): Promise<GetPerusahaanTbkResponse> {
   return apiGetResponse<GetPerusahaanTbkResponse>(
     "/api/database/perusahaan-tbk",
     params,
     "Gagal mengambil data perusahaan Tbk.",
+    signal,
   );
 }
 
@@ -1111,11 +1112,13 @@ export type {
 
 export function getPerusahaanProperList(
   params?: PerusahaanProperParams,
+  signal?: AbortSignal,
 ): Promise<GetPerusahaanProperResponse> {
   return apiGetResponse<GetPerusahaanProperResponse>(
     "/api/database/perusahaan-proper",
     params,
     "Gagal mengambil data perusahaan Proper.",
+    signal,
   );
 }
 
@@ -1129,11 +1132,12 @@ export type {
   GetPerusahaanIsoResponse,
 } from "@/lib/types/perusahaan-iso";
 
-export function getPerusahaanIsoList(params?: PerusahaanIsoParams): Promise<GetPerusahaanIsoResponse> {
+export function getPerusahaanIsoList(params?: PerusahaanIsoParams, signal?: AbortSignal): Promise<GetPerusahaanIsoResponse> {
   return apiGetResponse<GetPerusahaanIsoResponse>(
     "/api/database/perusahaan-iso",
     params,
     "Gagal mengambil data perusahaan ISO.",
+    signal,
   );
 }
 
@@ -1220,10 +1224,11 @@ export async function getPelatihanTahunOptions(): Promise<number[]> {
   return data;
 }
 
-export function getPerusahaanCustomerList(params?: PerusahaanCustomerParams): Promise<GetPerusahaanCustomerResponse> {
+export function getPerusahaanCustomerList(params?: PerusahaanCustomerParams, signal?: AbortSignal): Promise<GetPerusahaanCustomerResponse> {
   return apiGetResponse<GetPerusahaanCustomerResponse>(
     "/api/database/perusahaan-customer",
     params,
     "Gagal mengambil data perusahaan customer.",
+    signal,
   );
 }

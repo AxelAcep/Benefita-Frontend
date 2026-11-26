@@ -1,6 +1,7 @@
 "use client";
 
 import AppLayout from "@/components/app-layout";
+import PerusahaanLink from "@/components/base/perusahaan-link";
 import { DataTable, type ColumnDef } from "@/components/base/data-table";
 import { SelectInput } from "@/components/base/form-field";
 import type { AkunPerusahaan } from "./data";
@@ -13,7 +14,7 @@ const columnsAkun = KATEGORI_AKUN.flatMap((kategori): ColumnDef<AkunPerusahaan>[
   return [
     { key: kode, label: `ACC ${kategori}`, className: "text-center font-semibold" },
     { key: kontak, label: `Kontak Terakhir ${kategori}`, className: "text-center" },
-    { key: jumlah, label, className: "text-center" },
+    { key: jumlah, label: `Hari ${kategori}`, className: "text-center" },
   ];
 });
 
@@ -26,8 +27,8 @@ export default function AkunPerusahaanContainer() {
       label: "No",
       render: (_value, _row, i) => (m.page - 1) * m.pageSize + i + 1,
     },
-    { key: "noInduk", label: "No Induk", className: "font-medium" },
-    { key: "perusahaan", label: "Perusahaan/Instansi", className: "font-semibold" },
+    { key: "noInduk", label: "No Induk", className: "font-medium", render: (_value, row) => <PerusahaanLink {...row} label={row.noInduk} /> },
+    { key: "perusahaan", label: "Perusahaan/Instansi", className: "font-semibold", render: (_value, row) => <PerusahaanLink {...row} label={row.perusahaan} /> },
     { key: "waktu", label: "Waktu" },
     { key: "action", label: "Action", className: "text-center" },
     ...columnsAkun,
@@ -47,16 +48,19 @@ export default function AkunPerusahaanContainer() {
     <AppLayout breadcrumbs={[{ label: "BDO" }, { label: JUDUL }]}>
       <div className="mb-4">
         <h1 className="text-lg font-semibold">{JUDUL}</h1>
-        <p className="text-sm text-zinc-500">Halaman ini menampilkan data contoh.</p>
+        <p className="text-sm text-zinc-500">Hari dihitung sejak kontak terakhir per bidang; kosong berarti belum ada aktivitas kontak tercatat.</p>
       </div>
+      {m.optionsError && <p role="alert" className="mb-3 text-sm text-red-600">{m.optionsError}</p>}
+      {m.error && <p role="alert" className="mb-3 text-sm text-red-600">{m.error}</p>}
       <DataTable
         columns={columns}
-        data={m.data}
+        data={m.error ? [] : m.data}
+        isLoading={m.loading}
         totalData={m.total}
         currentPage={m.page}
         totalPages={m.totalPages}
         pageSize={m.pageSize}
-        onPageChange={m.setPage}
+        onPageChange={m.loading ? undefined : m.setPage}
         searchValue={m.search}
         onSearchChange={m.changeSearch}
         searchPlaceholder="Cari perusahaan atau no induk..."

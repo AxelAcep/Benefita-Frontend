@@ -41,22 +41,22 @@ export default function RekapBulananContainer() {
     <AppLayout breadcrumbs={[{ label: "BDO" }, { label: "Rekap Daily AE" }]}>
       <div className="mb-4">
         <h1 className="text-lg font-semibold">Rekap Daily AE</h1>
-        <p className="text-sm text-zinc-500">Data contoh tersedia untuk April 2026.</p>
+        <p className="text-sm text-zinc-500">Jumlah aktivitas kontak per AE untuk setiap tanggal dalam bulan, menurut waktu WIB.</p>
       </div>
+      {m.error && <p role="alert" className="mb-3 text-sm text-red-600">{m.error}</p>}
       <DataTable
         columns={columns}
-        data={m.data}
+        data={m.error ? [] : m.data}
+        isLoading={m.loading}
         totalData={m.total}
         currentPage={m.page}
         totalPages={m.totalPages}
         pageSize={m.pageSize}
-        onPageChange={m.setPage}
+        onPageChange={m.loading ? undefined : m.setPage}
         searchValue={m.search}
         onSearchChange={m.changeSearch}
         searchPlaceholder="Cari nama AE..."
-        emptyMessage={
-          m.tersedia ? "Tidak ada nama yang cocok." : `Tidak ada data contoh untuk ${m.labelBulan}.`
-        }
+        emptyMessage={m.error || `Tidak ada aktivitas untuk ${m.labelBulan}.`}
         filterSlot={
           <>
             <label htmlFor="rekap-bulan" className="text-xs font-medium text-zinc-600">
