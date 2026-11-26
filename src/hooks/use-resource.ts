@@ -17,7 +17,8 @@ export interface ResourceService<T, Id, C, U> {
   list: (params: ListParams) => Promise<ListResult<T>>;
   create: (payload: C) => Promise<T>;
   update: (id: Id, payload: U) => Promise<T>;
-  remove: (id: Id) => Promise<void>;
+  /** Opsional: sebagian entitas belum punya endpoint hapus di backend. */
+  remove?: (id: Id) => Promise<void>;
 }
 
 export interface UseResourceOptions {
@@ -106,9 +107,15 @@ export function useResource<T, Id = number, C = unknown, U = Partial<C>>(
   };
 
   const remove = async (id: Id) => {
+    if (!service.remove) {
+      throw new Error("Hapus belum didukung untuk data ini.");
+    }
     await service.remove(id);
     await fetchData();
   };
+
+  /** Dipakai halaman untuk menyembunyikan tombol hapus kalau tidak didukung. */
+  const bisaHapus = typeof service.remove === "function";
 
   return {
     data,
@@ -127,5 +134,6 @@ export function useResource<T, Id = number, C = unknown, U = Partial<C>>(
     create,
     update,
     remove,
+    bisaHapus,
   };
 }

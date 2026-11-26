@@ -1,169 +1,52 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
-
-export interface Hotel {
-  id: string;
-  kodeHotel: string;
-  namaHotel: string;
-  alamat: string;
-  kota: string;
-  telepon: string;
-  fax?: string | null;
-  pubRate?: number | null;
-  corRate?: number | null;
-}
-
-export interface HotelPagination {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface GetHotelsResponse {
-  data: Hotel[];
-  pagination: HotelPagination;
-}
-
-export interface CreateHotelRequest {
-  kodeHotel: string;
-  namaHotel: string;
-  alamat: string;
-  kota: string;
-  telepon: string;
-  fax?: string;
-  pubRate?: number;
-  corRate?: number;
-}
-
-export interface UpdateHotelRequest {
-  namaHotel?: string;
-  alamat?: string;
-  kota?: string;
-  telepon?: string;
-  fax?: string;
-  pubRate?: number;
-  corRate?: number;
-}
-
-// ─────────────────────────────────────────────
-// FETCH HELPERS (pakai auth wrapper kamu)
-// ─────────────────────────────────────────────
-
-import { fetchWithAuth } from "./login.service";
-
-// ─────────────────────────────────────────────
-// API SERVICE
-// ─────────────────────────────────────────────
-
 /**
- * GET ALL HOTEL
- * support:
- * - pagination
- * - filter kota
- * - search (kode, nama, alamat)
+ * Service Hotel.
+ *
+ * Perakitan URL, pengiriman token, dan penanganan error ada di
+ * @/lib/api/client — di sini tinggal endpoint dan tipenya.
+ *
+ * Catatan: backend belum punya route DELETE /api/training/hotel/:id,
+ * jadi service ini sengaja tidak menyediakan fungsi hapus. Fungsi
+ * deleteHotel yang lama memanggil endpoint yang tidak pernah ada.
  */
-export async function getHotels(params?: {
-  page?: number;
-  limit?: number;
-  kota?: string;
-  search?: string;
-}): Promise<GetHotelsResponse> {
-  const query = new URLSearchParams();
+import { apiGet, apiList, apiPost, apiPut } from "@/lib/api/client";
+import type {
+  CreateHotelRequest,
+  Hotel,
+  UpdateHotelRequest,
+} from "@/lib/types/hotel";
+import type { ListParams, ListResult } from "@/lib/api/client";
 
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.kota) query.append("kota", params.kota);
-  if (params?.search) query.append("search", params.search);
+// Tipe pindah ke @/lib/types/hotel. Diekspor ulang di sini supaya file lama
+// yang mengimpor dari service tidak ikut rusak.
+export type { CreateHotelRequest, Hotel, UpdateHotelRequest };
 
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/hotel?${query.toString()}`,
-    {
-      method: "GET",
-    },
-  );
+const BASE = "/api/training/hotel";
 
-  const data = await res.json();
+export const getHotels = (
+  params: ListParams = {},
+): Promise<ListResult<Hotel>> =>
+  apiList<Hotel>(BASE, params, "Gagal mengambil data hotel");
 
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data hotel");
-  }
+export const getHotelById = (kodeHotel: string): Promise<Hotel> =>
+  apiGet<Hotel>(`${BASE}/${kodeHotel}`, undefined, "Gagal mengambil detail hotel");
 
-  return data;
-}
+/** Daftar kota yang benar-benar ada di tabel hotel, untuk mengisi dropdown. */
+export const getHotelKotaList = (): Promise<string[]> =>
+  apiGet<string[]>(`${BASE}/kota`, undefined, "Gagal mengambil daftar kota");
 
-/**
- * GET BY ID
- */
-export async function getHotelById(id: string): Promise<Hotel> {
-  const res = await fetchWithAuth(`${API_URL}/api/training/hotel/${id}`, {
-    method: "GET",
-  });
+export const createHotel = (payload: CreateHotelRequest): Promise<Hotel> =>
+  apiPost<Hotel>(BASE, payload, "Gagal membuat data hotel");
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil detail hotel");
-  }
-
-  return data.data;
-}
-
-/**
- * CREATE HOTEL
- */
-export async function createHotel(payload: CreateHotelRequest): Promise<Hotel> {
-  const res = await fetchWithAuth(`${API_URL}/api/training/hotel`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal membuat hotel");
-  }
-
-  return data.data;
-}
-
-/**
- * UPDATE HOTEL
- */
-export async function updateHotel(
-  id: string,
+/** `kodeHotel` di sini adalah kode ASLI baris yang diedit, bukan kode baru. */
+export const updateHotel = (
+  kodeHotel: string,
   payload: UpdateHotelRequest,
-): Promise<Hotel> {
-  const res = await fetchWithAuth(`${API_URL}/api/training/hotel/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+): Promise<Hotel> =>
+  apiPut<Hotel>(`${BASE}/${kodeHotel}`, payload, "Gagal mengubah data hotel");
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal update hotel");
-  }
-
-  return data.data;
-}
-
-/**
- * DELETE HOTEL
- */
-export async function deleteHotel(id: string): Promise<void> {
-  const res = await fetchWithAuth(`${API_URL}/api/training/hotel/${id}`, {
-    method: "DELETE",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal hapus hotel");
-  }
-}
+/** Dibentuk untuk useResource. Tanpa `remove`: endpoint hapus belum ada. */
+export const hotelService = {
+  list: getHotels,
+  create: createHotel,
+  update: updateHotel,
+};
