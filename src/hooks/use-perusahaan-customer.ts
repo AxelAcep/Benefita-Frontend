@@ -1,15 +1,17 @@
-// hooks/use-perusahaan-customer.ts
-
-import { useCallback, useEffect, useState } from "react";
-import {
-  getPerusahaanCustomerList,
-  type PerusahaanCustomerItem,
-  type PerusahaanCustomerPagination,
-} from "@/lib/services/perusahaan.service";
+import { useEffect, useState } from "react";
+import { getPerusahaanCustomerList } from "@/lib/services/perusahaan.service";
+import type {
+  PerusahaanCustomerItem,
+  PerusahaanCustomerPagination,
+} from "@/lib/types/perusahaan-customer";
 
 const PAGE_SIZE = 10;
 
-export function usePerusahaanCustomer() {
+export function usePerusahaanCustomer(
+  page: number,
+  search: string,
+  tahun: number | "",
+) {
   const [data, setData] = useState<PerusahaanCustomerItem[]>([]);
   const [pagination, setPagination] = useState<PerusahaanCustomerPagination>({
     total: 0,
@@ -20,56 +22,28 @@ export function usePerusahaanCustomer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [tahun, setTahun] = useState<number | "">("");
-  const [appliedTahun, setAppliedTahun] = useState<number | "">("");
-
-  const fetch = useCallback(async () => {
+  useEffect(() => {
+    let batal = false;
     setLoading(true);
     setError(null);
-    try {
-      const res = await getPerusahaanCustomerList({
-        page,
-        limit: PAGE_SIZE,
-        search,
-        tahun: appliedTahun,
+    getPerusahaanCustomerList({ page, limit: PAGE_SIZE, search, tahun })
+      .then((result) => {
+        if (batal) return;
+        setData(result.data);
+        setPagination(result.pagination);
+      })
+      .catch((err: unknown) => {
+        if (batal) return;
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+      })
+      .finally(() => {
+        if (!batal) setLoading(false);
       });
-      setData(res.data);
-      setPagination(res.pagination);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, appliedTahun]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+    return () => {
+      batal = true;
+    };
+  }, [page, search, tahun]);
 
-  const handleSearch = useCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
-  }, []);
-
-  const handleTerapkan = useCallback(() => {
-    setAppliedTahun(tahun);
-    setPage(1);
-  }, [tahun]);
-
-  return {
-    data,
-    pagination,
-    loading,
-    error,
-    search,
-    page,
-    tahun,
-    appliedTahun,
-    setPage,
-    setTahun,
-    handleSearch,
-    handleTerapkan,
-  };
+  return { data, pagination, loading, error };
 }

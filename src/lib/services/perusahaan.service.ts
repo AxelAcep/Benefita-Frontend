@@ -1,3 +1,4 @@
+import type { GetPerusahaanCustomerResponse, PerusahaanCustomerParams } from "@/lib/types/perusahaan-customer";
 import type { GetPerusahaanIsoResponse, PerusahaanIsoParams } from "@/lib/types/perusahaan-iso";
 import type { GetPerusahaanPrioritasResponse, PerusahaanPrioritasParams } from "@/lib/types/perusahaan-prioritas";
 import type { GetPerusahaanVendorResponse, PerusahaanVendorParams } from "@/lib/types/perusahaan-vendor";
@@ -1269,73 +1270,26 @@ export function getPerusahaanByAlamatList(params?: PerusahaanByAlamatParams): Pr
 // pelatihan pertama/terakhir, rating PROPER, PIC ENV/CSR/TSM/EPM
 // ─────────────────────────────────────────────
 
-export interface PelatihanRange {
-  tglMulai: string | null;
-  tglSelesai: string | null;
-}
-
-export interface PerusahaanCustomerItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  env: string | null;
-  csr: string | null;
-  tsm: string | null;
-  epm: string | null;
-  proper: string | null;
-  pelatihanPertama: PelatihanRange;
-  pelatihanTerakhir: PelatihanRange;
-}
-
-export interface PerusahaanCustomerPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanCustomerResponse {
-  data: PerusahaanCustomerItem[];
-  pagination: PerusahaanCustomerPagination;
-}
+export type {
+  PelatihanRange,
+  PerusahaanCustomerItem,
+  PerusahaanCustomerPagination,
+  GetPerusahaanCustomerResponse,
+} from "@/lib/types/perusahaan-customer";
 
 export async function getPelatihanTahunOptions(): Promise<number[]> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/pelatihan-tahun-options`,
-    { method: "GET" },
+  const { data } = await apiGetResponse<{ data: number[] }>(
+    "/api/database/pelatihan-tahun-options",
+    undefined,
+    "Gagal mengambil opsi tahun pelatihan.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil opsi tahun pelatihan.");
-  }
-
-  return data.data;
+  return data;
 }
 
-export async function getPerusahaanCustomerList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  tahun?: number | "";
-}): Promise<GetPerusahaanCustomerResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.tahun) query.append("tahun", String(params.tahun));
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-customer?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanCustomerList(params?: PerusahaanCustomerParams): Promise<GetPerusahaanCustomerResponse> {
+  return apiGetResponse<GetPerusahaanCustomerResponse>(
+    "/api/database/perusahaan-customer",
+    params,
+    "Gagal mengambil data perusahaan customer.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(
-      data.message || "Gagal mengambil data perusahaan customer.",
-    );
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
