@@ -1,3 +1,4 @@
+import type { GetPerusahaanByAlamatResponse, PerusahaanByAlamatParams } from "@/lib/types/perusahaan-berdasarkan-alamat";
 import type { GetPerusahaanProperResponse, PerusahaanProperParams } from "@/lib/types/perusahaan-proper";
 import { apiGetResponse } from "@/lib/api/client";
 import type { GetPerusahaanTbkResponse } from "@/lib/types/perusahaan-tbk";
@@ -1360,50 +1361,18 @@ export async function getPerusahaanVendorList(params?: {
 // PERUSAHAAN BY ALAMAT — semua perusahaan, diurutkan berdasarkan alamat
 // ─────────────────────────────────────────────
 
-export interface PerusahaanByAlamatItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  alamat: string | null;
-  alamatFactory: string | null;
-  acc: string | null;
-}
+export type {
+  PerusahaanByAlamatItem,
+  PerusahaanByAlamatPagination,
+  GetPerusahaanByAlamatResponse,
+} from "@/lib/types/perusahaan-berdasarkan-alamat";
 
-export interface PerusahaanByAlamatPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanByAlamatResponse {
-  data: PerusahaanByAlamatItem[];
-  pagination: PerusahaanByAlamatPagination;
-}
-
-export async function getPerusahaanByAlamatList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}): Promise<GetPerusahaanByAlamatResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-by-alamat?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanByAlamatList(params?: PerusahaanByAlamatParams): Promise<GetPerusahaanByAlamatResponse> {
+  return apiGetResponse<GetPerusahaanByAlamatResponse>(
+    "/api/database/perusahaan-by-alamat",
+    params,
+    "Gagal mengambil data perusahaan berdasarkan alamat.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(
-      data.message || "Gagal mengambil data perusahaan berdasarkan alamat.",
-    );
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
