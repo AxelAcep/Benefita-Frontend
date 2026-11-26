@@ -14,7 +14,7 @@ import {
 import type { DailyActivityItem } from "@/lib/services/perusahaan.service";
 import ModalDailyActivity, {
   type DailyActivityFormData,
-} from "./perusahaan/(form)/modal-daily";
+} from "@/app/database/perusahaan/(form)/modal-daily";
 import Notification from "@/components/base/notifications";
 import { getSession } from "@/lib/services/login.service";
 // ─────────────────────────────────────────────

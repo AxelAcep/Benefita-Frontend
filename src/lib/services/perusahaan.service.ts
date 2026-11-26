@@ -2,31 +2,8 @@ import { fetchWithAuth } from "@/lib/services/login.service";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export interface Perusahaan {
-  id: number;
-  nama: string;
-  alamatPusat: string;
-  noTelp: string | null;
-}
-
-export interface PaginationMeta {
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
-export interface GetPerusahaanParams {
-  search?: string;
-  page?: number;
-  pageSize?: number;
-  jenisInstansi?: string;
-}
-
-export interface GetPerusahaanResponse {
-  data: Perusahaan[];
-  meta: PaginationMeta;
-}
+export type { Perusahaan, PaginationMeta, GetPerusahaanParams, GetPerusahaanResponse } from "@/lib/types/database-daftar";
+export { getPerusahaan } from "./database-daftar.service";
 
 export type CreatePerusahaanPayload = {
   noInduk: string;
@@ -103,40 +80,6 @@ export type CreatePerusahaanResponse = {
   message: string;
   data: any;
 };
-
-export async function getPerusahaan(
-  params: GetPerusahaanParams = {},
-): Promise<GetPerusahaanResponse> {
-  const query = new URLSearchParams();
-  if (params.search) query.append("search", params.search);
-  if (params.page) query.append("page", params.page.toString());
-  if (params.pageSize) query.append("pageSize", params.pageSize.toString());
-  if (params.jenisInstansi) query.append("jenisInstansi", params.jenisInstansi);
-
-  const url = `${API_URL}/api/database/perusahaan?${query.toString()}`;
-
-  const res = await fetchWithAuth(url);
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json.message || "Gagal mengambil data perusahaan.");
-  }
-
-  return {
-    data: json.data.map((item: any) => ({
-      id: item.noInduk,
-      nama: item.company,
-      alamatPusat: item.alamat,
-      noTelp: item.telp ?? null,
-    })),
-    meta: {
-      total: json.pagination.total,
-      totalPages: json.pagination.totalPages,
-      page: json.pagination.currentPage,
-      pageSize: json.pagination.pageSize,
-    },
-  };
-}
 
 export async function createPerusahaan(
   payload: CreatePerusahaanPayload,
