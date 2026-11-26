@@ -83,10 +83,9 @@ export function RiwayatPegawai({ pegawaiId, limit, tampilkanRingkasan = false }:
               </p>
             </div>
           )}
-          <dl className="grid gap-3 text-sm sm:grid-cols-3">
-            <div><dt className="text-zinc-500">Total cuti dan izin</dt><dd className="font-semibold">{summary.totalCutiDanIzin} hari</dd></div>
-            <div><dt className="text-zinc-500">Total sakit</dt><dd className="font-semibold">{summary.totalSakit} hari</dd></div>
-            <div><dt className="text-zinc-500">Sisa kuota</dt><dd className="font-semibold">{12 - summary.totalCutiDanIzin - summary.totalSakit} hari</dd></div>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div><dt className="text-zinc-500">Pengajuan cuti dan izin disetujui</dt><dd className="font-semibold">{summary.totalCutiDanIzin}</dd></div>
+            <div><dt className="text-zinc-500">Pengajuan sakit disetujui</dt><dd className="font-semibold">{summary.totalSakit}</dd></div>
           </dl>
         </section>
       )}

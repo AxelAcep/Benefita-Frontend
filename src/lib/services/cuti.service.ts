@@ -5,9 +5,11 @@ import type {
   GetPengajuanListResponse,
   GetRiwayatResponse,
   JenisIzin,
+  KaryawanCutiItem,
   KonfirmasiRequest,
   PengajuanIzin,
   PengajuanIzinListItem,
+  RiwayatIzinItem,
   StatusIzin,
 } from "@/lib/types/cuti";
 
@@ -60,4 +62,14 @@ export const getKaryawanCuti = (params?: ListIzinParams) =>
 export const daftarPengajuanService = {
   list: (params: ListIzinParams) =>
     apiList<PengajuanIzinListItem>(BASE, { ...params }, "Gagal mengambil daftar pengajuan."),
+};
+
+export const riwayatIzinService = {
+  list: (params: ListIzinParams) =>
+    apiList<RiwayatIzinItem>(`${BASE}/riwayat`, { ...params }, "Gagal mengambil riwayat izin."),
+};
+
+export const karyawanCutiService = {
+  list: (params: ListIzinParams) =>
+    apiList<KaryawanCutiItem>(`${BASE}/karyawan-cuti`, { ...params }, "Gagal mengambil daftar pegawai."),
 };
