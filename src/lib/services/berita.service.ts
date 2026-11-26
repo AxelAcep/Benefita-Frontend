@@ -1,138 +1,41 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-import { fetchWithAuth } from "./login.service";
-
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
-
-export interface Berita {
-  id: string;
-  periode: string; // ISO Date String dari backend
-  isi: string;
-  status: "aktif" | "nonaktif";
-}
-
-export interface BeritaResponse<T> {
-  message: string;
-  data: T;
-}
-
-export interface CreateBeritaRequest {
-  periode: string; // Format: "YYYY-MM-DD" atau ISO string
-  isi: string;
-}
-
-export interface UpdateBeritaRequest {
-  periode?: string;
-  isi?: string;
-}
-
-// ─────────────────────────────────────────────
-// API SERVICE
-// ─────────────────────────────────────────────
-
 /**
- * POST /api/berita
- * Membuat berita baru
+ * Service Berita.
+ *
+ * Perakitan URL, pengiriman token, dan penanganan error ada di
+ * @/lib/api/client — di sini tinggal endpoint dan tipenya.
+ *
+ * Endpoint riwayat tidak berhalaman: backend mengembalikan seluruh berita
+ * sekaligus, jadi pencarian dan paginasi dilakukan di sisi halaman.
  */
-export async function createBerita(
-  payload: CreateBeritaRequest,
-): Promise<BeritaResponse<Berita>> {
-  const res = await fetchWithAuth(`${API_URL}/api/berita`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+import { apiGet, apiPost, apiPatch } from "@/lib/api/client";
+import type {
+  Berita,
+  CreateBeritaRequest,
+  UpdateBeritaRequest,
+} from "@/lib/types/berita";
 
-  const data = await res.json();
+// Tipe pindah ke @/lib/types/berita. Diekspor ulang supaya file lama yang
+// mengimpor dari service tidak ikut rusak.
+export type { Berita, CreateBeritaRequest, UpdateBeritaRequest };
 
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal membuat berita");
-  }
+const BASE = "/api/berita";
 
-  return data;
-}
+/** Seluruh berita, termasuk yang sudah lewat periodenya. */
+export const getAllBerita = (): Promise<Berita[]> =>
+  apiGet<Berita[]>(`${BASE}/riwayat`, undefined, "Gagal mengambil data berita");
 
-/**
- * GET /api/berita
- * Mengambil semua berita yang berstatus aktif (periode >= now)
- */
-export async function getBeritaAktif(): Promise<BeritaResponse<Berita[]>> {
-  const res = await fetchWithAuth(`${API_URL}/api/berita`, {
-    method: "GET",
-  });
+export const getBeritaById = (id: string): Promise<Berita> =>
+  apiGet<Berita>(
+    `${BASE}/riwayat/${id}`,
+    undefined,
+    "Gagal mengambil detail berita",
+  );
 
-  const data = await res.json();
+export const createBerita = (payload: CreateBeritaRequest): Promise<Berita> =>
+  apiPost<Berita>(BASE, payload, "Gagal membuat berita");
 
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil berita aktif");
-  }
-
-  return data;
-}
-
-/**
- * GET /api/berita/riwayat
- * Mengambil semua riwayat berita (dengan status derived)
- */
-export async function getAllBerita(): Promise<BeritaResponse<Berita[]>> {
-  const res = await fetchWithAuth(`${API_URL}/api/berita/riwayat`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil semua berita");
-  }
-
-  return data;
-}
-
-/**
- * GET /api/berita/riwayat/:id
- * Mengambil detail satu berita berdasarkan ID
- */
-export async function getBeritaById(
-  id: string,
-): Promise<BeritaResponse<Berita>> {
-  const res = await fetchWithAuth(`${API_URL}/api/berita/riwayat/${id}`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Berita tidak ditemukan");
-  }
-
-  return data;
-}
-
-/**
- * PATCH /api/berita/:id
- * Memperbarui data berita berdasarkan ID
- */
-export async function updateBerita(
+export const updateBerita = (
   id: string,
   payload: UpdateBeritaRequest,
-): Promise<BeritaResponse<Berita>> {
-  const res = await fetchWithAuth(`${API_URL}/api/berita/${id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal memperbarui berita");
-  }
-
-  return data;
-}
+): Promise<Berita> =>
+  apiPatch<Berita>(`${BASE}/${id}`, payload, "Gagal mengubah berita");

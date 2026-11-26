@@ -1,5 +1,5 @@
-import TambahEditBeritaContainer from "@/containers/training/berita/tambah";
+import BeritaFormContainer from "@/containers/training/berita/form";
 
 export default function Page() {
-  return <TambahEditBeritaContainer />;
+  return <BeritaFormContainer />;
 }

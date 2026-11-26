@@ -197,6 +197,14 @@ export async function apiPutForm<T>(
   return buka<T>(await request<unknown>(path, formInit("PUT", form), pesanGagal));
 }
 
+export async function apiPatch<T>(
+  path: string,
+  payload?: unknown,
+  pesanGagal = "Gagal mengubah data.",
+): Promise<T> {
+  return buka<T>(await request<unknown>(path, jsonInit("PATCH", payload), pesanGagal));
+}
+
 export async function apiDelete(
   path: string,
   pesanGagal = "Gagal menghapus data.",
