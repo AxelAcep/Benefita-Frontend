@@ -31,8 +31,9 @@ export default function ListPenawaran({
 }: Props) {
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const totalPages = Math.ceil(data.length / pageSize);
-  const paginated = data.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+  const activePage = Math.min(page, totalPages);
+  const paginated = data.slice((activePage - 1) * pageSize, activePage * pageSize);
 
   const handleDownload = async (filePath: string) => {
     const res = await fetchWithAuth(
@@ -73,7 +74,7 @@ export default function ListPenawaran({
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
           <input
             value={search}
-            onChange={(e) => onSearch(e.target.value)}
+            onChange={(e) => { onSearch(e.target.value); setPage(1); }}
             placeholder="Cari informasi..."
             className="pl-8 pr-3 py-1.5 text-xs border border-zinc-200 rounded-lg outline-none focus:ring-2 ring-emerald-500/20 w-48"
           />
@@ -135,7 +136,7 @@ export default function ListPenawaran({
                   className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors"
                 >
                   <td className="px-4 py-3 text-xs text-zinc-400">
-                    {(page - 1) * pageSize + i + 1}
+                    {(activePage - 1) * pageSize + i + 1}
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-600">
                     {new Date(row.tanggal).toISOString().split("T")[0]}
@@ -178,13 +179,13 @@ export default function ListPenawaran({
       {/* Pagination */}
       <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-100">
         <p className="text-[11px] text-zinc-400">
-          Menampilkan {data.length === 0 ? 0 : (page - 1) * pageSize + 1}–
-          {Math.min(page * pageSize, data.length)} dari {data.length} data
+          Menampilkan {data.length === 0 ? 0 : (activePage - 1) * pageSize + 1}–
+          {Math.min(activePage * pageSize, data.length)} dari {data.length} data
         </p>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setPage((p) => p - 1)}
-            disabled={page === 1}
+            disabled={activePage === 1}
             className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40"
           >
             ‹ Sebelumnya
@@ -200,7 +201,7 @@ export default function ListPenawaran({
           ))}
           <button
             onClick={() => setPage((p) => p + 1)}
-            disabled={page === totalPages || totalPages === 0}
+            disabled={activePage === totalPages || totalPages === 0}
             className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40"
           >
             Selanjutnya ›

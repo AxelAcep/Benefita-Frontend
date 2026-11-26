@@ -280,7 +280,6 @@ export function usePenawaran() {
   const [error, setError] = useState<string | null>(null);
 
   const params = useParams();
-  console.log("ROUTE PARAMS:", params);
   const perusahaanId = params?.id as string;
 
   const fetch = useCallback(async () => {
