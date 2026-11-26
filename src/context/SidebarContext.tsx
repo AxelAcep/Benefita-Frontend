@@ -20,10 +20,14 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     setMobileOpen(false);
   }, []);
 
+  // Pindah halaman hanya menutup overlay mobile, yang memang menutupi
+  // seluruh layar. Sidebar desktop dibiarkan terbuka: memanggil close()
+  // di sini membuatnya menutup sendiri setiap kali pengguna berpindah
+  // menu, padahal bawaannya memang terbuka.
   useEffect(() => {
-    if (previousPath.current !== pathname) close();
+    if (previousPath.current !== pathname) setMobileOpen(false);
     previousPath.current = pathname;
-  }, [pathname, close]);
+  }, [pathname]);
 
   function toggle() {
     if (window.matchMedia("(min-width: 768px)").matches) {
