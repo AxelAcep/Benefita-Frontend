@@ -167,17 +167,30 @@ function formInit(method: string, form: FormData): RequestInit {
   return { method, body: form };
 }
 
-/** Rakit FormData dari objek biasa; File dikirim apa adanya. */
+/**
+ * Rakit FormData dari objek biasa.
+ *
+ * File dikirim apa adanya. Array dikirim sebagai field berulang dengan
+ * nama yang sama (trainerKodes=A&trainerKodes=B), bukan diubah jadi satu
+ * string — itu bentuk yang diharapkan backend.
+ */
 export function keFormData(payload: Record<string, unknown>): FormData {
   const form = new FormData();
+
   for (const [key, value] of Object.entries(payload)) {
     if (value === undefined || value === null) continue;
-    if (value instanceof File) {
-      form.append(key, value);
-    } else {
-      form.append(key, String(value));
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item === undefined || item === null) continue;
+        form.append(key, item instanceof File ? item : String(item));
+      }
+      continue;
     }
+
+    form.append(key, value instanceof File ? value : String(value));
   }
+
   return form;
 }
 

@@ -13,10 +13,15 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ListParams, ListResult } from "@/lib/api/client";
 
-export interface ResourceService<T, Id, C, U> {
+/**
+ * `R` adalah bentuk yang dikembalikan create dan update. Seringkali sama
+ * dengan `T`, tapi tidak selalu: beberapa endpoint mengembalikan bentuk
+ * detail yang lebih lengkap daripada baris di daftar.
+ */
+export interface ResourceService<T, Id, C, U, R = T> {
   list: (params: ListParams) => Promise<ListResult<T>>;
-  create: (payload: C) => Promise<T>;
-  update: (id: Id, payload: U) => Promise<T>;
+  create: (payload: C) => Promise<R>;
+  update: (id: Id, payload: U) => Promise<R>;
   /** Opsional: sebagian entitas belum punya endpoint hapus di backend. */
   remove?: (id: Id) => Promise<void>;
 }
@@ -29,8 +34,8 @@ export interface UseResourceOptions {
   pesanGagal?: string;
 }
 
-export function useResource<T, Id = number, C = unknown, U = Partial<C>>(
-  service: ResourceService<T, Id, C, U>,
+export function useResource<T, Id = number, C = unknown, U = Partial<C>, R = T>(
+  service: ResourceService<T, Id, C, U, R>,
   options: UseResourceOptions = {},
 ) {
   const { limit = 10, pesanGagal = "Gagal mengambil data." } = options;

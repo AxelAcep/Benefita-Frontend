@@ -1,240 +1,96 @@
-// services/jadwal-training.service.ts
+/**
+ * Service Jadwal Training.
+ *
+ * Perakitan URL, pengiriman token, dan penanganan error ada di
+ * @/lib/api/client — di sini tinggal endpoint dan tipenya.
+ *
+ * Create dan update dikirim sebagai multipart karena bisa membawa berkas
+ * agenda, dan trainerKodes dikirim sebagai field berulang.
+ *
+ * Catatan: endpoint ubah dan hapus memakai noJadwal sebagai kunci, bukan
+ * id — lihat router.put("/jadwal-training/:noJadwal") di backend.
+ */
+import {
+  apiDelete,
+  apiGet,
+  apiList,
+  apiPostForm,
+  apiPutForm,
+  keFormData,
+} from "@/lib/api/client";
+import type {
+  OpsiJadwal,
+  CreateJadwalTrainingRequest,
+  JadwalTraining,
+  JadwalTrainingListItem,
+  TrainerItem,
+  UpdateJadwalTrainingRequest,
+} from "@/lib/types/jadwal-training";
+import type { ListParams, ListResult } from "@/lib/api/client";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// Tipe pindah ke @/lib/types/jadwal-training. Diekspor ulang supaya file
+// lama yang mengimpor dari service tidak ikut rusak.
+export type {
+  OpsiJadwal,
+  CreateJadwalTrainingRequest,
+  JadwalTraining,
+  JadwalTrainingListItem,
+  TrainerItem,
+  UpdateJadwalTrainingRequest,
+};
 
-import { fetchWithAuth } from "./login.service";
+const BASE = "/api/training/jadwal-training";
 
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
-
-export interface TrainerItem {
-  kode: string;
-  nama: string;
-}
-
-export interface JadwalTrainingListItem {
-  id: string;
-  noJadwal: string;
-  tglMulai: string | null;
-  kodePelatihan: string;
-  jenisTraining: string;
-  judulLengkap: string;
-  biaya: number;
-  lokasiDetail: string | null;
-  status: string;
-  catatan: string | null;
-  lastUpdate: string;
-  trainers: { trainer: TrainerItem }[];
-  pegawai: { id: string; nama: string };
-}
-
-export interface JadwalTraining {
-  id: string;
-  noJadwal: string;
-  kodePelatihan: string;
-  tglMulai: string | null;
-  tglSelesai: string | null;
-  judulLengkap: string;
-  judulPendek: string;
-  metode: string;
-  jenisTraining: string;
-  kota: string;
-  lokasiDetail: string | null;
-  biaya: number;
-  catatan: string | null;
-  status: string;
-  fileAgenda: string | null;
-  lastUpdate: string;
-  updateOleh: string;
-  trainers: { trainer: TrainerItem }[];
-  pegawai: { id: string; nama: string };
-  judulTraining: { kode: string; judulTraining: string };
-}
-
-export interface JadwalTrainingPagination {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface GetJadwalTrainingResponse {
-  data: JadwalTrainingListItem[];
-  meta: JadwalTrainingPagination;
-}
-
-export interface CreateJadwalTrainingRequest {
-  noJadwal: string;
-  kodePelatihan: string;
-  tglMulai?: string | null;
-  tglSelesai?: string | null;
-  judulLengkap: string;
-  judulPendek: string;
-  metode: string;
-  jenisTraining: string;
-  kota: string;
-  lokasiDetail?: string | null;
-  biaya: number;
-  catatan?: string | null;
-  status?: string;
-  updateOleh: string;
-  trainerKodes?: string[];
-  fileAgenda?: File | null;
-}
-
-export interface UpdateJadwalTrainingRequest {
-  noJadwal?: string;
-  kodePelatihan?: string;
-  tglMulai?: string | null;
-  tglSelesai?: string | null;
-  judulLengkap?: string;
-  judulPendek?: string;
-  metode?: string;
-  jenisTraining?: string;
-  kota?: string;
-  lokasiDetail?: string | null;
-  biaya?: number;
-  catatan?: string | null;
-  status?: string;
-  updateOleh?: string;
-  trainerKodes?: string[];
-  fileAgenda?: File | null;
-}
-
-export interface NextNoJadwalResponse {
-  noJadwal: string;
-}
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
-
-function buildFormData(
-  payload: CreateJadwalTrainingRequest | UpdateJadwalTrainingRequest,
-): FormData {
-  const formData = new FormData();
-
-  Object.entries(payload).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
-
-    if (key === "trainerKodes" && Array.isArray(value)) {
-      // Array dikirim sebagai multiple field dengan key sama
-      value.forEach((kode) => formData.append("trainerKodes", kode));
-    } else if (value instanceof File) {
-      formData.append(key, value);
-    } else {
-      formData.append(key, String(value));
-    }
-  });
-
-  return formData;
-}
-
-// ─────────────────────────────────────────────
-// API SERVICE
-// ─────────────────────────────────────────────
-
-export async function getJadwalTraining(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  jenisTraining?: string;
-  metode?: string;
-}): Promise<GetJadwalTrainingResponse> {
-  const query = new URLSearchParams();
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.status) query.append("status", params.status);
-  if (params?.jenisTraining)
-    query.append("jenisTraining", params.jenisTraining);
-  if (params?.metode) query.append("metode", params.metode);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/jadwal-training?${query.toString()}`,
-    { method: "GET" },
+export const getJadwalTraining = (
+  params: ListParams = {},
+): Promise<ListResult<JadwalTrainingListItem>> =>
+  apiList<JadwalTrainingListItem>(
+    BASE,
+    params,
+    "Gagal mengambil data jadwal training",
   );
 
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil data jadwal training");
-
-  return data;
-}
-
-export async function getJadwalTrainingById(
-  id: string,
-): Promise<JadwalTraining> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/jadwal-training/${id}`,
-    { method: "GET" },
+export const getJadwalTrainingById = (id: string): Promise<JadwalTraining> =>
+  apiGet<JadwalTraining>(
+    `${BASE}/${id}`,
+    undefined,
+    "Gagal mengambil detail jadwal training",
   );
 
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil detail jadwal training");
+/**
+ * Nilai status, metode, dan jenis yang benar-benar dipakai di database.
+ * Backend menurunkan updateOleh sendiri dari token, jadi tidak dikirim.
+ */
+export const getOpsiJadwal = (): Promise<OpsiJadwal> =>
+  apiGet<OpsiJadwal>(`${BASE}/opsi`, undefined, "Gagal mengambil opsi jadwal");
 
-  return data.data;
-}
-
-export async function getNextNoJadwal(): Promise<NextNoJadwalResponse> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/jadwal-training/next-no-jadwal`,
-    { method: "GET" },
+/** Nomor jadwal berikutnya, dipakai saat membuat jadwal baru. */
+export const getNextNoJadwal = (): Promise<{ noJadwal: string }> =>
+  apiGet<{ noJadwal: string }>(
+    `${BASE}/next-no-jadwal`,
+    undefined,
+    "Gagal mengambil nomor jadwal berikutnya",
   );
 
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(
-      data.message || "Gagal mengambil nomor jadwal berikutnya",
-    );
-
-  return data.data;
-}
-
-export async function createJadwalTraining(
+export const createJadwalTraining = (
   payload: CreateJadwalTrainingRequest,
-): Promise<JadwalTraining> {
-  const formData = buildFormData(payload);
+): Promise<JadwalTraining> =>
+  apiPostForm<JadwalTraining>(
+    BASE,
+    keFormData(payload as unknown as Record<string, unknown>),
+    "Gagal membuat jadwal training",
+  );
 
-  const res = await fetchWithAuth(`${API_URL}/api/training/jadwal-training`, {
-    method: "POST",
-    body: formData,
-  });
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Gagal membuat jadwal training");
-
-  return data.data;
-}
-
-export async function updateJadwalTraining(
-  id: string,
+/** `noJadwal` adalah nomor ASLI baris yang diubah, bukan nomor baru. */
+export const updateJadwalTraining = (
+  noJadwal: string,
   payload: UpdateJadwalTrainingRequest,
-): Promise<JadwalTraining> {
-  const formData = buildFormData(payload);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/jadwal-training/${id}`,
-    { method: "PUT", body: formData },
+): Promise<JadwalTraining> =>
+  apiPutForm<JadwalTraining>(
+    `${BASE}/${noJadwal}`,
+    keFormData(payload as unknown as Record<string, unknown>),
+    "Gagal mengubah jadwal training",
   );
 
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengupdate jadwal training");
-
-  return data.data;
-}
-
-export async function deleteJadwalTraining(id: string): Promise<void> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/jadwal-training/${id}`,
-    { method: "DELETE" },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal menghapus jadwal training");
-}
+export const deleteJadwalTraining = (noJadwal: string): Promise<void> =>
+  apiDelete(`${BASE}/${noJadwal}`, "Gagal menghapus jadwal training");

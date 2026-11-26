@@ -1,272 +1,163 @@
-import { useState, useCallback } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useResource } from "@/hooks/use-resource";
 import {
-  getJadwalTraining,
-  getJadwalTrainingById,
   createJadwalTraining,
-  updateJadwalTraining,
   deleteJadwalTraining,
+  getJadwalTrainingById,
+  getJadwalTraining,
   getNextNoJadwal,
-  type JadwalTrainingListItem,
-  type JadwalTraining,
-  type JadwalTrainingPagination,
-  type CreateJadwalTrainingRequest,
-  type UpdateJadwalTrainingRequest,
+  getOpsiJadwal,
+  updateJadwalTraining,
 } from "@/lib/services/jadwal-training.service";
+import type {
+  CreateJadwalTrainingRequest,
+  JadwalTraining,
+  JadwalTrainingListItem,
+  OpsiJadwal,
+  UpdateJadwalTrainingRequest,
+} from "@/lib/types/jadwal-training";
 
-// ─────────────────────────────────────────────
-// LIST HOOK
-// ─────────────────────────────────────────────
+/**
+ * Service untuk useResource.
+ *
+ * Perlu dibentuk di sini, bukan diambil dari file service, karena endpoint
+ * ubah dan hapus memakai noJadwal sebagai kunci sementara useResource
+ * memanggilnya dengan satu identitas baris.
+ */
+const jadwalService = {
+  list: getJadwalTraining,
+  create: createJadwalTraining,
+  update: updateJadwalTraining,
+  remove: deleteJadwalTraining,
+};
 
-interface UseJadwalTrainingListParams {
-  initialLimit?: number;
-}
-
-export function useJadwalTrainingList({
-  initialLimit = 10,
-}: UseJadwalTrainingListParams = {}) {
-  const [data, setData] = useState<JadwalTrainingListItem[]>([]);
-  const [meta, setMeta] = useState<JadwalTrainingPagination>({
-    total: 0,
-    page: 1,
-    limit: initialLimit,
-    totalPages: 0,
+/** List + paginasi + search + filter status, jenis, dan metode. */
+export function useJadwalTrainingList(limit = 10) {
+  return useResource<
+    JadwalTrainingListItem,
+    string,
+    CreateJadwalTrainingRequest,
+    UpdateJadwalTrainingRequest,
+    JadwalTraining
+  >(jadwalService, {
+    limit,
+    filter: { status: "", jenisTraining: "", metode: "" },
+    pesanGagal: "Gagal mengambil data jadwal training",
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterJenis, setFilterJenis] = useState("");
-  const [filterMetode, setFilterMetode] = useState("");
-  const [appliedStatus, setAppliedStatus] = useState("");
-  const [appliedJenis, setAppliedJenis] = useState("");
-  const [appliedMetode, setAppliedMetode] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const fetch = useCallback(
-    async (params?: {
-      page?: number;
-      search?: string;
-      status?: string;
-      jenisTraining?: string;
-      metode?: string;
-    }) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const res = await getJadwalTraining({
-          page: params?.page ?? currentPage,
-          limit: initialLimit,
-          search: params?.search ?? search,
-          status: params?.status ?? appliedStatus,
-          jenisTraining: params?.jenisTraining ?? appliedJenis,
-          metode: params?.metode ?? appliedMetode,
-        });
-        setData(res.data);
-        setMeta(res.meta);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [
-      currentPage,
-      search,
-      appliedStatus,
-      appliedJenis,
-      appliedMetode,
-      initialLimit,
-    ],
-  );
-
-  const handleSearch = useCallback(
-    (val: string) => {
-      setSearch(val);
-      setCurrentPage(1);
-      fetch({
-        page: 1,
-        search: val,
-        status: appliedStatus,
-        jenisTraining: appliedJenis,
-        metode: appliedMetode,
-      });
-    },
-    [fetch, appliedStatus, appliedJenis, appliedMetode],
-  );
-
-  const handleTerapkan = useCallback(() => {
-    setAppliedStatus(filterStatus);
-    setAppliedJenis(filterJenis);
-    setAppliedMetode(filterMetode);
-    setCurrentPage(1);
-    fetch({
-      page: 1,
-      search,
-      status: filterStatus,
-      jenisTraining: filterJenis,
-      metode: filterMetode,
-    });
-  }, [fetch, filterStatus, filterJenis, filterMetode, search]);
-
-  const handlePageChange = useCallback(
-    (page: number) => {
-      setCurrentPage(page);
-      fetch({
-        page,
-        search,
-        status: appliedStatus,
-        jenisTraining: appliedJenis,
-        metode: appliedMetode,
-      });
-    },
-    [fetch, search, appliedStatus, appliedJenis, appliedMetode],
-  );
-
-  return {
-    data,
-    meta,
-    isLoading,
-    error,
-    search,
-    currentPage,
-    filterStatus,
-    setFilterStatus,
-    filterJenis,
-    setFilterJenis,
-    filterMetode,
-    setFilterMetode,
-    fetch,
-    handleSearch,
-    handleTerapkan,
-    handlePageChange,
-  };
 }
 
-// ─────────────────────────────────────────────
-// DETAIL HOOK
-// ─────────────────────────────────────────────
-
-export function useJadwalTrainingDetail() {
+/** Detail satu jadwal, untuk mengisi formulir saat mode ubah. */
+export function useJadwalTrainingDetail(id: string | null) {
   const [data, setData] = useState<JadwalTraining | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await getJadwalTrainingById(id);
-      setData(res);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mengambil detail");
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (!id) {
+      setData(null);
+      setError(null);
+      return;
     }
+
+    let batal = false;
+    setLoading(true);
+    setError(null);
+
+    getJadwalTrainingById(id)
+      .then((res) => {
+        if (!batal) setData(res);
+      })
+      .catch((err: unknown) => {
+        if (batal) return;
+        setError(
+          err instanceof Error ? err.message : "Gagal mengambil detail jadwal",
+        );
+      })
+      .finally(() => {
+        if (!batal) setLoading(false);
+      });
+
+    return () => {
+      batal = true;
+    };
+  }, [id]);
+
+  return { data, loading, error };
+}
+
+/**
+ * Nomor jadwal berikutnya. Hanya diambil saat membuat jadwal baru —
+ * saat mengubah, nomornya sudah ada dan tidak boleh diganti.
+ */
+export function useNextNoJadwal(aktif: boolean) {
+  const [noJadwal, setNoJadwal] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!aktif) return;
+
+    let batal = false;
+    setLoading(true);
+    setError(null);
+
+    getNextNoJadwal()
+      .then((res) => {
+        if (!batal) setNoJadwal(res.noJadwal);
+      })
+      .catch((err: unknown) => {
+        if (batal) return;
+        setError(
+          err instanceof Error ? err.message : "Gagal mengambil nomor jadwal",
+        );
+      })
+      .finally(() => {
+        if (!batal) setLoading(false);
+      });
+
+    return () => {
+      batal = true;
+    };
+  }, [aktif]);
+
+  return { noJadwal, loading, error };
+}
+
+/**
+ * Opsi status, metode, dan jenis training dari database.
+ *
+ * Sebelumnya tiap halaman memaku daftarnya sendiri, dan daftar status-nya
+ * salah: "TENTATIVE" dan "SELESAI", padahal yang tersimpan "TENTATIF",
+ * "TERKONFIRMASI", dan "BATAL".
+ */
+export function useOpsiJadwal() {
+  const [opsi, setOpsi] = useState<OpsiJadwal>({
+    status: [],
+    metode: [],
+    jenisTraining: [],
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let batal = false;
+    setLoading(true);
+
+    getOpsiJadwal()
+      .then((res) => {
+        if (!batal) setOpsi(res);
+      })
+      // Dropdown kosong lebih baik daripada halaman gagal dimuat.
+      .catch(() => {})
+      .finally(() => {
+        if (!batal) setLoading(false);
+      });
+
+    return () => {
+      batal = true;
+    };
   }, []);
 
-  return { data, isLoading, error, fetch };
-}
-
-// ─────────────────────────────────────────────
-// NEXT NO. JADWAL HOOK (auto-generate)
-// ─────────────────────────────────────────────
-
-export function useNextNoJadwal() {
-  const [noJadwal, setNoJadwal] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetch = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await getNextNoJadwal();
-      setNoJadwal(res.noJadwal);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Gagal mengambil nomor jadwal berikutnya",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  return { noJadwal, isLoading, error, fetch };
-}
-
-// ─────────────────────────────────────────────
-// MUTATION HOOK
-// ─────────────────────────────────────────────
-
-interface UseJadwalTrainingMutationOptions {
-  onSuccess?: () => void;
-  onError?: (msg: string) => void;
-}
-
-export function useJadwalTrainingMutation({
-  onSuccess,
-  onError,
-}: UseJadwalTrainingMutationOptions = {}) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleCreate = useCallback(
-    async (payload: CreateJadwalTrainingRequest) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        await createJadwalTraining(payload);
-        onSuccess?.();
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Gagal membuat data";
-        setError(msg);
-        onError?.(msg);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [onSuccess, onError],
-  );
-
-  const handleUpdate = useCallback(
-    async (id: string, payload: UpdateJadwalTrainingRequest) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        await updateJadwalTraining(id, payload);
-        onSuccess?.();
-      } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "Gagal mengupdate data";
-        setError(msg);
-        onError?.(msg);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [onSuccess, onError],
-  );
-
-  const handleDelete = useCallback(
-    async (id: string) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        await deleteJadwalTraining(id);
-        onSuccess?.();
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "Gagal menghapus data";
-        setError(msg);
-        onError?.(msg);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [onSuccess, onError],
-  );
-
-  return { isLoading, error, handleCreate, handleUpdate, handleDelete };
+  return { opsi, loading };
 }
