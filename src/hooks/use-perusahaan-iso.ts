@@ -1,15 +1,18 @@
-// hooks/use-perusahaan-iso.ts
-
-import { useCallback, useEffect, useState } from "react";
-import {
-  getPerusahaanIsoList,
-  type PerusahaanIsoItem,
-  type PerusahaanIsoPagination,
-} from "@/lib/services/perusahaan.service";
+import { useEffect, useState } from "react";
+import { getPerusahaanIsoList } from "@/lib/services/perusahaan.service";
+import type {
+  PerusahaanIsoItem,
+  PerusahaanIsoPagination,
+} from "@/lib/types/perusahaan-iso";
 
 const PAGE_SIZE = 10;
 
-export function usePerusahaanIso() {
+export function usePerusahaanIso(
+  page: number,
+  search: string,
+  sort: "asc" | "desc",
+  liniBisnisId: number | "",
+) {
   const [data, setData] = useState<PerusahaanIsoItem[]>([]);
   const [pagination, setPagination] = useState<PerusahaanIsoPagination>({
     total: 0,
@@ -20,67 +23,28 @@ export function usePerusahaanIso() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<"asc" | "desc">("desc");
-  const [liniBisnisId, setLiniBisnisId] = useState<number | "">("");
-  const [appliedLiniBisnisId, setAppliedLiniBisnisId] = useState<
-    number | ""
-  >("");
-
-  const fetch = useCallback(async () => {
+  useEffect(() => {
+    let batal = false;
     setLoading(true);
     setError(null);
-    try {
-      const res = await getPerusahaanIsoList({
-        page,
-        limit: PAGE_SIZE,
-        search,
-        sort,
-        liniBisnisId: appliedLiniBisnisId,
+    getPerusahaanIsoList({ page, limit: PAGE_SIZE, search, sort, liniBisnisId })
+      .then((result) => {
+        if (batal) return;
+        setData(result.data);
+        setPagination(result.pagination);
+      })
+      .catch((err: unknown) => {
+        if (batal) return;
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+      })
+      .finally(() => {
+        if (!batal) setLoading(false);
       });
-      setData(res.data);
-      setPagination(res.pagination);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, sort, appliedLiniBisnisId]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+    return () => {
+      batal = true;
+    };
+  }, [page, search, sort, liniBisnisId]);
 
-  const handleSearch = useCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
-  }, []);
-
-  const toggleSort = useCallback(() => {
-    setSort((prev) => (prev === "asc" ? "desc" : "asc"));
-    setPage(1);
-  }, []);
-
-  const handleTerapkan = useCallback(() => {
-    setAppliedLiniBisnisId(liniBisnisId);
-    setPage(1);
-  }, [liniBisnisId]);
-
-  return {
-    data,
-    pagination,
-    loading,
-    error,
-    search,
-    page,
-    sort,
-    liniBisnisId,
-    setPage,
-    setLiniBisnisId,
-    handleSearch,
-    toggleSort,
-    handleTerapkan,
-    refresh: fetch,
-  };
+  return { data, pagination, loading, error };
 }

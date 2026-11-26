@@ -1,3 +1,4 @@
+import type { GetPerusahaanIsoResponse, PerusahaanIsoParams } from "@/lib/types/perusahaan-iso";
 import type { GetPerusahaanPrioritasResponse, PerusahaanPrioritasParams } from "@/lib/types/perusahaan-prioritas";
 import type { GetPerusahaanVendorResponse, PerusahaanVendorParams } from "@/lib/types/perusahaan-vendor";
 import type { GetPerusahaanByAlamatResponse, PerusahaanByAlamatParams } from "@/lib/types/perusahaan-berdasarkan-alamat";
@@ -1187,60 +1188,18 @@ export function getPerusahaanProperList(
 // PERUSAHAAN ISO — kategoriCpn mengandung "ISO"
 // ─────────────────────────────────────────────
 
-export interface PerusahaanIsoItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  alamat: string | null;
-  telp: string | null;
-  updatter: string | null;
-  updateTerakhir: string | null;
-  kategoriCpn: string | null;
-  liniBisnis: string | null;
-  tahunPeringkat: string | null;
-  env: string | null;
-  csr: string | null;
-  tsm: string | null;
-  epm: string | null;
-}
+export type {
+  PerusahaanIsoItem,
+  PerusahaanIsoPagination,
+  GetPerusahaanIsoResponse,
+} from "@/lib/types/perusahaan-iso";
 
-export interface PerusahaanIsoPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanIsoResponse {
-  data: PerusahaanIsoItem[];
-  pagination: PerusahaanIsoPagination;
-}
-
-export async function getPerusahaanIsoList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sort?: "asc" | "desc";
-  liniBisnisId?: number | "";
-}): Promise<GetPerusahaanIsoResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.sort) query.append("sort", params.sort);
-  if (params?.liniBisnisId) query.append("liniBisnisId", String(params.liniBisnisId));
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-iso?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanIsoList(params?: PerusahaanIsoParams): Promise<GetPerusahaanIsoResponse> {
+  return apiGetResponse<GetPerusahaanIsoResponse>(
+    "/api/database/perusahaan-iso",
+    params,
+    "Gagal mengambil data perusahaan ISO.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data perusahaan ISO.");
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
