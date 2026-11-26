@@ -14,7 +14,7 @@ import {
 import type { ContactPersonItem } from "@/lib/services/perusahaan.service";
 import ModalContactPerson, {
   type ContactPersonFormData,
-} from "../(form)/modal-cp";
+} from "./modal-cp";
 import Notification from "@/components/base/notifications";
 
 // ─────────────────────────────────────────────
