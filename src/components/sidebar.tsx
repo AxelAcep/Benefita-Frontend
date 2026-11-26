@@ -75,10 +75,6 @@ const navItems: NavItem[] = [
       },
       { label: "Daftar Perusahaan TBK", href: "/perusahaan/tbk" },
       { label: "Daftar Perusahaan PROPER", href: "/perusahaan/proper" },
-      {
-        label: "Daftar Perusahaan PROPER 2x Kali Biru",
-        href: "/perusahaan/proper-2kali-biru",
-      },
       { label: "Daftar Perusahaan ISO", href: "/perusahaan/iso" },
       { label: "Daftar Perusahaan Customer", href: "/perusahaan/customer" },
       { label: "Daftar Perusahaan Prioritas", href: "/perusahaan/prioritas" },
