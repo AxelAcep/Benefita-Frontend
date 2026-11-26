@@ -2,7 +2,8 @@
 
 import React from "react";
 import { Users, Plus } from "lucide-react";
-import { PesertaTrainingListItem } from "@/lib/services/input.service";
+import { TablePagination } from "@/components/base/table-pagination";
+import type { PesertaTrainingListItem } from "@/lib/types/input-peserta";
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -302,13 +303,13 @@ export default function TableListPeserta({
                         onClick={() => aksiHandlers.onCetakKwitansi?.(row)}
                         className="text-[11px] text-emerald-600 font-semibold hover:underline text-left"
                       >
-                        Cetak Kwitansi
+                        Draf Kwitansi
                       </button>
                       <button
                         onClick={() => aksiHandlers.onCetakInvoice?.(row)}
                         className="text-[11px] text-emerald-600 font-semibold hover:underline text-left"
                       >
-                        Cetak Invoice
+                        Draf Invoice
                       </button>
                       <button
                         onClick={() => aksiHandlers.onPesertaFinal?.(row)}
@@ -339,68 +340,13 @@ export default function TableListPeserta({
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-5 py-3 border-t border-zinc-100">
-        <p className="text-[11px] text-zinc-400">
-          Menampilkan{" "}
-          <span className="font-semibold text-zinc-600">
-            {totalData === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–
-            {Math.min(currentPage * PAGE_SIZE, totalData)}
-          </span>{" "}
-          dari <span className="font-semibold text-zinc-600">{totalData}</span>{" "}
-          data
-        </p>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-          >
-            ‹ Sebelumnya
-          </button>
-
-          {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map(
-            (p) => (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                  p === currentPage
-                    ? "bg-emerald-500 text-white"
-                    : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                }`}
-              >
-                {p}
-              </button>
-            ),
-          )}
-
-          {totalPages > 5 && (
-            <>
-              <span className="text-[11px] text-zinc-400 px-1">...</span>
-              <button
-                onClick={() => onPageChange(totalPages)}
-                className={`w-7 h-7 rounded-lg text-[11px] font-semibold transition-colors ${
-                  currentPage === totalPages
-                    ? "bg-emerald-500 text-white"
-                    : "border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                }`}
-              >
-                {totalPages}
-              </button>
-            </>
-          )}
-
-          <button
-            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1.5 text-[11px] border border-zinc-200 rounded-lg text-zinc-500 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium"
-          >
-            Selanjutnya ›
-          </button>
-        </div>
-      </div>
+      <TablePagination
+        page={currentPage}
+        limit={PAGE_SIZE}
+        total={totalData}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 }

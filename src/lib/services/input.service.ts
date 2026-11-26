@@ -1,4 +1,4 @@
-import { apiGet, apiGetResponse } from "@/lib/api/client";
+import { apiDelete, apiGet, apiGetResponse, apiPatch, apiPost, apiPostForm, apiPutForm, keFormData } from "@/lib/api/client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { fetchWithAuth } from "./login.service";
@@ -7,133 +7,13 @@ import { fetchWithAuth } from "./login.service";
 // TYPES
 // ─────────────────────────────────────────────
 
-export interface PesertaTrainingListItem {
-  id: number;
-  nama: string;
-  perusahaan: { noInduk: string; company: string | null };
-  accExecutive: string | null;
-  ownEnv: string | null;
-  metode: string | null;
-  status: string | null;
-  ujian: string | null;
-  konfirmasiOleh: string | null;
-  konTgl: string | null;
-  statusFinal: boolean;
-  finalTgl: string | null;
-  hargaTotal: number | null;
-  diskon: number | null;
-  ppn: number | null;
-  bayar: number | null;
-  cashback: number | null;
-  sisa: number;
-  infoPembayaran: string | null;
-  catatan: string | null;
-  tglInput: string;
-  tglUpdate: string;
-  pegawaiInput: { id: string; nama: string } | null;
-  pegawaiUpdate: { id: string; nama: string } | null;
-  pegawaiKonfirmasi: { id: string; nama: string } | null;
-  pegawaiFinal: { id: string; nama: string } | null;
-}
-
-export interface PesertaTraining extends PesertaTrainingListItem {
-  jabatan: string | null;
-  alamat: string | null;
-  noTelp: string | null;
-  noFax: string | null;
-  email: string | null;
-  alamatPengirimanSertifikat: string | null;
-  industri: string | null;
-  noInvUjian: string | null;
-  noKwtUjian: string | null;
-  infoPenagihan: string | null;
-  tglBayar: string | null;
-  noInvoice: string | null;
-  noKwitansi: string | null;
-  fileBuktiPembayaran: string | null;
-  filePendaftaran: string | null;
-  jadwalTraining: {
-    noJadwal: string;
-    judulLengkap: string;
-    judulPendek: string;
-    metode: string;
-    biaya: number;
-    status: string;
-    kodePelatihan: string;
-    lokasiDetail: string | null;
-    kota: string;
-    tglMulai: string | null;
-    tglSelesai: string | null;
-    catatan: string | null;
-  };
-}
-
-export interface JadwalSummary {
-  noJadwal: string;
-  metode: string;
-  biaya: number;
-  status: string;
-  jenisTraining: string;
-  kodePelatihan: string;
-  lokasiDetail: string | null;
-  judulLengkap: string;
-  catatan: string | null;
-  tglMulai: string | null;
-  tglSelesai: string | null;
-  kota: string;
-  pesertaFixOffline: number;
-  pesertaFixOnline: number;
-}
-
-export interface PesertaTrainingPagination {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface GetPesertaTrainingResponse {
-  jadwal: JadwalSummary;
-  data: PesertaTrainingListItem[];
-  meta: PesertaTrainingPagination;
-}
-
-export interface CreatePesertaTrainingRequest {
-  nama: string;
-  jabatan?: string;
-  alamat?: string;
-  noTelp?: string;
-  noFax?: string;
-  email?: string;
-  alamatPengirimanSertifikat?: string;
-  catatan?: string;
-  industri?: string;
-  status?: string;
-  ownEnv?: string;
-  metode?: string;
-  noIndukPerusahaan: string;
-  accExecutive?: string;
-  ujian?: string;
-  noInvUjian?: string;
-  noKwtUjian?: string;
-  diskon?: number;
-  ppn?: number;
-  cashback?: number;
-  hargaTotal?: number;
-  bayar?: number;
-  infoPembayaran?: string;
-  infoPenagihan?: string;
-  tglBayar?: string;
-  noInvoice?: string;
-  noKwitansi?: string;
-  fileBuktiPembayaran?: File;
-  filePendaftaran?: File;
-}
-
-export type UpdatePesertaTrainingRequest =
-  Partial<CreatePesertaTrainingRequest> & {
-    konfirmasiOleh?: string;
-  };
+import type {
+  CreatePesertaTrainingRequest,
+  GetPesertaTrainingResponse,
+  PesertaTraining,
+  UpdatePesertaTrainingRequest,
+} from "@/lib/types/input-peserta";
+export type * from "@/lib/types/input-peserta";
 
 // ─────────────────────────────────────────────
 // API SERVICE
@@ -165,108 +45,29 @@ export const getPesertaTrainingById = (id: string) =>
     "Gagal mengambil detail peserta.",
   );
 
-/**
- * CREATE PESERTA
- */
-export async function createPesertaTraining(
-  noJadwal: string,
-  payload: CreatePesertaTrainingRequest,
-): Promise<PesertaTraining> {
-  const formData = new FormData();
-
-  Object.entries(payload).forEach(([key, val]) => {
-    if (val === undefined || val === null) return;
-    if (val instanceof File) {
-      formData.append(key, val);
-    } else {
-      formData.append(key, String(val));
-    }
-  });
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/input/jadwal/${noJadwal}/peserta`,
-    { method: "POST", body: formData },
+export const createPesertaTraining = (noJadwal: string, payload: CreatePesertaTrainingRequest) =>
+  apiPostForm<PesertaTraining>(
+    `/api/input/jadwal/${encodeURIComponent(noJadwal)}/peserta`,
+    keFormData({ ...payload }),
+    "Gagal menambahkan peserta.",
   );
 
-  const data = await res.json();
+export const updatePesertaTraining = (id: string, payload: UpdatePesertaTrainingRequest) =>
+  apiPutForm<PesertaTraining>(
+    `/api/input/peserta/${encodeURIComponent(id)}`,
+    keFormData({ ...payload }),
+    "Gagal memperbarui peserta.",
+  );
 
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal menambahkan peserta");
-  }
+export const deletePesertaTraining = (id: string) =>
+  apiDelete(`/api/input/peserta/${encodeURIComponent(id)}`, "Gagal menghapus peserta.");
 
-  return data.data;
-}
-
-/**
- * UPDATE PESERTA
- */
-export async function updatePesertaTraining(
-  id: string,
-  payload: UpdatePesertaTrainingRequest,
-): Promise<PesertaTraining> {
-  const formData = new FormData();
-
-  Object.entries(payload).forEach(([key, val]) => {
-    if (val === undefined || val === null) return;
-    if (val instanceof File) {
-      formData.append(key, val);
-    } else {
-      formData.append(key, String(val));
-    }
-  });
-
-  const res = await fetchWithAuth(`${API_URL}/api/input/peserta/${id}`, {
-    method: "PUT",
-    body: formData,
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengupdate peserta");
-  }
-
-  return data.data;
-}
-
-/**
- * DELETE PESERTA
- */
-export async function deletePesertaTraining(id: string): Promise<void> {
-  const res = await fetchWithAuth(`${API_URL}/api/input/peserta/${id}`, {
-    method: "DELETE",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal menghapus peserta");
-  }
-}
-
-/**
- * UPDATE STATUS FINAL PESERTA
- * Peserta yang statusnya Final = udah nyelesain training & berhak
- * didaftarkan ke uji kompetensi (buat sertifikat LSP).
- */
-export async function updateStatusFinalPeserta(
-  id: string,
-  statusFinal: boolean = true,
-): Promise<PesertaTraining> {
-  const res = await fetchWithAuth(`${API_URL}/api/input/peserta/${id}/final`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ statusFinal }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengubah status Final peserta");
-  }
-
-  return data.data;
-}
+export const updateStatusFinalPeserta = (id: string, statusFinal = true) =>
+  apiPatch<PesertaTraining>(
+    `/api/input/peserta/${encodeURIComponent(id)}/final`,
+    { statusFinal },
+    "Gagal mengubah status Final peserta.",
+  );
 
 // ─────────────────────────────────────────────
 // BRIDGE KE UJI KOMPETENSI (LSP)
@@ -279,22 +80,8 @@ export interface SkemaKualifikasiOption {
   nama: string;
 }
 
-export async function getSkemaKualifikasiOptions(): Promise<
-  SkemaKualifikasiOption[]
-> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/input/skema-kualifikasi/list`,
-    { method: "GET" },
-  );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil daftar skema kualifikasi");
-  }
-
-  return data.data;
-}
+export const getSkemaKualifikasiOptions = () =>
+  apiGet<SkemaKualifikasiOption[]>("/api/input/skema-kualifikasi/list", undefined, "Gagal mengambil daftar skema kualifikasi.");
 
 export interface PesertaUji {
   id: number;
@@ -308,29 +95,12 @@ export interface PesertaUji {
   skema: SkemaKualifikasiOption;
 }
 
-export async function createPesertaUjiFromTraining(
-  pesertaTrainingId: string,
-  skemaId: number,
-): Promise<PesertaUji> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/input/peserta-uji/dari-training`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pesertaTrainingId, skemaId }),
-    },
+export const createPesertaUjiFromTraining = (pesertaTrainingId: string, skemaId: number) =>
+  apiPost<PesertaUji>(
+    "/api/input/peserta-uji/dari-training",
+    { pesertaTrainingId, skemaId },
+    "Gagal mendaftarkan peserta ke uji kompetensi.",
   );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(
-      data.message || "Gagal mendaftarkan peserta ke uji kompetensi",
-    );
-  }
-
-  return data.data;
-}
 
 export interface BiodataPeserta {
   id: number;
