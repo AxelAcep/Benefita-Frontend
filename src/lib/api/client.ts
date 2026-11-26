@@ -158,6 +158,45 @@ export async function apiPut<T>(
   return buka<T>(await request<unknown>(path, jsonInit("PUT", payload), pesanGagal));
 }
 
+/**
+ * Varian multipart untuk endpoint yang menerima unggahan berkas.
+ * Content-Type sengaja tidak diisi: browser harus menuliskannya sendiri
+ * lengkap dengan boundary FormData.
+ */
+function formInit(method: string, form: FormData): RequestInit {
+  return { method, body: form };
+}
+
+/** Rakit FormData dari objek biasa; File dikirim apa adanya. */
+export function keFormData(payload: Record<string, unknown>): FormData {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === undefined || value === null) continue;
+    if (value instanceof File) {
+      form.append(key, value);
+    } else {
+      form.append(key, String(value));
+    }
+  }
+  return form;
+}
+
+export async function apiPostForm<T>(
+  path: string,
+  form: FormData,
+  pesanGagal = "Gagal menyimpan data.",
+): Promise<T> {
+  return buka<T>(await request<unknown>(path, formInit("POST", form), pesanGagal));
+}
+
+export async function apiPutForm<T>(
+  path: string,
+  form: FormData,
+  pesanGagal = "Gagal mengubah data.",
+): Promise<T> {
+  return buka<T>(await request<unknown>(path, formInit("PUT", form), pesanGagal));
+}
+
 export async function apiDelete(
   path: string,
   pesanGagal = "Gagal menghapus data.",

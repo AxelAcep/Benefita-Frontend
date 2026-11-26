@@ -1,168 +1,80 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+/**
+ * Service Judul Training.
+ *
+ * Perakitan URL, pengiriman token, dan penanganan error ada di
+ * @/lib/api/client — di sini tinggal endpoint dan tipenya.
+ *
+ * Create dan update dikirim sebagai multipart karena bisa membawa berkas
+ * brosur. Backend belum punya route hapus untuk judul training.
+ */
+import {
+  apiGet,
+  apiList,
+  apiPostForm,
+  apiPutForm,
+  keFormData,
+} from "@/lib/api/client";
+import type {
+  CreateJudulTrainingRequest,
+  JudulTraining,
+  JudulTrainingListItem,
+  UpdateJudulTrainingRequest,
+} from "@/lib/types/judul-training";
+import type { ListParams, ListResult } from "@/lib/api/client";
 
-import { fetchWithAuth } from "./login.service";
+// Tipe pindah ke @/lib/types/judul-training. Diekspor ulang supaya file
+// lama yang mengimpor dari service tidak ikut rusak.
+export type {
+  CreateJudulTrainingRequest,
+  JudulTraining,
+  JudulTrainingListItem,
+  UpdateJudulTrainingRequest,
+};
 
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
+const BASE = "/api/training/judul-training";
 
-export interface JudulTraining {
-  id: number;
-  kode: string;
-  judulTraining: string;
-  tipe: string;
-  hari: number;
-  biayaOffline: number;
-  biayaOnline: number;
-  batch: number;
-  brosur: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface JudulTrainingListItem {
-  id: number;
-  kode: string;
-  judulTraining: string;
-  tipe: string;
-  hari: number;
-  biayaOnline: number;
-  biayaOffline: number;
-  batch: number;
-  brosur: string | null;
-}
-
-export interface JudulTrainingPagination {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface GetJudulTrainingResponse {
-  data: JudulTrainingListItem[];
-  meta: JudulTrainingPagination;
-}
-
-export interface CreateJudulTrainingRequest {
-  kode: string;
-  judulTraining: string;
-  tipe: string;
-  hari: number;
-  biayaOffline: number;
-  biayaOnline: number;
-  batch: number;
-  brosur?: File | null;
-}
-
-export interface UpdateJudulTrainingRequest {
-  kode?: string;
-  judulTraining?: string;
-  tipe?: string;
-  hari?: number;
-  biayaOffline?: number;
-  biayaOnline?: number;
-  batch?: number;
-  brosur?: File | null;
-}
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
-
-function buildFormData(
-  payload: CreateJudulTrainingRequest | UpdateJudulTrainingRequest,
-): FormData {
-  const formData = new FormData();
-
-  Object.entries(payload).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
-    if (value instanceof File) {
-      formData.append(key, value);
-    } else {
-      formData.append(key, String(value));
-    }
-  });
-
-  return formData;
-}
-
-// ─────────────────────────────────────────────
-// API SERVICE
-// ─────────────────────────────────────────────
-
-export async function getJudulTraining(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  tipe?: string;
-  kode?: string;
-}): Promise<GetJudulTrainingResponse> {
-  const query = new URLSearchParams();
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.tipe) query.append("tipe", params.tipe);
-  if (params?.kode) query.append("kode", params.kode);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/judul-training?${query.toString()}`,
-    { method: "GET" },
+export const getJudulTraining = (
+  params: ListParams = {},
+): Promise<ListResult<JudulTrainingListItem>> =>
+  apiList<JudulTrainingListItem>(
+    BASE,
+    params,
+    "Gagal mengambil data judul training",
   );
 
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil data judul training");
-
-  return data;
-}
-
-export async function getJudulTrainingById(id: number): Promise<JudulTraining> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/judul-training/${id}`,
-    { method: "GET" },
+export const getJudulTrainingById = (id: number): Promise<JudulTraining> =>
+  apiGet<JudulTraining>(
+    `${BASE}/${id}`,
+    undefined,
+    "Gagal mengambil detail judul training",
   );
 
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil detail judul training");
+/** Tipe yang benar-benar dipakai di database, untuk mengisi dropdown. */
+export const getJudulTrainingTipeList = (): Promise<string[]> =>
+  apiGet<string[]>(`${BASE}/tipe`, undefined, "Gagal mengambil daftar tipe");
 
-  return data.data;
-}
-
-export async function createJudulTraining(
+export const createJudulTraining = (
   payload: CreateJudulTrainingRequest,
-): Promise<JudulTraining> {
-  const formData = buildFormData(payload);
+): Promise<JudulTrainingListItem> =>
+  apiPostForm<JudulTrainingListItem>(
+    BASE,
+    keFormData(payload as unknown as Record<string, unknown>),
+    "Gagal membuat judul training",
+  );
 
-  const res = await fetchWithAuth(`${API_URL}/api/training/judul-training`, {
-    method: "POST",
-    body: formData,
-  });
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Gagal membuat judul training");
-
-  return data.data;
-}
-
-export async function updateJudulTraining(
+export const updateJudulTraining = (
   id: number,
   payload: UpdateJudulTrainingRequest,
-): Promise<JudulTraining> {
-  const formData = buildFormData(payload);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/judul-training/${id}`,
-    {
-      method: "PUT",
-      body: formData,
-    },
+): Promise<JudulTrainingListItem> =>
+  apiPutForm<JudulTrainingListItem>(
+    `${BASE}/${id}`,
+    keFormData(payload as unknown as Record<string, unknown>),
+    "Gagal mengubah judul training",
   );
 
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengupdate judul training");
-
-  return data.data;
-}
+/** Dibentuk untuk useResource. Tanpa `remove`: endpoint hapus belum ada. */
+export const judulTrainingService = {
+  list: getJudulTraining,
+  create: createJudulTraining,
+  update: updateJudulTraining,
+};
