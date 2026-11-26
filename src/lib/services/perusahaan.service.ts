@@ -1,3 +1,5 @@
+import { apiGetResponse } from "@/lib/api/client";
+import type { GetPerusahaanTbkResponse } from "@/lib/types/perusahaan-tbk";
 import { fetchWithAuth } from "@/lib/services/login.service";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -1142,53 +1144,23 @@ export async function getLiniBisnis(): Promise<LiniBisnisResponse> {
 // PERUSAHAAN TBK — kategoriCpn mengandung "Tbk" (posisi/kapitalisasi bebas)
 // ─────────────────────────────────────────────
 
-export interface PerusahaanTbkItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  acc: string | null;
-  alamat: string | null;
-  telp: string | null;
-  updateTerakhir: string | null;
-  liniBisnis: string | null;
-  tglTerakhirTraining: string | null;
-}
+export type {
+  GetPerusahaanTbkResponse,
+  PerusahaanTbkItem,
+  PerusahaanTbkPagination,
+} from "@/lib/types/perusahaan-tbk";
 
-export interface PerusahaanTbkPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanTbkResponse {
-  data: PerusahaanTbkItem[];
-  pagination: PerusahaanTbkPagination;
-}
-
-export async function getPerusahaanTbkList(params?: {
+export function getPerusahaanTbkList(params?: {
   page?: number;
   limit?: number;
   search?: string;
   sort?: "asc" | "desc";
 }): Promise<GetPerusahaanTbkResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.sort) query.append("sort", params.sort);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-tbk?${query.toString()}`,
-    { method: "GET" },
+  return apiGetResponse<GetPerusahaanTbkResponse>(
+    "/api/database/perusahaan-tbk",
+    params,
+    "Gagal mengambil data perusahaan Tbk.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data perusahaan Tbk.");
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
