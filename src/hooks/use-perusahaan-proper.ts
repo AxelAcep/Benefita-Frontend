@@ -1,16 +1,20 @@
-// hooks/use-perusahaan-proper.ts
-
-import { useCallback, useEffect, useState } from "react";
-import {
-  getPerusahaanProperList,
-  type PerusahaanProperItem,
-  type PerusahaanProperPagination,
-  type PeringkatProper,
-} from "@/lib/services/perusahaan.service";
+import { useEffect, useState } from "react";
+import { getPerusahaanProperList } from "@/lib/services/perusahaan.service";
+import type {
+  PerusahaanProperItem,
+  PeringkatProper,
+  PerusahaanProperPagination,
+} from "@/lib/types/perusahaan-proper";
 
 const PAGE_SIZE = 10;
 
-export function usePerusahaanProper() {
+export function usePerusahaanProper(
+  page: number,
+  search: string,
+  sort: "asc" | "desc",
+  peringkat: PeringkatProper | "",
+  liniBisnisId: number | "",
+) {
   const [data, setData] = useState<PerusahaanProperItem[]>([]);
   const [pagination, setPagination] = useState<PerusahaanProperPagination>({
     total: 0,
@@ -21,76 +25,28 @@ export function usePerusahaanProper() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<"asc" | "desc">("desc");
-  const [peringkat, setPeringkat] = useState<PeringkatProper | "">("");
-  const [liniBisnisId, setLiniBisnisId] = useState<number | "">("");
-  const [appliedPeringkat, setAppliedPeringkat] = useState<
-    PeringkatProper | ""
-  >("");
-  const [appliedLiniBisnisId, setAppliedLiniBisnisId] = useState<
-    number | ""
-  >("");
-
-  const fetch = useCallback(async () => {
+  useEffect(() => {
+    let batal = false;
     setLoading(true);
     setError(null);
-    try {
-      const res = await getPerusahaanProperList({
-        page,
-        limit: PAGE_SIZE,
-        search,
-        sort,
-        peringkat: appliedPeringkat,
-        liniBisnisId: appliedLiniBisnisId,
+    getPerusahaanProperList({ page, limit: PAGE_SIZE, search, sort, peringkat, liniBisnisId })
+      .then((result) => {
+        if (batal) return;
+        setData(result.data);
+        setPagination(result.pagination);
+      })
+      .catch((err: unknown) => {
+        if (batal) return;
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+      })
+      .finally(() => {
+        if (!batal) setLoading(false);
       });
-      setData(res.data);
-      setPagination(res.pagination);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, sort, appliedPeringkat, appliedLiniBisnisId]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+    return () => {
+      batal = true;
+    };
+  }, [page, search, sort, peringkat, liniBisnisId]);
 
-  const handleSearch = useCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
-  }, []);
-
-  const toggleSort = useCallback(() => {
-    setSort((prev) => (prev === "asc" ? "desc" : "asc"));
-    setPage(1);
-  }, []);
-
-  const handleTerapkan = useCallback(() => {
-    setAppliedPeringkat(peringkat);
-    setAppliedLiniBisnisId(liniBisnisId);
-    setPage(1);
-  }, [peringkat, liniBisnisId]);
-
-  return {
-    data,
-    pagination,
-    loading,
-    error,
-    search,
-    page,
-    sort,
-    peringkat,
-    liniBisnisId,
-    appliedPeringkat,
-    setPage,
-    setPeringkat,
-    setLiniBisnisId,
-    handleSearch,
-    toggleSort,
-    handleTerapkan,
-    refresh: fetch,
-  };
+  return { data, pagination, loading, error };
 }

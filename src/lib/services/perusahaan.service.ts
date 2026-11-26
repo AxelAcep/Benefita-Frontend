@@ -1,3 +1,4 @@
+import type { GetPerusahaanProperResponse, PerusahaanProperParams } from "@/lib/types/perusahaan-proper";
 import { apiGetResponse } from "@/lib/api/client";
 import type { GetPerusahaanTbkResponse } from "@/lib/types/perusahaan-tbk";
 import { fetchWithAuth } from "@/lib/services/login.service";
@@ -1127,17 +1128,12 @@ export interface LiniBisnisResponse {
 }
 
 // ── SERVICE ──
-export async function getLiniBisnis(): Promise<LiniBisnisResponse> {
-  const res = await fetchWithAuth(`${API_URL}/api/database/lini-bisnis`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data lini bisnis.");
-  }
-
-  return { data: data.data };
+export function getLiniBisnis(): Promise<LiniBisnisResponse> {
+  return apiGetResponse<LiniBisnisResponse>(
+    "/api/database/lini-bisnis",
+    undefined,
+    "Gagal mengambil data lini bisnis.",
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -1167,72 +1163,21 @@ export function getPerusahaanTbkList(params?: {
 // PERUSAHAAN PROPER — perusahaan yang punya riwayat rating PROPER
 // ─────────────────────────────────────────────
 
-export type PeringkatProper =
-  | "EMAS"
-  | "HIJAU"
-  | "BIRU"
-  | "MERAH"
-  | "HITAM"
-  | "DITUNDA"
-  | "MASALAH"
-  | "TUTUP"
-  | "DITANGGUHKAN"
-  | "MERAH_MUDA";
+export type {
+  GetPerusahaanProperResponse,
+  PerusahaanProperItem,
+  PerusahaanProperPagination,
+  PeringkatProper,
+} from "@/lib/types/perusahaan-proper";
 
-export interface PerusahaanProperItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  acc: string | null;
-  alamat: string | null;
-  telp: string | null;
-  email: string | null;
-  updatter: string | null;
-  updateTerakhir: string | null;
-  kategoriCpn: string | null;
-  liniBisnis: string | null;
-  tahunPeringkat: string | null;
-}
-
-export interface PerusahaanProperPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanProperResponse {
-  data: PerusahaanProperItem[];
-  pagination: PerusahaanProperPagination;
-}
-
-export async function getPerusahaanProperList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sort?: "asc" | "desc";
-  peringkat?: PeringkatProper | "";
-  liniBisnisId?: number | "";
-}): Promise<GetPerusahaanProperResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.sort) query.append("sort", params.sort);
-  if (params?.peringkat) query.append("peringkat", params.peringkat);
-  if (params?.liniBisnisId) query.append("liniBisnisId", String(params.liniBisnisId));
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-proper?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanProperList(
+  params?: PerusahaanProperParams,
+): Promise<GetPerusahaanProperResponse> {
+  return apiGetResponse<GetPerusahaanProperResponse>(
+    "/api/database/perusahaan-proper",
+    params,
+    "Gagal mengambil data perusahaan Proper.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data perusahaan Proper.");
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
