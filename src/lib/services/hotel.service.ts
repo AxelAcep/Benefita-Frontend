@@ -4,11 +4,8 @@
  * Perakitan URL, pengiriman token, dan penanganan error ada di
  * @/lib/api/client — di sini tinggal endpoint dan tipenya.
  *
- * Catatan: backend belum punya route DELETE /api/training/hotel/:id,
- * jadi service ini sengaja tidak menyediakan fungsi hapus. Fungsi
- * deleteHotel yang lama memanggil endpoint yang tidak pernah ada.
  */
-import { apiGet, apiList, apiPost, apiPut } from "@/lib/api/client";
+import { apiDelete, apiGet, apiList, apiPost, apiPut } from "@/lib/api/client";
 import type {
   CreateHotelRequest,
   Hotel,
@@ -44,9 +41,14 @@ export const updateHotel = (
 ): Promise<Hotel> =>
   apiPut<Hotel>(`${BASE}/${kodeHotel}`, payload, "Gagal mengubah data hotel");
 
-/** Dibentuk untuk useResource. Tanpa `remove`: endpoint hapus belum ada. */
+/** `kodeHotel` adalah kode baris yang dihapus, sama seperti updateHotel. */
+export const deleteHotel = (kodeHotel: string): Promise<void> =>
+  apiDelete(`${BASE}/${kodeHotel}`, "Gagal menghapus data hotel");
+
+/** Dibentuk untuk useResource. */
 export const hotelService = {
   list: getHotels,
   create: createHotel,
   update: updateHotel,
+  remove: deleteHotel,
 };

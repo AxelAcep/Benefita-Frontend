@@ -5,6 +5,7 @@
  * proses simpan, filter kota, dan notifikasi.
  */
 import { useState } from "react";
+import { useKonfirmasiHapus } from "@/hooks/use-konfirmasi-hapus";
 import { useHotels, useKotaHotel } from "@/hooks/use-hotel";
 import type { Hotel } from "@/lib/types/hotel";
 import type { HotelFormValues } from "./form";
@@ -108,8 +109,17 @@ export function useHotelManage() {
     }
   };
 
+  const hapus = useKonfirmasiHapus({
+    remove: resource.remove,
+    idDari: (row: Hotel) => row.kodeHotel,
+    namaDari: (row: Hotel) => row.namaHotel,
+    onSukses: (nama) => showNotif(`Data hotel "${nama}" berhasil dihapus`, "success"),
+    onGagal: (pesan) => showNotif(pesan, "error"),
+  });
+
   return {
     ...resource,
+    ...hapus,
     kotaList,
     kota: resource.filter.kota ?? "",
     setKota: (v: string) => resource.setFilter("kota", v),

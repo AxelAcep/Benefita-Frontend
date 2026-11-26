@@ -3,7 +3,8 @@
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { DataTable, type ColumnDef } from "@/components/base/data-table";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import ConfirmModal from "@/components/base/confirm-modal";
 import type { Hotel } from "@/lib/types/hotel";
 import { HotelForm } from "./form";
 import { UKURAN_HALAMAN, useHotelManage } from "./manage";
@@ -32,15 +33,27 @@ export default function HotelContainer() {
     { key: "pubRate", label: "Pub Rate", render: rupiah },
     { key: "corRate", label: "Corporate", render: rupiah },
     {
-      key: "edit",
-      label: "Edit",
+      key: "aksi",
+      label: "Aksi",
       render: (_v, row) => (
-        <button
-          onClick={() => m.openEdit(row)}
-          aria-label={`Edit ${row.namaHotel}`}
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => m.openEdit(row)}
+            aria-label={`Edit ${row.namaHotel}`}
+            title="Edit"
+            className="text-zinc-500 hover:text-emerald-600 transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => m.askDelete(row)}
+            aria-label={`Hapus ${row.namaHotel}`}
+            title="Hapus"
+            className="text-zinc-500 hover:text-red-600 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -114,6 +127,15 @@ export default function HotelContainer() {
         initialData={m.editValues}
         isLoading={m.isSaving}
         kotaList={m.kotaList}
+      />
+
+      <ConfirmModal
+        isOpen={!!m.hapusTarget}
+        title="Hapus Data Hotel"
+        message={`Data Hotel "${m.namaHapus}" akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`}
+        onConfirm={m.confirmDelete}
+        onCancel={m.cancelDelete}
+        loading={m.isDeleting}
       />
     </AppLayout>
   );

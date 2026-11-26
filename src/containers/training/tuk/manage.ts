@@ -8,6 +8,7 @@
  * bukan juga mengurus useState satu per satu.
  */
 import { useState } from "react";
+import { useKonfirmasiHapus } from "@/hooks/use-konfirmasi-hapus";
 import { useTUK } from "@/hooks/use-tuk";
 import type { TUK } from "@/lib/types/tuk";
 import type { TUKFormValues } from "./form";
@@ -96,8 +97,17 @@ export function useTUKManage() {
     }
   };
 
+  const hapus = useKonfirmasiHapus({
+    remove: resource.remove,
+    idDari: (row: TUK) => row.id,
+    namaDari: (row: TUK) => row.nama,
+    onSukses: (nama) => showNotif(`Data tuk "${nama}" berhasil dihapus`, "success"),
+    onGagal: (pesan) => showNotif(pesan, "error"),
+  });
+
   return {
     ...resource,
+    ...hapus,
     modalOpen,
     editValues,
     isSaving,

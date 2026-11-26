@@ -3,7 +3,8 @@
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { DataTable, type ColumnDef } from "@/components/base/data-table";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import ConfirmModal from "@/components/base/confirm-modal";
 import type { Asesor } from "@/lib/types/asesor";
 import { AsesorForm } from "./form";
 import { UKURAN_HALAMAN, useAsesorManage } from "./manage";
@@ -27,12 +28,27 @@ export default function AsesorContainer() {
       render: (_v, row) => row.pegawai?.nama ?? "-",
     },
     {
-      key: "edit",
-      label: "Edit",
+      key: "aksi",
+      label: "Aksi",
       render: (_v, row) => (
-        <button onClick={() => m.openEdit(row)} aria-label={`Edit ${row.nama}`}>
-          <Pencil className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => m.openEdit(row)}
+            aria-label={`Edit ${row.nama}`}
+            title="Edit"
+            className="text-zinc-500 hover:text-emerald-600 transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => m.askDelete(row)}
+            aria-label={`Hapus ${row.nama}`}
+            title="Hapus"
+            className="text-zinc-500 hover:text-red-600 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -86,6 +102,15 @@ export default function AsesorContainer() {
         onSubmit={m.save}
         initialData={m.editValues}
         isLoading={m.isSaving}
+      />
+
+      <ConfirmModal
+        isOpen={!!m.hapusTarget}
+        title="Hapus Data Asesor"
+        message={`Data Asesor "${m.namaHapus}" akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`}
+        onConfirm={m.confirmDelete}
+        onCancel={m.cancelDelete}
+        loading={m.isDeleting}
       />
     </AppLayout>
   );

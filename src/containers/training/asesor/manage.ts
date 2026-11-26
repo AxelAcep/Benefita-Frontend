@@ -5,6 +5,7 @@
  * diedit, proses simpan, dan notifikasi.
  */
 import { useState } from "react";
+import { useKonfirmasiHapus } from "@/hooks/use-konfirmasi-hapus";
 import { useAsesor } from "@/hooks/use-asesor";
 import type { Asesor } from "@/lib/types/asesor";
 import type { AsesorFormValues } from "./form";
@@ -80,8 +81,17 @@ export function useAsesorManage() {
     }
   };
 
+  const hapus = useKonfirmasiHapus({
+    remove: resource.remove,
+    idDari: (row: Asesor) => row.id,
+    namaDari: (row: Asesor) => row.nama,
+    onSukses: (nama) => showNotif(`Data asesor "${nama}" berhasil dihapus`, "success"),
+    onGagal: (pesan) => showNotif(pesan, "error"),
+  });
+
   return {
     ...resource,
+    ...hapus,
     modalOpen,
     editValues,
     isSaving,
