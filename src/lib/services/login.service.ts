@@ -265,13 +265,20 @@ export interface PegawaiDropdownItem {
 export async function getPegawaiMarketingSales(): Promise<
   PegawaiDropdownItem[]
 > {
-  const res = await fetch(`${API_URL}/api/user/dropdown/sales`); // endpoint backend
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || "Gagal mengambil data pegawai");
-  }
+  // Dulu memakai fetch telanjang tanpa token karena endpointnya memang
+  // terbuka. Endpoint itu sudah ditutup; dipakai hanya di halaman detail
+  // database yang ada di balik login.
+  const res = await fetchWithAuth(`${API_URL}/api/user/dropdown/sales`, {
+    method: "GET",
+  });
+
   const data = await res.json();
-  return data.data; // asumsikan response { data: PegawaiDropdownItem[] }
+
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal mengambil data pegawai");
+  }
+
+  return data.data;
 }
 
 export interface PegawaiDetail {
