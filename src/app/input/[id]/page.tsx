@@ -13,8 +13,8 @@ import TableListPeserta from "./table-list-peserta";
 import ModalTambahPeserta, {
   type TambahPesertaFormData,
 } from "./modal-tambah-peserta";
-import PageKwitansi from "./kwitansi/[idPeserta]/page";
-import PageInvoice from "./invoice/[idPeserta]/page";
+import PageKwitansi from "@/containers/input/kwitansi";
+import PageInvoice from "@/containers/input/invoice";
 import DaftarkanUjiModal from "./daftarkan-uji-modal";
 import Notification from "@/components/base/notifications"; // sesuaikan path
 
