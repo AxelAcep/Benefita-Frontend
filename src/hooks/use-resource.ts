@@ -20,8 +20,9 @@ import type { ListParams, ListResult } from "@/lib/api/client";
  */
 export interface ResourceService<T, Id, C, U, R = T> {
   list: (params: ListParams) => Promise<ListResult<T>>;
-  create: (payload: C) => Promise<R>;
-  update: (id: Id, payload: U) => Promise<R>;
+  /** Opsional: sebagian halaman hanya membaca daftar. */
+  create?: (payload: C) => Promise<R>;
+  update?: (id: Id, payload: U) => Promise<R>;
   /** Opsional: sebagian entitas belum punya endpoint hapus di backend. */
   remove?: (id: Id) => Promise<void>;
 }
@@ -100,12 +101,18 @@ export function useResource<T, Id = number, C = unknown, U = Partial<C>, R = T>(
   };
 
   const create = async (payload: C) => {
+    if (!service.create) {
+      throw new Error("Tambah data belum didukung untuk data ini.");
+    }
     const hasil = await service.create(payload);
     await fetchData();
     return hasil;
   };
 
   const update = async (id: Id, payload: U) => {
+    if (!service.update) {
+      throw new Error("Ubah data belum didukung untuk data ini.");
+    }
     const hasil = await service.update(id, payload);
     await fetchData();
     return hasil;
@@ -119,7 +126,9 @@ export function useResource<T, Id = number, C = unknown, U = Partial<C>, R = T>(
     await fetchData();
   };
 
-  /** Dipakai halaman untuk menyembunyikan tombol hapus kalau tidak didukung. */
+  /** Dipakai halaman untuk menyembunyikan tombol yang tidak didukung. */
+  const bisaTambah = typeof service.create === "function";
+  const bisaUbah = typeof service.update === "function";
   const bisaHapus = typeof service.remove === "function";
 
   return {
@@ -139,6 +148,8 @@ export function useResource<T, Id = number, C = unknown, U = Partial<C>, R = T>(
     create,
     update,
     remove,
+    bisaTambah,
+    bisaUbah,
     bisaHapus,
   };
 }
