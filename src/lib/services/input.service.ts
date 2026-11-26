@@ -1,3 +1,4 @@
+import { apiGet } from "@/lib/api/client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { fetchWithAuth } from "./login.service";
@@ -174,21 +175,12 @@ export async function getPesertaTraining(
 /**
  * GET ONE PESERTA
  */
-export async function getPesertaTrainingById(
-  id: string,
-): Promise<PesertaTraining> {
-  const res = await fetchWithAuth(`${API_URL}/api/input/peserta/${id}`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil detail peserta");
-  }
-
-  return data.data;
-}
+export const getPesertaTrainingById = (id: string) =>
+  apiGet<PesertaTraining>(
+    `/api/input/peserta/${encodeURIComponent(id)}`,
+    undefined,
+    "Gagal mengambil detail peserta.",
+  );
 
 /**
  * CREATE PESERTA
