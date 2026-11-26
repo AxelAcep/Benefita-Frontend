@@ -134,12 +134,21 @@ function buka<T>(body: unknown): T {
   return (b && typeof b === "object" && "data" in b ? b.data : body) as T;
 }
 
+/** Untuk respons yang memuat ringkasan di samping data. */
+export function apiGetResponse<T>(
+  path: string,
+  params?: ListParams,
+  pesanGagal = "Gagal mengambil data.",
+): Promise<T> {
+  return request<T>(path, { method: "GET" }, pesanGagal, params);
+}
+
 export async function apiGet<T>(
   path: string,
   params?: ListParams,
   pesanGagal = "Gagal mengambil data.",
 ): Promise<T> {
-  return buka<T>(await request<unknown>(path, { method: "GET" }, pesanGagal, params));
+  return buka<T>(await apiGetResponse<unknown>(path, params, pesanGagal));
 }
 
 export async function apiPost<T>(
