@@ -117,8 +117,20 @@ export function useJudulManage() {
     }
   };
 
+  /**
+   * Tombol "Download Jadwal Tahun 2026".
+   *
+   * Belum ada endpointnya di backend. Versi lama memanggil
+   * console.log("download jadwal"), jadi tombolnya terlihat berfungsi
+   * padahal tidak melakukan apa pun. Sampai endpointnya ada, tombol ini
+   * mengatakan terus terang bahwa fiturnya belum tersedia.
+   */
+  const downloadJadwal = () =>
+    showNotif("Download jadwal belum tersedia.", "error");
+
   return {
     ...resource,
+    downloadJadwal,
     tipeList,
     draftTipe,
     setDraftTipe,

@@ -191,6 +191,15 @@ export default function JudulTrainingContainer() {
               </button>
             </div>
           }
+          actionSlot={
+            <button
+              onClick={m.downloadJadwal}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-emerald-500 text-emerald-500 hover:bg-emerald-50 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download Jadwal Tahun 2026
+            </button>
+          }
         />
       </div>
 
