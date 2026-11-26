@@ -1,3 +1,4 @@
+import type { GetPerusahaanPrioritasResponse, PerusahaanPrioritasParams } from "@/lib/types/perusahaan-prioritas";
 import type { GetPerusahaanVendorResponse, PerusahaanVendorParams } from "@/lib/types/perusahaan-vendor";
 import type { GetPerusahaanByAlamatResponse, PerusahaanByAlamatParams } from "@/lib/types/perusahaan-berdasarkan-alamat";
 import type { GetPerusahaanProperResponse, PerusahaanProperParams } from "@/lib/types/perusahaan-proper";
@@ -1252,60 +1253,18 @@ export async function getPerusahaanIsoList(params?: {
 
 export const PRIORITAS_LETTER_OPTIONS = ["A", "B", "C", "D", "E"] as const;
 
-export interface PerusahaanPrioritasItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  alamat: string | null;
-  telp: string | null;
-  email: string | null;
-  prioritasMa: string | null;
-  prioritasAe: string | null;
-  updatter: string | null;
-  updateTerakhir: string | null;
-  env: string | null;
-  csr: string | null;
-}
+export type {
+  PerusahaanPrioritasItem,
+  PerusahaanPrioritasPagination,
+  GetPerusahaanPrioritasResponse,
+} from "@/lib/types/perusahaan-prioritas";
 
-export interface PerusahaanPrioritasPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanPrioritasResponse {
-  data: PerusahaanPrioritasItem[];
-  pagination: PerusahaanPrioritasPagination;
-}
-
-export async function getPerusahaanPrioritasList(params: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  prioritasMa?: string;
-  prioritasAe?: string;
-}): Promise<GetPerusahaanPrioritasResponse> {
-  const query = new URLSearchParams();
-
-  if (params.page) query.append("page", String(params.page));
-  if (params.limit) query.append("limit", String(params.limit));
-  if (params.search) query.append("search", params.search);
-  if (params.prioritasMa) query.append("prioritasMa", params.prioritasMa);
-  if (params.prioritasAe) query.append("prioritasAe", params.prioritasAe);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-prioritas?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanPrioritasList(params: PerusahaanPrioritasParams): Promise<GetPerusahaanPrioritasResponse> {
+  return apiGetResponse<GetPerusahaanPrioritasResponse>(
+    "/api/database/perusahaan-prioritas",
+    params,
+    "Gagal mengambil data perusahaan prioritas.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(
-      data.message || "Gagal mengambil data perusahaan prioritas.",
-    );
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
