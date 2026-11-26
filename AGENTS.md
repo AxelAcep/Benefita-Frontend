@@ -204,25 +204,35 @@ Sudah mengikuti pola container:
 - `training/` — 14 halaman, seluruhnya
 - `input/invoice`, `input/kwitansi` — baru dipindah, isinya belum dirapikan
 
-Belum disentuh, kira-kira menurut besarnya:
+Belum disentuh, menurut besarnya:
 
 ```
-database/   162 berkas   ← paling besar; 5 entitas hampir identik
-accounting/  37
-perusahaan/  12
-peserta/     12
-(pages)/     11
-bdo/          8
-dokumen/      3
+dokumen       1.265 baris     3 berkas
+bdo           3.144           8
+(pages)       3.379          11   ← karyawan ada di sini
+perusahaan    4.009          12
+peserta       5.993          12
+accounting   11.887          37
+database     ~40.000        162
 ```
 
-`database/` adalah target berikutnya yang paling berharga. Lima entitas
-(`perusahaan`, `pemda`, `sekolah`, `rumah-sakit`, `instansi-daerah`) punya
-belasan berkas yang **identik byte demi byte** — `tab-daily.tsx`,
-`tab-contact-person.tsx`, `modal-akses.tsx`, `modal-pos.tsx`, dan
-beberapa `card-*`. Ubah satu, empat lainnya ketinggalan. Pola `laporan-peserta-uji`
-di `containers/training/` adalah contoh cara menyatukannya: satu kerangka
-bersama, tiap halaman menyerahkan bagian yang berbeda saja.
+**Urutan yang disepakati pemilik repositori: `database/` dikerjakan
+paling akhir, bukan pertama.** Modul itu yang paling rumit, terutama
+`database/perusahaan`. Jangan mengambilnya lebih dulu hanya karena
+duplikasinya paling kasat mata.
+
+Urutan yang dianjurkan: `dokumen` → `bdo` → `(pages)` → `perusahaan` →
+`peserta` → `accounting` → `database`. Naik perlahan dari yang kecil,
+supaya pola yang dipakai sudah matang sebelum menyentuh yang besar.
+
+Catatan tentang `database/` untuk nanti: lima entitas (`perusahaan`,
+`pemda`, `sekolah`, `rumah-sakit`, `instansi-daerah`) punya belasan berkas
+yang **identik byte demi byte** — `tab-daily.tsx`, `tab-contact-person.tsx`,
+`modal-akses.tsx`, `modal-pos.tsx`, dan beberapa `card-*`. Ubah satu,
+empat lainnya ketinggalan. Pola `containers/training/laporan-peserta-uji`
+adalah contoh cara menyatukannya: satu kerangka bersama, tiap halaman
+menyerahkan bagian yang berbeda saja. Karena salah pola sekali berarti
+salah lima kali, modul ini dikerjakan setelah pola terbukti di modul lain.
 
 ### Menyusul
 
