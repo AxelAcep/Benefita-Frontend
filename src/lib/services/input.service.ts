@@ -265,21 +265,14 @@ export interface JadwalPesertaLinksResponse {
 /**
  * GET JADWAL + PESERTA (public - buat halaman pengumuman link biodata/evaluasi)
  */
-export async function getJadwalPesertaLinks(
+export function getJadwalPesertaLinks(
   noJadwal: string,
 ): Promise<JadwalPesertaLinksResponse> {
-  const res = await fetch(
-    `${API_URL}/api/public/jadwal/${noJadwal}/peserta-links`,
-    { method: "GET" },
+  return apiPublic<JadwalPesertaLinksResponse>(
+    `/api/public/jadwal/${encodeURIComponent(noJadwal)}/peserta-links`,
+    {},
+    "Gagal mengambil data jadwal",
   );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data jadwal");
-  }
-
-  return data.data;
 }
 
 export type { RekapEvaluasiResponse } from "@/lib/types/rekap-evaluasi";
