@@ -563,7 +563,9 @@ export default function Sidebar() {
             <X aria-hidden="true" className="size-4" />
           </button>
         </div>
-        <NavContent onLinkClick={close} />
+        {/* Tanpa onLinkClick: di desktop sidebar tetap terbuka setelah
+            pindah menu. Yang menutupnya hanya tombol X di atas. */}
+        <NavContent />
       </aside>}
 
       {/* Mobile */}
