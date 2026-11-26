@@ -162,18 +162,12 @@ export function updateBiodataPeserta(
 /**
  * GET CONTEXT EVALUASI (public - sebelum diisi)
  */
-export async function getEvaluasiContext(id: string): Promise<EvaluasiContext> {
-  const res = await fetch(`${API_URL}/api/public/evaluasi/${id}`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data evaluasi");
-  }
-
-  return data.data;
+export function getEvaluasiContext(id: string): Promise<EvaluasiContext> {
+  return apiPublic<EvaluasiContext>(
+    `/api/public/evaluasi/${encodeURIComponent(id)}`,
+    {},
+    "Gagal mengambil data evaluasi",
+  );
 }
 
 /**
@@ -232,42 +226,28 @@ export interface EvaluasiPelatihan {
   }[];
 }
 
-export async function getJudulTrainingOptions(): Promise<
+export function getJudulTrainingOptions(): Promise<
   JudulTrainingOption[]
 > {
-  const res = await fetch(`${API_URL}/api/public/evaluasi/judul-training`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil daftar pelatihan");
-  }
-
-  return data.data;
+  return apiPublic<JudulTrainingOption[]>(
+    "/api/public/evaluasi/judul-training",
+    {},
+    "Gagal mengambil daftar pelatihan",
+  );
 }
 
 /**
  * CREATE EVALUASI PELATIHAN (public - submit form)
  */
-export async function createEvaluasiPelatihan(
+export function createEvaluasiPelatihan(
   id: string,
   payload: CreateEvaluasiPelatihanRequest,
 ): Promise<EvaluasiPelatihan> {
-  const res = await fetch(`${API_URL}/api/public/evaluasi/${id}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengirim evaluasi");
-  }
-
-  return data.data;
+  return apiPublic<EvaluasiPelatihan>(
+    `/api/public/evaluasi/${encodeURIComponent(id)}`,
+    { method: "POST", payload },
+    "Gagal mengirim evaluasi",
+  );
 }
 
 export interface JadwalPesertaLinksResponse {
