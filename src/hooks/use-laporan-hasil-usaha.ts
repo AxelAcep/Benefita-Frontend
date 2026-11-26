@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import {
   getLaporanHasilUsaha,
   LaporanHasilUsahaItem,
+  LaporanHasilUsahaParams,
   Pagination,
-  GetPendapatanParams,
 } from "@/lib/services/accounting.service";
 
 interface UseLaporanHasilUsahaReturn {
@@ -15,11 +15,11 @@ interface UseLaporanHasilUsahaReturn {
   };
   loading: boolean;
   error: Error | null;
-  refetch: (newParams?: Partial<GetPendapatanParams>) => Promise<void>;
+  refetch: (newParams?: Partial<LaporanHasilUsahaParams>) => Promise<void>;
 }
 
 export function useLaporanHasilUsaha(
-  initialParams?: GetPendapatanParams,
+  initialParams?: LaporanHasilUsahaParams,
 ): UseLaporanHasilUsahaReturn {
   const [data, setData] = useState<LaporanHasilUsahaItem[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
@@ -34,12 +34,12 @@ export function useLaporanHasilUsaha(
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [params, setParams] = useState<GetPendapatanParams>(
+  const [params, setParams] = useState<LaporanHasilUsahaParams>(
     initialParams || {},
   );
 
   const fetchData = useCallback(
-    async (fetchParams: GetPendapatanParams = params) => {
+    async (fetchParams: LaporanHasilUsahaParams = params) => {
       setLoading(true);
       setError(null);
       try {
@@ -62,7 +62,7 @@ export function useLaporanHasilUsaha(
   );
 
   const refetch = useCallback(
-    async (newParams?: Partial<GetPendapatanParams>) => {
+    async (newParams?: Partial<LaporanHasilUsahaParams>) => {
       const mergedParams = { ...params, ...newParams };
       await fetchData(mergedParams);
     },
