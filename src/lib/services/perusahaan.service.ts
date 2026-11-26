@@ -1,3 +1,4 @@
+import type { GetPerusahaanVendorResponse, PerusahaanVendorParams } from "@/lib/types/perusahaan-vendor";
 import type { GetPerusahaanByAlamatResponse, PerusahaanByAlamatParams } from "@/lib/types/perusahaan-berdasarkan-alamat";
 import type { GetPerusahaanProperResponse, PerusahaanProperParams } from "@/lib/types/perusahaan-proper";
 import { apiGetResponse } from "@/lib/api/client";
@@ -1313,48 +1314,18 @@ export async function getPerusahaanPrioritasList(params: {
 // beneran keisi), jadi wajar kalau hasilnya sedikit.
 // ─────────────────────────────────────────────
 
-export interface PerusahaanVendorItem {
-  noInduk: string;
-  namaPerusahaan: string | null;
-  acc: string[];
-  status: string | null;
-  expired: string | null;
-}
+export type {
+  PerusahaanVendorItem,
+  PerusahaanVendorPagination,
+  GetPerusahaanVendorResponse,
+} from "@/lib/types/perusahaan-vendor";
 
-export interface PerusahaanVendorPagination {
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-}
-
-export interface GetPerusahaanVendorResponse {
-  data: PerusahaanVendorItem[];
-  pagination: PerusahaanVendorPagination;
-}
-
-export async function getPerusahaanVendorList(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-}): Promise<GetPerusahaanVendorResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan-vendor?${query.toString()}`,
-    { method: "GET" },
+export function getPerusahaanVendorList(params?: PerusahaanVendorParams): Promise<GetPerusahaanVendorResponse> {
+  return apiGetResponse<GetPerusahaanVendorResponse>(
+    "/api/database/perusahaan-vendor",
+    params,
+    "Gagal mengambil data perusahaan vendor.",
   );
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data perusahaan vendor.");
-  }
-
-  return { data: data.data, pagination: data.pagination };
 }
 
 // ─────────────────────────────────────────────
