@@ -570,42 +570,5 @@ export async function getJadwalPesertaLinks(
   return data.data;
 }
 
-export interface RekapEvaluasiResponse {
-  jadwal: {
-    judulLengkap: string;
-    tglMulai: string | null;
-    tglSelesai: string | null;
-  };
-  totalPeserta: number;
-  totalMengisi: number;
-  rataRata: {
-    nilaiSistematikaMateri: number;
-    nilaiTampilanSlide: number;
-    nilaiAlokasiWaktu: number;
-    nilaiPenerapanMateri: number;
-    nilaiPeningkatanKompetensi: number;
-    nilaiTrainer: number;
-  };
-  komentarManfaatPeserta: string[];
-  komentarManfaatPerusahaan: string[];
-}
-
-/**
- * GET REKAP EVALUASI (admin - protected)
- */
-export async function getRekapEvaluasi(
-  noJadwal: string,
-): Promise<RekapEvaluasiResponse> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/jadwal/${noJadwal}/rekap-evaluasi`,
-    { method: "GET" },
-  );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil rekap evaluasi");
-  }
-
-  return data.data;
-}
+export type { RekapEvaluasiResponse } from "@/lib/types/rekap-evaluasi";
+export { getRekapEvaluasi } from "./rekap-evaluasi.service";

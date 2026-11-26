@@ -1,58 +1,41 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  getRekapEvaluasi,
-  RekapEvaluasiResponse,
-} from "@/lib/services/input.service";
+"use client";
 
-interface UseRekapEvaluasiOptions {
-  noJadwal: string;
-}
+import { useEffect, useState } from "react";
+import { getRekapEvaluasi } from "@/lib/services/rekap-evaluasi.service";
+import type { RekapEvaluasiResponse } from "@/lib/types/rekap-evaluasi";
 
-export function useRekapEvaluasi({ noJadwal }: UseRekapEvaluasiOptions) {
-  const [data, setData] = useState<RekapEvaluasiResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const isMounted = useRef(true);
+export function useRekapEvaluasi({ noJadwal }: { noJadwal: string }) {
+  const [revision, setRevision] = useState(0);
+  const [result, setResult] = useState<{
+    key: string;
+    data: RekapEvaluasiResponse | null;
+    error: string | null;
+  } | null>(null);
+  const key = JSON.stringify([noJadwal, revision]);
 
   useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+    if (!noJadwal) return;
+    let active = true;
+    getRekapEvaluasi(noJadwal).then(
+      (data) => {
+        if (active) setResult({ key, data, error: null });
+      },
+      (err: unknown) => {
+        if (active) setResult({
+          key,
+          data: null,
+          error: err instanceof Error ? err.message : "Gagal mengambil rekap evaluasi.",
+        });
+      },
+    );
+    return () => { active = false; };
+  }, [key, noJadwal]);
 
-  const fetchData = useCallback(async () => {
-    if (!noJadwal) {
-      setIsLoading(false);
-      setError("noJadwal tidak ditemukan di URL");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const result = await getRekapEvaluasi(noJadwal);
-      if (isMounted.current) {
-        setData(result);
-      }
-    } catch (err) {
-      if (isMounted.current) {
-        setError(
-          err instanceof Error ? err.message : "Gagal mengambil rekap evaluasi",
-        );
-      }
-    } finally {
-      if (isMounted.current) {
-        setIsLoading(false);
-      }
-    }
-  }, [noJadwal]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, isLoading, error, refetch: fetchData };
+  const current = result?.key === key ? result : null;
+  return {
+    data: current?.data ?? null,
+    error: noJadwal ? current?.error ?? null : "Nomor jadwal tidak ditemukan.",
+    isLoading: Boolean(noJadwal && !current),
+    refetch: () => setRevision((value) => value + 1),
+  };
 }
