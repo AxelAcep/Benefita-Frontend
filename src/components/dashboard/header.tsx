@@ -1,11 +1,6 @@
 "use client";
-import {
-  getSession,
-  UserDetail,
-  getUserDetail,
-} from "@/lib/services/login.service";
 import { LayoutList, BarChart2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 type ViewMode = "table" | "chart";
 interface Props {
@@ -14,15 +9,14 @@ interface Props {
 }
 
 export default function DashboardHeader({ viewMode, onViewModeChange }: Props) {
-  const [user, setUser] = useState<UserDetail | null>(null);
-  useEffect(() => {
-    const session = getSession();
-    if (!session?.user?.id) return;
+  // Nama dan role diambil dari sesi. Backend sudah mengirim nama pegawai
+  // saat login dan refresh, jadi tidak perlu getUserDetail() lagi — versi
+  // lama memanggilnya tiap mount dan menelan kegagalannya dengan
+  // console.error, sehingga nama bisa kosong tanpa penjelasan.
+  const { user } = useAuth();
 
-    getUserDetail(session.user.id).then(setUser).catch(console.error);
-  }, []);
-
-  const initial = user?.pegawai.nama.charAt(0).toUpperCase();
+  const nama = user?.nama?.trim() ?? "";
+  const initial = nama ? nama.charAt(0).toUpperCase() : "";
   const today = new Date().toLocaleDateString("id-ID", {
     weekday: "long",
     day: "numeric",
@@ -72,13 +66,17 @@ export default function DashboardHeader({ viewMode, onViewModeChange }: Props) {
         <div className="flex items-center gap-2">
           <div className="text-right hidden sm:block">
             <p className="text-black text-xs font-semibold leading-tight">
-              {user?.pegawai.nama}
+              {nama}
             </p>
             <p className="text-zinc-400 text-[10px] leading-tight">
-              {user?.role}
+              {user?.role ?? ""}
             </p>
           </div>
-          <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
+              initial ? "bg-emerald-500" : "bg-zinc-200"
+            }`}
+          >
             {initial}
           </div>
         </div>
