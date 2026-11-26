@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, X } from "lucide-react";
+import { Eye, Pencil, Plus, X } from "lucide-react";
+import { Can } from "@/components/base/can";
 import AppLayout from "@/components/app-layout";
 import { DataTable, type ColumnDef } from "@/components/base/data-table";
+import { useCan } from "@/hooks/use-can";
 import type { JadwalTrainingListItem } from "@/lib/types/jadwal-training";
 import { UKURAN_HALAMAN, useJadwalManage } from "./manage";
 
@@ -22,6 +24,8 @@ function tanggal(iso: string | null) {
 export default function JadwalTrainingContainer() {
   const router = useRouter();
   const m = useJadwalManage();
+  const canUpdate = useCan("training", "update");
+  const canDelete = useCan("training", "delete");
 
   const columns: ColumnDef<JadwalTrainingListItem>[] = [
     {
@@ -99,17 +103,17 @@ export default function JadwalTrainingContainer() {
       render: (v) => (v ? String(v) : <span className="text-zinc-300">-</span>),
     },
     {
-      key: "edit",
-      label: "Edit",
+      key: "aksi",
+      label: "Aksi",
       headerClassName: "text-center",
       className: "text-center",
-      render: (_v, row) => (
+      render: (_v, row) => (canUpdate || canDelete) && (
         <button
           onClick={() => router.push(`/training/jadwal/edit/${row.noJadwal}`)}
-          aria-label={`Edit jadwal ${row.noJadwal}`}
+          aria-label={`${canUpdate ? "Edit" : "Lihat"} jadwal ${row.noJadwal}`}
           className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-500 transition-colors"
         >
-          <Pencil className="w-3.5 h-3.5" />
+          {canUpdate ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         </button>
       ),
     },
@@ -200,13 +204,15 @@ export default function JadwalTrainingContainer() {
             </div>
           }
           actionSlot={
-            <button
-              onClick={() => router.push("/training/jadwal/tambah")}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Tambah Jadwal Training
-            </button>
+            <Can modul="training" aksi="create">
+              <button
+                onClick={() => router.push("/training/jadwal/tambah")}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Tambah Jadwal Training
+              </button>
+            </Can>
           }
         />
       </div>

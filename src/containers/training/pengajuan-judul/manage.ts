@@ -105,6 +105,7 @@ export function usePengajuanManage() {
 
   return {
     ...resource,
+    isEdit: editId !== null,
     modalOpen,
     // Null saat mode tambah, dan juga selama detail belum tiba — supaya
     // formulir tidak sempat menampilkan data baris sebelumnya.

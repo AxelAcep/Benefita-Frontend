@@ -129,6 +129,7 @@ export function useTrainerManage() {
 
   return {
     ...resource,
+    isEdit: selectedId !== null,
     status: resource.filter.status ?? "",
     setStatus: (v: string) => resource.setFilter("status", v),
     detailOpen,

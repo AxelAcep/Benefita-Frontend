@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import { useCan } from "@/hooks/use-can";
 import Notification from "@/components/base/notifications";
 import { SelectInput, TextInput } from "@/components/base/form-field";
 import { usePesertaUjiDetailManage } from "./manage";
@@ -74,6 +75,7 @@ export default function PesertaUjiDetailContainer() {
   const router = useRouter();
   const m = usePesertaUjiDetailManage();
   const { assign, hasil } = m;
+  const canUpdate = useCan("training", "update");
 
   return (
     <AppLayout
@@ -128,10 +130,10 @@ export default function PesertaUjiDetailContainer() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                assign.simpan();
+                if (canUpdate) assign.simpan();
               }}
             >
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <fieldset disabled={!canUpdate} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <SelectInput
                   label="TUK"
                   optional
@@ -161,11 +163,13 @@ export default function PesertaUjiDetailContainer() {
                   value={assign.tglUji}
                   onChange={(e) => assign.setTglUji(e.target.value)}
                 />
-              </div>
+              </fieldset>
 
-              <div className="flex justify-end mt-5">
-                <TombolSimpan saving={assign.saving} label="Simpan" />
-              </div>
+              {canUpdate && (
+                <div className="flex justify-end mt-5">
+                  <TombolSimpan saving={assign.saving} label="Simpan" />
+                </div>
+              )}
             </form>
           </Kartu>
 
@@ -173,10 +177,10 @@ export default function PesertaUjiDetailContainer() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                hasil.simpan();
+                if (canUpdate) hasil.simpan();
               }}
             >
-              <div className="space-y-4">
+              <fieldset disabled={!canUpdate} className="space-y-4">
                 <div>
                   <p className="block text-[11px] font-semibold text-zinc-500 mb-1.5">
                     Hasil
@@ -227,11 +231,13 @@ export default function PesertaUjiDetailContainer() {
                     />
                   </div>
                 )}
-              </div>
+              </fieldset>
 
-              <div className="flex justify-end mt-5">
-                <TombolSimpan saving={hasil.saving} label="Simpan Hasil" />
-              </div>
+              {canUpdate && (
+                <div className="flex justify-end mt-5">
+                  <TombolSimpan saving={hasil.saving} label="Simpan Hasil" />
+                </div>
+              )}
             </form>
           </Kartu>
         </div>

@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Newspaper, Send } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import { TrainingAccess } from "@/containers/training/access";
 import { SelectInput, TextArea, TextInput } from "@/components/base/form-field";
 import { useBeritaAction, useBeritaById } from "@/hooks/use-berita";
 
@@ -34,9 +35,18 @@ const STATUS_OPSI = [
 ];
 
 export default function BeritaFormContainer() {
-  const router = useRouter();
   const params = useParams<{ id?: string }>();
   const id = params?.id ?? null;
+
+  return (
+    <TrainingAccess aksi={id ? "update" : "create"}>
+      <BeritaForm id={id} />
+    </TrainingAccess>
+  );
+}
+
+function BeritaForm({ id }: { id: string | null }) {
+  const router = useRouter();
   const isEdit = Boolean(id);
 
   const { data: detail, loading: detailLoading } = useBeritaById(id);

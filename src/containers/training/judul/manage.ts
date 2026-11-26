@@ -130,6 +130,7 @@ export function useJudulManage() {
 
   return {
     ...resource,
+    isEdit: editRow !== null,
     downloadJadwal,
     tipeList,
     draftTipe,

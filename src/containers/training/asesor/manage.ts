@@ -91,6 +91,7 @@ export function useAsesorManage() {
 
   return {
     ...resource,
+    isEdit: editId !== null,
     ...hapus,
     modalOpen,
     editValues,

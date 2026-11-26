@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Newspaper, Pencil, Plus } from "lucide-react";
+import { Can } from "@/components/base/can";
 import AppLayout from "@/components/app-layout";
 import { DataTable, type ColumnDef } from "@/components/base/data-table";
 import { tanggalBerita, type Berita } from "@/lib/types/berita";
@@ -63,13 +64,15 @@ export default function BeritaContainer() {
       headerClassName: "w-16 text-right",
       className: "text-right",
       render: (_v, row) => (
-        <button
-          onClick={() => router.push(`/training/berita/edit/${row.id}`)}
-          aria-label="Edit berita"
-          className="p-1.5 rounded-lg hover:bg-zinc-100 text-emerald-500 transition-colors"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
+        <Can modul="training" aksi="update">
+          <button
+            onClick={() => router.push(`/training/berita/edit/${row.id}`)}
+            aria-label="Edit berita"
+            className="p-1.5 rounded-lg hover:bg-zinc-100 text-emerald-500 transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+        </Can>
       ),
     },
   ];
@@ -102,13 +105,15 @@ export default function BeritaContainer() {
         // jadi tabelnya terlihat kosong seolah tidak ada data.
         isLoading={m.loading}
         actionSlot={
-          <button
-            onClick={() => router.push("/training/berita/tambah")}
-            className="flex sm:inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors whitespace-nowrap"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Tambah Berita
-          </button>
+          <Can modul="training" aksi="create">
+            <button
+              onClick={() => router.push("/training/berita/tambah")}
+              className="flex sm:inline-flex w-full sm:w-auto items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors whitespace-nowrap"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Tambah Berita
+            </button>
+          </Can>
         }
         filterSlot={
           <div className="flex items-center gap-2">

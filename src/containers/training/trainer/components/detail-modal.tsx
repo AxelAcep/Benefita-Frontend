@@ -39,7 +39,7 @@ function Baris({ label, value }: { label: string; value?: React.ReactNode }) {
 export interface TrainerDetailModalProps {
   open: boolean;
   onClose: () => void;
-  onEdit: () => void;
+  onEdit?: () => void;
   data: Trainer | null;
   loading?: boolean;
 }
@@ -67,14 +67,16 @@ export function TrainerDetailModal({
           >
             Tutup
           </button>
-          <button
-            type="button"
-            onClick={onEdit}
-            disabled={!data}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50"
-          >
-            Edit Data
-          </button>
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              disabled={!data}
+              className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50"
+            >
+              Edit Data
+            </button>
+          )}
         </>
       }
     >

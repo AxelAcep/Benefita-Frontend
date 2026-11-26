@@ -26,6 +26,7 @@ import {
 import { Icons } from "@/assets";
 // Tambah useAuth di import
 import { useAuth } from "@/context/AuthContext";
+import { useCan } from "@/hooks/use-can";
 
 // Di dalam component Sidebar(), tambah:
 // ---------------------------------------------------------------------------
@@ -43,6 +44,7 @@ interface NavItem {
   href?: string;
   icon: React.ElementType;
   children?: NavChild[];
+  requiresTrainingRead?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +227,7 @@ const navItems: NavItem[] = [
   {
     label: "Training",
     icon: GraduationCap,
+    requiresTrainingRead: true,
     children: [
       { label: "Kebutuhan Training per Customer", href: "/training/customer" },
       { label: "Manajemen Berita", href: "/training/berita" },
@@ -238,6 +241,7 @@ const navItems: NavItem[] = [
   {
     label: "LSP",
     icon: BadgeCheck,
+    requiresTrainingRead: true,
     children: [
       { label: "Input TUK", href: "/training/tuk" },
       { label: "Input Asesor", href: "/training/asesor" },
@@ -277,6 +281,7 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { logout: handleLogout } = useAuth();
+  const canReadTraining = useCan("training", "read");
 
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
@@ -420,6 +425,10 @@ export default function Sidebar() {
           className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto"
         >
           {navItems.map((item) => {
+            if (item.requiresTrainingRead && !canReadTraining) {
+              return null;
+            }
+
             const Icon = item.icon;
             const active = isParentActive(item);
             const isOpen = openMenus[item.label] ?? active;

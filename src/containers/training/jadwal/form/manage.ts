@@ -10,7 +10,7 @@
  * where: { noJadwal }.
  */
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   createJadwalTraining,
   deleteJadwalTraining,
@@ -39,10 +39,8 @@ const keAngka = (v: string | undefined) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-export function useJadwalFormManage() {
+export function useJadwalFormManage(noJadwalAsli: string | null) {
   const router = useRouter();
-  const params = useParams<{ id?: string }>();
-  const noJadwalAsli = params?.id ?? null;
   const isEdit = Boolean(noJadwalAsli);
 
   const { data: detail, loading: detailLoading } =

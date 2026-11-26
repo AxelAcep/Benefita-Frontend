@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight, ClipboardList } from "lucide-react";
 import AppLayout from "@/components/app-layout";
+import { useCan } from "@/hooks/use-can";
 import Notification from "@/components/base/notifications";
 import SearchInput from "@/components/base/search-input";
 import { TablePagination } from "@/components/base/table-pagination";
@@ -64,6 +65,7 @@ const TD = "px-3 py-3 text-zinc-600 align-top";
 
 export default function PesertaUjiContainer() {
   const m = usePesertaUjiManage();
+  const canUpdate = useCan("training", "update");
   const jumlahKolom = 10 + CHECKLIST_FIELDS.length;
 
   return (
@@ -209,9 +211,10 @@ export default function PesertaUjiContainer() {
                         <input
                           type="checkbox"
                           checked={row[f]}
+                          disabled={!canUpdate}
                           onChange={() => m.toggle(row, f)}
                           aria-label={`${LABEL_CHECKLIST[f].lengkap} — ${row.nama}`}
-                          className="w-3.5 h-3.5 rounded border-zinc-300 text-emerald-500 focus:ring-emerald-200 cursor-pointer"
+                          className="w-3.5 h-3.5 rounded border-zinc-300 text-emerald-500 focus:ring-emerald-200 cursor-pointer disabled:cursor-default"
                         />
                       </td>
                     ))}

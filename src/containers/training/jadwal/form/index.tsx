@@ -8,12 +8,16 @@
  * penanganan berkas agenda yang sudah terpasang.
  */
 import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarDays, Loader2, Paperclip, Save, Trash2, X } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import ConfirmModal from "@/components/base/confirm-modal";
+import { Can } from "@/components/base/can";
+import { TrainingAccess } from "@/containers/training/access";
+import { useCan } from "@/hooks/use-can";
 import { JudulTrainingSelect } from "@/components/base/JudulTrainingSelect";
 import { TrainerSelect } from "@/components/base/TrainerSelect";
 import {
@@ -27,7 +31,20 @@ import { jadwalSchema, NILAI_KOSONG, type JadwalFormValues } from "./form-schema
 import { useJadwalFormManage } from "./manage";
 
 export default function JadwalFormContainer() {
-  const m = useJadwalFormManage();
+  const params = useParams<{ id?: string }>();
+  const noJadwal = params?.id ?? null;
+  const canUpdate = useCan("training", "update");
+  const aksi = noJadwal ? (canUpdate ? "update" : "delete") : "create";
+
+  return (
+    <TrainingAccess aksi={aksi}>
+      <JadwalForm noJadwal={noJadwal} readOnly={aksi === "delete"} />
+    </TrainingAccess>
+  );
+}
+
+function JadwalForm({ noJadwal, readOnly }: { noJadwal: string | null; readOnly: boolean }) {
+  const m = useJadwalFormManage(noJadwal);
   const fileRef = useRef<HTMLInputElement>(null);
   const [namaBerkas, setNamaBerkas] = useState<string | null>(null);
 
@@ -55,6 +72,7 @@ export default function JadwalFormContainer() {
 
   const sedangProses = m.saving || m.detailLoading;
   const urlAgendaLama = urlFileAgenda(m.detail?.fileAgenda ?? null);
+  const judulForm = readOnly ? "Detail Jadwal" : m.isEdit ? "Edit Jadwal" : "Tambah Jadwal";
 
   const opsi = (daftar: string[]) =>
     daftar.map((v) => ({ value: v, label: v }));
@@ -64,7 +82,7 @@ export default function JadwalFormContainer() {
       breadcrumbs={[
         { label: "Training", href: "/training" },
         { label: "Manajemen Jadwal Training", href: "/training/jadwal" },
-        { label: m.isEdit ? "Edit Jadwal" : "Tambah Jadwal" },
+        { label: judulForm },
       ]}
     >
       {m.notif && (
@@ -84,31 +102,33 @@ export default function JadwalFormContainer() {
             </div>
             <div>
               <p className="font-bold text-zinc-800 text-sm">
-                {m.isEdit ? "Edit Jadwal Training" : "Tambah Jadwal Training"}
+                {judulForm} Training
               </p>
-              <p className="text-[11px] text-zinc-400 mt-0.5">
-                {m.isEdit
-                  ? "Ubah data jadwal di bawah ini"
-                  : "Lengkapi data jadwal di bawah ini"}
-              </p>
+              {!readOnly && (
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  {m.isEdit ? "Ubah data jadwal di bawah ini" : "Lengkapi data jadwal di bawah ini"}
+                </p>
+              )}
             </div>
           </div>
 
           {m.isEdit && (
-            <button
-              type="button"
-              onClick={m.bukaKonfirmasiHapus}
-              disabled={sedangProses || m.deleting}
-              className="px-3 py-2 rounded-xl text-xs font-semibold border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Hapus
-            </button>
+            <Can modul="training" aksi="delete">
+              <button
+                type="button"
+                onClick={m.bukaKonfirmasiHapus}
+                disabled={sedangProses || m.deleting}
+                className="px-3 py-2 rounded-xl text-xs font-semibold border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Hapus
+              </button>
+            </Can>
           )}
         </div>
 
-        <form onSubmit={handleSubmit(m.simpan)}>
-          <div className="px-6 py-6 space-y-5">
+        <form onSubmit={readOnly ? (event) => event.preventDefault() : handleSubmit(m.simpan)}>
+          <fieldset disabled={readOnly} className="min-w-0 px-6 py-6 space-y-5">
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <TextInput
                 label="No. Jadwal"
@@ -312,7 +332,7 @@ export default function JadwalFormContainer() {
                 )}
               </div>
             </Field>
-          </div>
+          </fieldset>
 
           <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-zinc-100">
             <button
@@ -321,37 +341,41 @@ export default function JadwalFormContainer() {
               disabled={sedangProses}
               className="px-4 py-2 rounded-xl text-xs font-semibold border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors disabled:opacity-50"
             >
-              Batal
+              {readOnly ? "Kembali" : "Batal"}
             </button>
-            <button
-              type="submit"
-              disabled={sedangProses}
-              className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 min-w-[130px] justify-center"
-            >
-              {sedangProses ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Menyimpan...
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5" />
-                  {m.isEdit ? "Simpan Perubahan" : "Simpan Jadwal"}
-                </>
-              )}
-            </button>
+            {!readOnly && (
+              <button
+                type="submit"
+                disabled={sedangProses}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 min-w-[130px] justify-center"
+              >
+                {sedangProses ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    {m.isEdit ? "Simpan Perubahan" : "Simpan Jadwal"}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </form>
       </div>
 
-      <ConfirmModal
-        isOpen={m.konfirmasiHapus}
-        title="Hapus Jadwal Training"
-        message={`Jadwal ${m.noJadwalAsli ?? ""} akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`}
-        onConfirm={m.hapus}
-        onCancel={m.tutupKonfirmasiHapus}
-        loading={m.deleting}
-      />
+      <Can modul="training" aksi="delete">
+        <ConfirmModal
+          isOpen={m.konfirmasiHapus}
+          title="Hapus Jadwal Training"
+          message={`Jadwal ${m.noJadwalAsli ?? ""} akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.`}
+          onConfirm={m.hapus}
+          onCancel={m.tutupKonfirmasiHapus}
+          loading={m.deleting}
+        />
+      </Can>
     </AppLayout>
   );
 }

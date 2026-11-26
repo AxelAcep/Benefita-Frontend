@@ -1,5 +1,6 @@
 "use client";
 
+import { Can } from "@/components/base/can";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { DataTable, type ColumnDef } from "@/components/base/data-table";
@@ -67,14 +68,16 @@ export default function JudulTrainingContainer() {
         const url = urlBrosur(row.brosur);
         return (
           <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={() => m.openEdit(row)}
-              aria-label={`Edit ${row.kode}`}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 hover:text-emerald-600 transition-colors"
-            >
-              <Pencil className="w-3 h-3" />
-              edit
-            </button>
+            <Can modul="training" aksi="update">
+              <button
+                onClick={() => m.openEdit(row)}
+                aria-label={`Edit ${row.kode}`}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 hover:text-emerald-600 transition-colors"
+              >
+                <Pencil className="w-3 h-3" />
+                edit
+              </button>
+            </Can>
             {url ? (
               <a
                 href={url}
@@ -182,13 +185,15 @@ export default function JudulTrainingContainer() {
                 </button>
               )}
 
-              <button
-                onClick={m.openAdd}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors inline-flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Tambah
-              </button>
+              <Can modul="training" aksi="create">
+                <button
+                  onClick={m.openAdd}
+                  className="h-8 px-3 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors inline-flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Tambah
+                </button>
+              </Can>
             </div>
           }
           actionSlot={
@@ -203,15 +208,17 @@ export default function JudulTrainingContainer() {
         />
       </div>
 
-      <JudulForm
-        open={m.modalOpen}
-        onClose={m.closeModal}
-        onSubmit={m.save}
-        initialData={m.formValues}
-        isLoading={m.isSaving}
-        tipeList={m.tipeList}
-        brosurLama={m.brosurLama}
-      />
+      <Can modul="training" aksi={m.isEdit ? "update" : "create"}>
+        <JudulForm
+          open={m.modalOpen}
+          onClose={m.closeModal}
+          onSubmit={m.save}
+          initialData={m.formValues}
+          isLoading={m.isSaving}
+          tipeList={m.tipeList}
+          brosurLama={m.brosurLama}
+        />
+      </Can>
     </AppLayout>
   );
 }

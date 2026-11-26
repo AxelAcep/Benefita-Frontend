@@ -107,6 +107,7 @@ export function useTUKManage() {
 
   return {
     ...resource,
+    isEdit: editId !== null,
     ...hapus,
     modalOpen,
     editValues,

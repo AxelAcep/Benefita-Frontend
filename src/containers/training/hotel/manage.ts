@@ -119,6 +119,7 @@ export function useHotelManage() {
 
   return {
     ...resource,
+    isEdit: editKode !== null,
     ...hapus,
     kotaList,
     kota: resource.filter.kota ?? "",

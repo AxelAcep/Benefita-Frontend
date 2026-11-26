@@ -1,5 +1,7 @@
 "use client";
 
+import { useCan } from "@/hooks/use-can";
+import { Can } from "@/components/base/can";
 import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import { DataTable, type ColumnDef } from "@/components/base/data-table";
@@ -13,6 +15,7 @@ const BATAS_TAG = 8;
 
 export default function TrainerContainer() {
   const m = useTrainerManage();
+  const canUpdate = useCan("training", "update");
 
   const columns: ColumnDef<Trainer>[] = [
     {
@@ -104,14 +107,16 @@ export default function TrainerContainer() {
           >
             Lihat Detail →
           </button>
-          <button
-            onClick={() => m.openEdit(row)}
-            aria-label={`Edit ${row.nama}`}
-            title="Edit"
-            className="text-zinc-500 hover:text-emerald-600 transition-colors"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
+          <Can modul="training" aksi="update">
+            <button
+              onClick={() => m.openEdit(row)}
+              aria-label={`Edit ${row.nama}`}
+              title="Edit"
+              className="text-zinc-500 hover:text-emerald-600 transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          </Can>
         </div>
       ),
     },
@@ -154,13 +159,15 @@ export default function TrainerContainer() {
                 <option value="aktif">Aktif</option>
                 <option value="nonaktif">Nonaktif</option>
               </select>
-              <button
-                onClick={m.openAdd}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Tambah Data Trainer
-              </button>
+              <Can modul="training" aksi="create">
+                <button
+                  onClick={m.openAdd}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Tambah Data Trainer
+                </button>
+              </Can>
             </div>
           }
         />
@@ -168,18 +175,20 @@ export default function TrainerContainer() {
         <TrainerDetailModal
           open={m.detailOpen}
           onClose={m.closeDetail}
-          onEdit={m.detailKeEdit}
+          onEdit={canUpdate ? m.detailKeEdit : undefined}
           data={m.detail}
           loading={m.detailLoading}
         />
 
-        <TrainerForm
-          open={m.formOpen}
-          onClose={m.closeForm}
-          onSubmit={m.save}
-          initialData={m.formValues}
-          isLoading={m.isSaving}
-        />
+        <Can modul="training" aksi={m.isEdit ? "update" : "create"}>
+          <TrainerForm
+            open={m.formOpen}
+            onClose={m.closeForm}
+            onSubmit={m.save}
+            initialData={m.formValues}
+            isLoading={m.isSaving}
+          />
+        </Can>
       </div>
     </AppLayout>
   );
