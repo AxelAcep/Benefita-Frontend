@@ -62,8 +62,10 @@ async function request<T>(
   init: RequestInit,
   pesanGagal: string,
   params?: ListParams,
+  authenticated = true,
 ): Promise<T> {
-  const res = await fetchWithAuth(buildUrl(path, params), init);
+  const url = buildUrl(path, params);
+  const res = await (authenticated ? fetchWithAuth(url, init) : fetch(url, init));
 
   // Endpoint DELETE kadang membalas 204 tanpa isi; jangan paksa json().
   const teks = await res.text();
@@ -149,6 +151,17 @@ export async function apiGet<T>(
   pesanGagal = "Gagal mengambil data.",
 ): Promise<T> {
   return buka<T>(await apiGetResponse<unknown>(path, params, pesanGagal));
+}
+
+/** Jalur formulir publik: tidak membaca token atau mencoba memperbarui sesi. */
+export async function apiPublic<T>(
+  path: string,
+  options: { method?: "GET" | "POST" | "PATCH"; payload?: unknown; params?: ListParams },
+  pesanGagal: string,
+): Promise<T> {
+  const { method = "GET", payload, params } = options;
+  const init = method === "GET" ? { method } : jsonInit(method, payload);
+  return buka<T>(await request<unknown>(path, init, pesanGagal, params, false));
 }
 
 export async function apiPost<T>(

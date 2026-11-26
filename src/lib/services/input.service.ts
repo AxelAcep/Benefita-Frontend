@@ -1,3 +1,4 @@
+import { apiPublic } from "@/lib/api/client";
 import { apiDelete, apiGet, apiGetResponse, apiPatch, apiPost, apiPostForm, apiPutForm, keFormData } from "@/lib/api/client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -136,40 +137,26 @@ export interface UpdateBiodataPesertaRequest {
 /**
  * GET BIODATA PESERTA (public form - sebelum diisi)
  */
-export async function getBiodataPeserta(id: string): Promise<BiodataPeserta> {
-  const res = await fetch(`${API_URL}/api/input/peserta/${id}/biodata`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil biodata peserta");
-  }
-
-  return data.data;
+export function getBiodataPeserta(id: string): Promise<BiodataPeserta> {
+  return apiPublic<BiodataPeserta>(
+    `/api/input/peserta/${encodeURIComponent(id)}/biodata`,
+    {},
+    "Gagal mengambil biodata peserta",
+  );
 }
 
 /**
  * UPDATE BIODATA PESERTA (public form - trainer isi/benerin)
  */
-export async function updateBiodataPeserta(
+export function updateBiodataPeserta(
   id: string,
   payload: UpdateBiodataPesertaRequest,
 ): Promise<PesertaTraining> {
-  const res = await fetch(`${API_URL}/api/input/peserta/${id}/biodata`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengupdate biodata peserta");
-  }
-
-  return data.data;
+  return apiPublic<PesertaTraining>(
+    `/api/input/peserta/${encodeURIComponent(id)}/biodata`,
+    { method: "PATCH", payload },
+    "Gagal mengupdate biodata peserta",
+  );
 }
 
 /**
