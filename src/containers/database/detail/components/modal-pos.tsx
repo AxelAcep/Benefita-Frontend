@@ -39,7 +39,7 @@ export default function ModalKirimPos({ noInduk, onClose }: Props) {
 
   const handleCreateSaveClick = () => setConfirmAction({ type: "create" });
   const handleCreateSaveConfirm = async () => {
-    if (!newRow?.nama || !newRow?.jabatan || !newRow?.acc) return;
+    if (!newRow?.nama || !newRow?.jabatan) return;
     setSaving(true);
     try {
       await create({ ...newRow });
@@ -55,7 +55,7 @@ export default function ModalKirimPos({ noInduk, onClose }: Props) {
     setEditForm({
       nama: row.nama,
       jabatan: row.jabatan,
-      acc: row.acc,
+      acc: row.acc ?? "",
       followUp: row.followUp ?? "",
     });
   };
@@ -204,7 +204,7 @@ export default function ModalKirimPos({ noInduk, onClose }: Props) {
                             {row.jabatan}
                           </td>
                           <td className="px-3 py-2 text-xs text-zinc-600">
-                            {row.acc}
+                            {row.acc ?? "-"}
                           </td>
                           <td className="px-3 py-2">
                             <div className="flex items-center gap-1">

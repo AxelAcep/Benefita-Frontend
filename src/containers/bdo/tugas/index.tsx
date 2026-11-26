@@ -1,55 +1,102 @@
 "use client";
 
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import AppLayout from "@/components/app-layout";
 import { DataTable, type ColumnDef } from "@/components/base/data-table";
-import type { TugasPelaporan } from "./data";
+import { jenisTugas, type Tugas } from "@/lib/types/bdo";
 import { TugasForm } from "./form";
 import { useTugasManage } from "./manage";
 
 const JUDUL = "Tugas dan Pelaporan";
+
 const formatTanggal = new Intl.DateTimeFormat("id-ID", {
   day: "2-digit",
   month: "long",
   year: "numeric",
-  timeZone: "UTC",
+  timeZone: "Asia/Jakarta",
 });
+
+const tanggal = (nilai: string | null) =>
+  nilai ? formatTanggal.format(new Date(nilai)) : "-";
 
 export default function TugasContainer() {
   const m = useTugasManage();
-  const columns: ColumnDef<TugasPelaporan>[] = [
+
+  const columns: ColumnDef<Tugas>[] = [
     {
       key: "no",
       label: "No",
-      render: (_value, _row, i) => (m.page - 1) * m.pageSize + i + 1,
+      render: (_v, _row, i) => (m.page - 1) * 10 + i + 1,
     },
     {
-      key: "tanggal",
+      key: "tanggalInput",
       label: "Tanggal",
-      render: (_value, row) => formatTanggal.format(new Date(row.tanggal)),
+      render: (_v, row) => tanggal(row.tanggalInput),
     },
     { key: "kegiatan", label: "Kegiatan", className: "whitespace-normal" },
-    { key: "pic", label: "PIC" },
+    {
+      key: "pic",
+      label: "PIC",
+      // picNama menyimpan nama mentah data lama, dipakai bila pegawainya
+      // tidak ketemu saat migrasi.
+      render: (_v, row) => row.pic?.nama ?? row.picNama ?? "-",
+    },
     {
       key: "dueDate",
       label: "Tenggat",
-      render: (_value, row) => row.dueDate ? formatTanggal.format(new Date(row.dueDate)) : "-",
+      render: (_v, row) => tanggal(row.dueDate),
     },
-    { key: "penerimaLaporan", label: "Penerima Laporan" },
-    { key: "status", label: "Status" },
+    {
+      key: "penerima",
+      label: "Penerima Laporan",
+      render: (_v, row) => row.penerima?.nama ?? row.penerimaNama ?? "-",
+    },
+    {
+      key: "jenis",
+      label: "Jenis",
+      render: (_v, row) => jenisTugas(row),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (_v, row) => (
+        <span
+          className={
+            row.selesai
+              ? "rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-600"
+              : "rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
+          }
+        >
+          {row.selesai ? "Selesai" : "Berjalan"}
+        </span>
+      ),
+    },
     {
       key: "aksi",
       label: "Aksi",
-      render: (_value, row) => (
-        <button
-          type="button"
-          aria-label={`Edit ${row.kegiatan}`}
-          title="Edit"
-          onClick={() => m.openForm(row)}
-          className="text-zinc-500 hover:text-emerald-600"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
+      render: (_v, row) => (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={`Edit ${row.kegiatan}`}
+            title="Edit"
+            onClick={() => m.openForm(row)}
+            className="text-zinc-500 hover:text-emerald-600"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            aria-label={`Hapus ${row.kegiatan}`}
+            title="Hapus"
+            onClick={() => {
+              if (confirm(`Hapus tugas "${row.kegiatan}"?`)) m.remove?.(row.id);
+            }}
+            className="text-zinc-500 hover:text-red-600"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -58,19 +105,25 @@ export default function TugasContainer() {
     <AppLayout breadcrumbs={[{ label: "BDO" }, { label: JUDUL }]}>
       <div className="mb-4">
         <h1 className="text-lg font-semibold">{JUDUL}</h1>
-        <p className="text-sm text-zinc-500">Ini data contoh. Perubahan hilang saat halaman dimuat ulang.</p>
+        <p className="text-sm text-zinc-500">
+          Tugas yang masih berjalan juga muncul sebagai pengingat di dashboard.
+        </p>
       </div>
+
+      {m.error ? <p className="mb-3 text-sm text-red-600">{m.error}</p> : null}
+
       <DataTable
         columns={columns}
         data={m.data}
+        isLoading={m.loading}
         totalData={m.total}
         currentPage={m.page}
         totalPages={m.totalPages}
-        pageSize={m.pageSize}
+        pageSize={10}
         onPageChange={m.setPage}
         searchValue={m.search}
-        onSearchChange={m.changeSearch}
-        searchPlaceholder="Cari kegiatan, PIC, atau status..."
+        onSearchChange={m.setSearch}
+        searchPlaceholder="Cari kegiatan, PIC, atau penerima..."
         actionSlot={
           <button
             type="button"
@@ -82,6 +135,7 @@ export default function TugasContainer() {
           </button>
         }
       />
+
       <TugasForm
         open={m.modalOpen}
         initialData={m.formValues}

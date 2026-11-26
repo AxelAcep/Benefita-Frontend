@@ -1,31 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { DATA_CONTOH } from "./data";
+import { useResource } from "@/hooks/use-resource";
+import { asapService } from "@/lib/services/bdo.service";
+import type { Asap, CreateAsapRequest, UpdateAsapRequest } from "@/lib/types/bdo";
 
-const PAGE_SIZE = 10;
-
+/**
+ * Daftar ASAP. Penyaringan menurut pegawai yang login dikerjakan backend,
+ * jadi di sini tidak ada logika hak akses.
+ */
 export function useAsapManage() {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const query = search.trim().toLowerCase();
-
-  const filtered = DATA_CONTOH.filter(({ perusahaan, asap, akun }) =>
-    [perusahaan, asap, akun].some((value) => value.toLowerCase().includes(query)),
+  return useResource<Asap, string, CreateAsapRequest, UpdateAsapRequest>(
+    asapService,
+    { limit: 10, filter: { kategori: "", status: "" }, pesanGagal: "Gagal mengambil data ASAP." },
   );
-  const start = (page - 1) * PAGE_SIZE;
-
-  return {
-    data: filtered.slice(start, start + PAGE_SIZE),
-    total: filtered.length,
-    totalPages: Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)),
-    page,
-    pageSize: PAGE_SIZE,
-    setPage,
-    search,
-    changeSearch(value: string) {
-      setSearch(value);
-      setPage(1);
-    },
-  };
 }

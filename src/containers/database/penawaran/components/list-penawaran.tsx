@@ -103,6 +103,9 @@ export default function ListPenawaran({
                 Tanggal
               </th>
               <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">
+                No. Surat
+              </th>
+              <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">
                 Kode
               </th>
               <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-right">
@@ -114,7 +117,7 @@ export default function ListPenawaran({
             {loading ? (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="text-center py-6 text-xs text-zinc-400"
                 >
                   Memuat...
@@ -123,7 +126,7 @@ export default function ListPenawaran({
             ) : paginated.length === 0 ? (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="text-center py-6 text-xs text-zinc-400"
                 >
                   Tidak ada data.
@@ -140,6 +143,9 @@ export default function ListPenawaran({
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-600">
                     {new Date(row.tanggal).toISOString().split("T")[0]}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-zinc-600">
+                    {row.noSurat ?? "-"}
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-700 font-medium">
                     {row.kodePelatihan.join(" | ")}

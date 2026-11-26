@@ -1,40 +1,39 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DATA_CONTOH, type TugasPelaporan } from "./data";
+import { useResource } from "@/hooks/use-resource";
+import { tugasService } from "@/lib/services/bdo.service";
+import type { CreateTugasRequest, Tugas, UpdateTugasRequest } from "@/lib/types/bdo";
 import type { TugasFormValues } from "./form";
 
-const PAGE_SIZE = 10;
-
-function tanggalHariIni() {
-  const sekarang = new Date();
-  const bulan = String(sekarang.getMonth() + 1).padStart(2, "0");
-  const hari = String(sekarang.getDate()).padStart(2, "0");
-
-  return `${sekarang.getFullYear()}-${bulan}-${hari}`;
-}
-
+/**
+ * Daftar Tugas. Penyaringan menurut pegawai yang login dikerjakan backend:
+ * selain SUPER_ADMIN, seseorang hanya menerima tugas yang dia jadi PIC-nya
+ * atau yang dilaporkan kepadanya.
+ */
 export function useTugasManage() {
-  const [data, setData] = useState(DATA_CONTOH);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<TugasPelaporan | null>(null);
+  const resource = useResource<Tugas, string, CreateTugasRequest, UpdateTugasRequest>(
+    tugasService,
+    { limit: 10, pesanGagal: "Gagal mengambil data tugas." },
+  );
 
-  const formValues = useMemo(() => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Tugas | null>(null);
+
+  const formValues = useMemo<TugasFormValues | null>(() => {
     if (!editTarget) return null;
-    const { status, pic, dueDate, penerimaLaporan, kegiatan } = editTarget;
 
     return {
-      status,
-      pic,
-      dueDate: dueDate ?? "",
-      penerimaLaporan: penerimaLaporan ?? "",
-      kegiatan,
+      status: editTarget.selesai ? "Selesai" : "Berjalan",
+      picId: editTarget.picId ?? "",
+      // Input type=date hanya menerima yyyy-mm-dd.
+      dueDate: editTarget.dueDate ? editTarget.dueDate.slice(0, 10) : "",
+      penerimaId: editTarget.penerimaId ?? "",
+      kegiatan: editTarget.kegiatan,
     };
   }, [editTarget]);
 
-  function openForm(row: TugasPelaporan | null) {
+  function openForm(row: Tugas | null) {
     setEditTarget(row);
     setModalOpen(true);
   }
@@ -44,49 +43,20 @@ export function useTugasManage() {
     setEditTarget(null);
   }
 
-  function save(values: TugasFormValues) {
-    const fields = {
-      ...values,
+  async function save(values: TugasFormValues) {
+    const payload = {
+      kegiatan: values.kegiatan,
+      picId: values.picId || null,
+      penerimaId: values.penerimaId || null,
       dueDate: values.dueDate || null,
-      penerimaLaporan: values.penerimaLaporan || null,
+      selesai: values.status === "Selesai",
     };
 
-    if (editTarget) {
-      setData((rows) =>
-        rows.map((row) => row.id === editTarget.id ? { ...row, ...fields } : row),
-      );
-    } else {
-      const tanggal = tanggalHariIni();
-      setData((rows) => [{ id: rows.length + 1, tanggal, ...fields }, ...rows]);
-      setSearch("");
-    }
+    if (editTarget) await resource.update?.(editTarget.id, payload);
+    else await resource.create?.(payload);
 
-    setPage(1);
     closeForm();
   }
 
-  const query = search.trim().toLowerCase();
-  const filtered = data.filter(({ kegiatan, pic, status }) =>
-    [kegiatan, pic, status].some((value) => value.toLowerCase().includes(query)),
-  );
-  const start = (page - 1) * PAGE_SIZE;
-
-  return {
-    data: filtered.slice(start, start + PAGE_SIZE),
-    total: filtered.length,
-    totalPages: Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)),
-    page,
-    pageSize: PAGE_SIZE,
-    setPage,
-    search,
-    changeSearch(value: string) {
-      setSearch(value);
-      setPage(1);
-    },
-    modalOpen,
-    formValues,
-    openForm,
-    closeForm,
-    save,
-  };
+  return { ...resource, modalOpen, formValues, openForm, closeForm, save, editTarget };
 }

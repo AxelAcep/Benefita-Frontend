@@ -4,7 +4,7 @@ import type { GetPerusahaanPrioritasResponse, PerusahaanPrioritasParams } from "
 import type { GetPerusahaanVendorResponse, PerusahaanVendorParams } from "@/lib/types/perusahaan-vendor";
 import type { GetPerusahaanByAlamatResponse, PerusahaanByAlamatParams } from "@/lib/types/perusahaan-berdasarkan-alamat";
 import type { GetPerusahaanProperResponse, PerusahaanProperParams } from "@/lib/types/perusahaan-proper";
-import { apiGetResponse } from "@/lib/api/client";
+import { apiGetResponse, apiList, apiGet, apiPost, apiPut, apiDelete } from "@/lib/api/client";
 import type { GetPerusahaanTbkResponse } from "@/lib/types/perusahaan-tbk";
 import { fetchWithAuth } from "@/lib/services/login.service";
 
@@ -542,7 +542,10 @@ export async function deleteContactPerson(
 
 export interface DailyActivityItem {
   id: string;
-  pegawaiId: string;
+  nama: string;
+  followUp: string | null;
+  sumberId: number | null;
+  pegawaiId: string | null;
   perusahaanId: string;
   kontak: string;
   jenisTraining: string;
@@ -556,7 +559,7 @@ export interface DailyActivityItem {
     id: string;
     nama: string;
     jabatan: string;
-  };
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -586,7 +589,8 @@ export interface GetOneDailyActivityResponse {
 }
 
 export interface DailyActivityPayload {
-  pegawaiId: string;
+  nama?: string;
+  pegawaiId?: string;
   kontak: string;
   jenisTraining: string;
   keterangan: string;
@@ -615,106 +619,23 @@ export async function getDailyActivityList(
   noInduk: string,
   params?: GetDailyActivityListParams,
 ): Promise<GetDailyActivityListResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.set("page", String(params.page));
-  if (params?.limit) query.set("limit", String(params.limit));
-  if (params?.search) query.set("search", params.search);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity?${query.toString()}`,
-    { method: "GET" },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil data daily activity.");
-  return data;
+  const result = await apiList<DailyActivityItem>(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity`, { ...params });
+  const { data, ...meta } = result;
+  return { message: "", data, meta };
 }
 
-// ─────────────────────────────────────────────
-// GET ONE
-// ─────────────────────────────────────────────
-
-export async function getOneDailyActivity(
-  noInduk: string,
-  id: string,
-): Promise<GetOneDailyActivityResponse> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity/${id}`,
-    { method: "GET" },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal mengambil data daily activity.");
-  return data;
+export async function getOneDailyActivity(noInduk: string, id: string): Promise<GetOneDailyActivityResponse> {
+  return { message: "", data: await apiGet<DailyActivityItem>(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity/${encodeURIComponent(id)}`) };
 }
-
-// ─────────────────────────────────────────────
-// CREATE
-// ─────────────────────────────────────────────
-
-export async function createDailyActivity(
-  noInduk: string,
-  payload: DailyActivityPayload,
-): Promise<CreateDailyActivityResponse> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal menambahkan daily activity.");
-  return data;
+export async function createDailyActivity(noInduk: string, payload: DailyActivityPayload): Promise<CreateDailyActivityResponse> {
+  return { message: "Daily activity berhasil ditambahkan.", data: await apiPost<DailyActivityItem>(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity`, payload) };
 }
-
-// ─────────────────────────────────────────────
-// UPDATE
-// ─────────────────────────────────────────────
-
-export async function updateDailyActivity(
-  noInduk: string,
-  id: string,
-  payload: Partial<DailyActivityPayload>,
-): Promise<UpdateDailyActivityResponse> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity/${id}`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal memperbarui daily activity.");
-  return data;
+export async function updateDailyActivity(noInduk: string, id: string, payload: Partial<DailyActivityPayload>): Promise<UpdateDailyActivityResponse> {
+  return { message: "Daily activity berhasil diperbarui.", data: await apiPut<DailyActivityItem>(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity/${encodeURIComponent(id)}`, payload) };
 }
-
-// ─────────────────────────────────────────────
-// DELETE
-// ─────────────────────────────────────────────
-
-export async function deleteDailyActivity(
-  noInduk: string,
-  id: string,
-): Promise<{ message: string }> {
-  const res = await fetchWithAuth(
-    `${API_URL}/api/database/perusahaan/${noInduk}/daily-activity/${id}`,
-    { method: "DELETE" },
-  );
-
-  const data = await res.json();
-  if (!res.ok)
-    throw new Error(data.message || "Gagal menghapus daily activity.");
-  return data;
+export async function deleteDailyActivity(noInduk: string, id: string): Promise<{ message: string }> {
+  await apiDelete(`/api/database/perusahaan/${encodeURIComponent(noInduk)}/daily-activity/${encodeURIComponent(id)}`);
+  return { message: "Daily activity berhasil dihapus." };
 }
 
 export interface GetHakAksesPerusahaanResponse {
@@ -836,9 +757,13 @@ export interface PosPerusahaan {
   id: string;
   nama: string;
   jabatan: string;
-  acc: string;
+  // Kosong pada data hasil migrasi tabpos: sumber lamanya tidak punya
+  // kolom ACC.
+  acc: string | null;
   followUp: string | null;
   noInduk: string;
+  posisi?: string | null;
+  tanggalKirim?: string | null;
 }
 
 // ── CREATE ──
@@ -925,6 +850,13 @@ export interface Penawaran {
   tanggal: string;
   filePath: string | null;
   perusahaanId?: string;
+  // Kolom surat penawaran, terisi pada data hasil migrasi
+  // tabSurat_Marketing. Penawaran yang dibuat lewat aplikasi belum
+  // mengisinya.
+  noSurat?: string | null;
+  keterangan?: string | null;
+  tujuan?: string | null;
+  pengirim?: string | null;
 }
 
 // ── CREATE ──
@@ -968,7 +900,9 @@ export async function getPenawaran(
 
 // ── GET BY ID ──
 export async function getPenawaranById(id: string): Promise<Penawaran> {
-  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran/${id}`, {
+  // Jalurnya "detail/:id", bukan "/:id": pola yang terakhir sudah dipakai
+  // pengambilan per perusahaan.
+  const res = await fetchWithAuth(`${API_URL}/api/database/penawaran/detail/${id}`, {
     method: "GET",
   });
   if (!res.ok) {

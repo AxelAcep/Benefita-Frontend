@@ -9,8 +9,13 @@ export function usePenawaranManage() {
   const [editTarget, setEditTarget] = useState<Penawaran | null>(null);
   const [search, setSearch] = useState("");
   const query = search.trim().toLowerCase();
-  const filtered = resource.data.filter((item) =>
-    item.kodePelatihan.some((code) => code.toLowerCase().includes(query)),
+  // Nomor surat dan tujuan ikut dicari: keduanya yang dipakai menelusuri
+  // penawaran lama hasil migrasi.
+  const filtered = resource.data.filter(
+    (item) =>
+      item.kodePelatihan.some((code) => code.toLowerCase().includes(query)) ||
+      (item.noSurat ?? "").toLowerCase().includes(query) ||
+      (item.tujuan ?? "").toLowerCase().includes(query),
   );
 
   async function save(payload: { kodePelatihan?: string[]; file?: File }) {
