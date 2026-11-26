@@ -1,185 +1,83 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
-
-export interface Trainer {
-  id: number;
-  kode: string;
-  nama: string;
-  referensi?: string | null;
-  alamat?: string | null;
-  subjekKhusus?: string | null;
-  telp?: string | null;
-  keterangan?: string | null;
-  email?: string | null;
-  tugas?: string | null;
-  kantor?: string | null;
-  alamatKantor?: string | null;
-  noTelpKantor?: string | null;
-  statusAktif: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface TrainerListItem {
-  id: number;
-  kode: string;
-  nama: string;
-  telp?: string | null;
-  email?: string | null;
-  kantor?: string | null;
-  referensi?: string | null;
-  subjekKhusus?: string | null;
-  tugas?: string | null;
-  jumlahHari?: number | null;
-  statusAktif: boolean;
-}
-
-export interface TrainerPagination {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-export interface GetTrainersResponse {
-  data: TrainerListItem[];
-  pagination: TrainerPagination;
-}
-
-export interface CreateTrainerRequest {
-  kode: string;
-  nama: string;
-  referensi?: string;
-  alamat?: string;
-  subjekKhusus?: string;
-  telp?: string;
-  keterangan?: string;
-  email?: string;
-  tugas?: string;
-  kantor?: string;
-  alamatKantor?: string;
-  noTelpKantor?: string;
-  statusAktif?: boolean;
-}
-
-export interface UpdateTrainerRequest {
-  kode?: string;
-  nama?: string;
-  referensi?: string;
-  alamat?: string;
-  subjekKhusus?: string;
-  telp?: string;
-  keterangan?: string;
-  email?: string;
-  tugas?: string;
-  kantor?: string;
-  alamatKantor?: string;
-  noTelpKantor?: string;
-  statusAktif?: boolean;
-}
-
-// ─────────────────────────────────────────────
-// FETCH HELPERS
-// ─────────────────────────────────────────────
-
-import { fetchWithAuth } from "./login.service";
-
-// ─────────────────────────────────────────────
-// API SERVICE
-// ─────────────────────────────────────────────
-
 /**
- * GET ALL TRAINER
- * support:
- * - pagination
- * - search (kode, nama, telp, kantor, subjekKhusus)
+ * Service Trainer.
+ *
+ * Perakitan URL, pengiriman token, dan penanganan error ada di
+ * @/lib/api/client — di sini tinggal endpoint dan tipenya.
+ *
+ * Catatan: backend belum punya route DELETE /api/training/trainer/:id,
+ * jadi service ini tidak menyediakan fungsi hapus.
  */
-export async function getTrainers(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: "aktif" | "nonaktif";
-}): Promise<GetTrainersResponse> {
-  const query = new URLSearchParams();
+import { apiGet, apiList, apiPost, apiPut } from "@/lib/api/client";
+import {
+  dariDetailApi,
+  dariListApi,
+  type CreateTrainerRequest,
+  type Trainer,
+  type TrainerApi,
+  type TrainerListApi,
+  type UpdateTrainerRequest,
+} from "@/lib/types/trainer";
+import type { ListParams, ListResult } from "@/lib/api/client";
 
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.status) query.append("status", params.status);
+export type {
+  CreateTrainerRequest,
+  Trainer,
+  TrainerApi,
+  TrainerListApi,
+  UpdateTrainerRequest,
+};
 
-  const res = await fetchWithAuth(
-    `${API_URL}/api/training/trainer?${query.toString()}`,
-    { method: "GET" },
+const BASE = "/api/training/trainer";
+
+/** Hasilnya sudah dipetakan ke bentuk tampilan, termasuk referensi jadi array. */
+export async function getTrainers(
+  params: ListParams = {},
+): Promise<ListResult<Trainer>> {
+  const res = await apiList<TrainerListApi>(
+    BASE,
+    params,
+    "Gagal mengambil data trainer",
   );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data trainer");
-  }
-
-  return data;
+  return { ...res, data: res.data.map(dariListApi) };
 }
 
-/**
- * GET BY ID
- */
 export async function getTrainerById(id: number): Promise<Trainer> {
-  const res = await fetchWithAuth(`${API_URL}/api/training/trainer/${id}`, {
-    method: "GET",
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil detail trainer");
-  }
-
-  return data.data;
+  const res = await apiGet<TrainerApi>(
+    `${BASE}/${id}`,
+    undefined,
+    "Gagal mengambil detail trainer",
+  );
+  return dariDetailApi(res);
 }
 
-/**
- * CREATE TRAINER
- */
+// create dan update ikut dipetakan ke bentuk tampilan supaya seluruh
+// service mengembalikan Trainer, bukan campuran Trainer dan TrainerApi.
 export async function createTrainer(
   payload: CreateTrainerRequest,
 ): Promise<Trainer> {
-  const res = await fetchWithAuth(`${API_URL}/api/training/trainer`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal membuat trainer");
-  }
-
-  return data.data;
+  const res = await apiPost<TrainerApi>(
+    BASE,
+    payload,
+    "Gagal membuat data trainer",
+  );
+  return dariDetailApi(res);
 }
 
-/**
- * UPDATE TRAINER
- */
 export async function updateTrainer(
   id: number,
   payload: UpdateTrainerRequest,
 ): Promise<Trainer> {
-  const res = await fetchWithAuth(`${API_URL}/api/training/trainer/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengupdate trainer");
-  }
-
-  return data.data;
+  const res = await apiPut<TrainerApi>(
+    `${BASE}/${id}`,
+    payload,
+    "Gagal mengubah data trainer",
+  );
+  return dariDetailApi(res);
 }
+
+/** Dibentuk untuk useResource. Tanpa `remove`: endpoint hapus belum ada. */
+export const trainerService = {
+  list: getTrainers,
+  create: createTrainer,
+  update: updateTrainer,
+};
