@@ -10,7 +10,7 @@ interface ModalPengajuanSuratProps {
   mode: "buat" | "edit";
   data?: {
     keterangan?: string;
-    tujuanNoInduk?: string;
+    tujuanNoInduk?: string | null;
     tujuanNama?: string;
   };
   onSubmit?: (form: {
