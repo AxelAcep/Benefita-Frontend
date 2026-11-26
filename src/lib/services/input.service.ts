@@ -1,4 +1,4 @@
-import { apiGet } from "@/lib/api/client";
+import { apiGet, apiGetResponse } from "@/lib/api/client";
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 import { fetchWithAuth } from "./login.service";
@@ -142,34 +142,17 @@ export type UpdatePesertaTrainingRequest =
 /**
  * GET LIST PESERTA BY JADWAL
  */
-export async function getPesertaTraining(
-  noJadwal: string,
-  params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-  },
-): Promise<GetPesertaTrainingResponse> {
-  const query = new URLSearchParams();
-
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
-  if (params?.search) query.append("search", params.search);
-  if (params?.status) query.append("status", params.status);
-
-  const res = await fetchWithAuth(
-    `${API_URL}/api/input/jadwal/${noJadwal}/peserta?${query.toString()}`,
-    { method: "GET" },
+export function getPesertaTraining(noJadwal: string, params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}) {
+  return apiGetResponse<GetPesertaTrainingResponse>(
+    `/api/input/jadwal/${encodeURIComponent(noJadwal)}/peserta`,
+    params,
+    "Gagal mengambil data peserta.",
   );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Gagal mengambil data peserta");
-  }
-
-  return data;
 }
 
 /**
