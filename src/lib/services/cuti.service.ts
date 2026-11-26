@@ -1,4 +1,4 @@
-import { apiGet, apiGetResponse, apiPatch, apiPostForm, keFormData } from "@/lib/api/client";
+import { apiGet, apiGetResponse, apiList, apiPatch, apiPostForm, keFormData } from "@/lib/api/client";
 import type {
   CreatePengajuanRequest,
   GetKaryawanCutiResponse,
@@ -7,6 +7,7 @@ import type {
   JenisIzin,
   KonfirmasiRequest,
   PengajuanIzin,
+  PengajuanIzinListItem,
   StatusIzin,
 } from "@/lib/types/cuti";
 
@@ -55,3 +56,8 @@ export const getKaryawanCuti = (params?: ListIzinParams) =>
     params && { ...params },
     "Gagal mengambil data karyawan cuti.",
   );
+
+export const daftarPengajuanService = {
+  list: (params: ListIzinParams) =>
+    apiList<PengajuanIzinListItem>(BASE, { ...params }, "Gagal mengambil daftar pengajuan."),
+};
