@@ -21,12 +21,13 @@ import {
   X,
   FileText,
   Database,
+  ShieldCheck,
   BadgeCheck,
 } from "lucide-react";
 import { Icons } from "@/assets";
 // Tambah useAuth di import
 import { useAuth } from "@/context/AuthContext";
-import { useCan } from "@/hooks/use-can";
+import { usePermission } from "@/context/PermissionContext";
 
 // Di dalam component Sidebar(), tambah:
 // ---------------------------------------------------------------------------
@@ -44,7 +45,8 @@ interface NavItem {
   href?: string;
   icon: React.ElementType;
   children?: NavChild[];
-  requiresTrainingRead?: boolean;
+  /** Modul pada matriks izin; menu disembunyikan kalau tidak punya read. */
+  modul?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,11 +56,13 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     label: "Dashboard",
+    modul: "dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
     label: "Perusahaan",
+    modul: "perusahaan",
     icon: Building2,
     children: [
       {
@@ -89,6 +93,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "BDO & Aktivitas",
+    modul: "bdo",
     icon: Activity,
     children: [
       { label: "Akun Perusahaan (BDO)", href: "/bdo/akun-perusahaan" },
@@ -123,6 +128,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "Peserta & Sertifikasi",
+    modul: "peserta",
     icon: Users,
     children: [
       { label: "Peserta Final", href: "/peserta/final" },
@@ -158,6 +164,7 @@ const navItems: NavItem[] = [
   // },
   {
     label: "Accounting",
+    modul: "accounting",
     icon: ChartColumnIncreasing,
     children: [
       { label: "Beranda", href: "/accounting/beranda" },
@@ -211,6 +218,7 @@ const navItems: NavItem[] = [
   },
   {
     label: "Dokumen",
+    modul: "dokumen",
     icon: FileText,
     children: [
       { label: "Permintaan Nomor Surat (Umum)", href: "/dokumen/umum" },
@@ -226,8 +234,8 @@ const navItems: NavItem[] = [
   },
   {
     label: "Training",
+    modul: "training",
     icon: GraduationCap,
-    requiresTrainingRead: true,
     children: [
       { label: "Kebutuhan Training per Customer", href: "/training/customer" },
       { label: "Manajemen Berita", href: "/training/berita" },
@@ -240,8 +248,8 @@ const navItems: NavItem[] = [
   },
   {
     label: "LSP",
+    modul: "training",
     icon: BadgeCheck,
-    requiresTrainingRead: true,
     children: [
       { label: "Input TUK", href: "/training/tuk" },
       { label: "Input Asesor", href: "/training/asesor" },
@@ -254,11 +262,13 @@ const navItems: NavItem[] = [
   },
   {
     label: "PROPER",
+    modul: "perusahaan",
     href: "/proper",
     icon: Leaf,
   },
   {
     label: "Karyawan & Aktivitas",
+    modul: "karyawan",
     icon: UserCog,
     children: [
       { label: "Update Data", href: "/karyawan/update-data" },
@@ -269,8 +279,15 @@ const navItems: NavItem[] = [
   },
   {
     label: "Database",
+    modul: "database",
     href: "/database",
     icon: Database,
+  },
+  {
+    label: "Pengaturan",
+    modul: "pengaturan",
+    icon: ShieldCheck,
+    children: [{ label: "Hak Akses", href: "/pengaturan/hak-akses" }],
   },
 ];
 
@@ -281,7 +298,7 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { logout: handleLogout } = useAuth();
-  const canReadTraining = useCan("training", "read");
+  const { permissions } = usePermission();
 
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
     if (typeof window !== "undefined") {
@@ -425,7 +442,8 @@ export default function Sidebar() {
           className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto"
         >
           {navItems.map((item) => {
-            if (item.requiresTrainingRead && !canReadTraining) {
+            // Menu induk disembunyikan kalau modulnya tidak punya read.
+            if (item.modul && permissions[item.modul]?.read !== true) {
               return null;
             }
 

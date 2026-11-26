@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
-import { TrainingAccess } from "@/containers/training/access";
+import { ModuleAccess } from "@/components/base/module-access";
 
 export default function Layout({ children }: { children: ReactNode }) {
-  return <TrainingAccess aksi="read">{children}</TrainingAccess>;
+  return (
+    <ModuleAccess modul="training" label="Training">
+      {children}
+    </ModuleAccess>
+  );
 }

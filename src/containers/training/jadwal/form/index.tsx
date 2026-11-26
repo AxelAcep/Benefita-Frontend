@@ -16,7 +16,7 @@ import AppLayout from "@/components/app-layout";
 import Notification from "@/components/base/notifications";
 import ConfirmModal from "@/components/base/confirm-modal";
 import { Can } from "@/components/base/can";
-import { TrainingAccess } from "@/containers/training/access";
+import { ModuleAccess } from "@/components/base/module-access";
 import { useCan } from "@/hooks/use-can";
 import { JudulTrainingSelect } from "@/components/base/JudulTrainingSelect";
 import { TrainerSelect } from "@/components/base/TrainerSelect";
@@ -37,9 +37,9 @@ export default function JadwalFormContainer() {
   const aksi = noJadwal ? (canUpdate ? "update" : "delete") : "create";
 
   return (
-    <TrainingAccess aksi={aksi}>
+    <ModuleAccess modul="training" label="Training" aksi={aksi}>
       <JadwalForm noJadwal={noJadwal} readOnly={aksi === "delete"} />
-    </TrainingAccess>
+    </ModuleAccess>
   );
 }
 

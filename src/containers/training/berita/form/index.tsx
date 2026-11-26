@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Newspaper, Send } from "lucide-react";
 import AppLayout from "@/components/app-layout";
-import { TrainingAccess } from "@/containers/training/access";
+import { ModuleAccess } from "@/components/base/module-access";
 import { SelectInput, TextArea, TextInput } from "@/components/base/form-field";
 import { useBeritaAction, useBeritaById } from "@/hooks/use-berita";
 
@@ -39,9 +39,9 @@ export default function BeritaFormContainer() {
   const id = params?.id ?? null;
 
   return (
-    <TrainingAccess aksi={id ? "update" : "create"}>
+    <ModuleAccess modul="training" label="Training" aksi={id ? "update" : "create"}>
       <BeritaForm id={id} />
-    </TrainingAccess>
+    </ModuleAccess>
   );
 }
 
