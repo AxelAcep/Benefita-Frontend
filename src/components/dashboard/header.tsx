@@ -1,6 +1,7 @@
 "use client";
 import { LayoutList, BarChart2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { SidebarToggle } from "@/components/sidebar-toggle";
 
 type ViewMode = "table" | "chart";
 interface Props {
@@ -27,11 +28,14 @@ export default function DashboardHeader({ viewMode, onViewModeChange }: Props) {
   return (
     <header className="flex items-center justify-between px-4 sm:px-6 py-3 bg-white border-b border-zinc-200 gap-3">
       {/* Kiri: Title */}
-      <div className="min-w-0">
+      <div className="flex min-w-0 items-center gap-3">
+        <SidebarToggle />
+        <div className="min-w-0">
         <h1 className="text-black font-bold text-base leading-tight">
           Dashboard
         </h1>
         <p className="text-zinc-400 text-xs mt-0.5 truncate">{today}</p>
+        </div>
       </div>
 
       {/* Kanan: Switch + User */}

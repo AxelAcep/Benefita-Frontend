@@ -8,6 +8,7 @@ export function toRequest(formData: TambahPesertaFormData): CreatePesertaTrainin
     noIndukPerusahaan: formData.noIndukPerusahaan,
     alamat: formData.alamat,
     noTelp: formData.noTelp,
+    noHp: formData.noHp,
     noFax: formData.noFax,
     email: formData.email,
     alamatPengirimanSertifikat: formData.alamatPengirimanSertifikat,
@@ -44,6 +45,7 @@ export function toForm(detailPeserta: PesertaTraining): Partial<TambahPesertaFor
     noIndukPerusahaan: detailPeserta.perusahaan?.noInduk ?? "",
     alamat: detailPeserta.alamat ?? "",
     noTelp: detailPeserta.noTelp ?? "",
+    noHp: detailPeserta.noHp ?? "",
     noFax: detailPeserta.noFax ?? "",
     email: detailPeserta.email ?? "",
     alamatPengirimanSertifikat:

@@ -26,9 +26,19 @@ const PERTANYAAN_ITEMS: {
   },
 ];
 
+const PERTANYAAN_TRAINER: {
+  key: keyof RekapEvaluasiResponse["evaluasiTrainer"][number]["rataRata"];
+  label: string;
+}[] = [
+  { key: "nilaiPenjelasan", label: "Menjelaskan materi dengan baik" },
+  { key: "nilaiPenguasaan", label: "Menguasai materi dan menjawab pertanyaan" },
+  { key: "nilaiSuasana", label: "Menciptakan suasana kondusif" },
+];
+
 function formatTanggal(dateStr: string | null): string {
   if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString("id-ID", {
+    timeZone: "Asia/Jakarta",
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -46,7 +56,7 @@ function ScoreBar({ value }: { value: number }) {
         />
       </div>
       <span className="text-xs font-semibold text-zinc-700 w-8 text-right">
-        {value || "-"}
+        {value ? value.toFixed(1) : "-"}
       </span>
     </div>
   );
@@ -127,6 +137,16 @@ export default function RekapEvaluasiContainer() {
                   </div>
                 ))}
               </div>
+              {data.saranPelaksanaan.length > 0 && (
+                <div className="mt-5 border-t border-zinc-100 pt-4">
+                  <h3 className="mb-2 text-sm font-medium text-zinc-700">Saran Pelaksanaan</h3>
+                  <ul className="space-y-2">
+                    {data.saranPelaksanaan.map((saran, index) => (
+                      <li key={index} className="whitespace-pre-wrap rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-600">{saran}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Evaluasi Trainer */}
@@ -134,7 +154,40 @@ export default function RekapEvaluasiContainer() {
               <h2 className="text-sm font-bold text-zinc-800 mb-4">
                 Evaluasi Trainer
               </h2>
-              <ScoreBar value={data.rataRata.nilaiTrainer} />
+              <div className="space-y-6">
+                {data.evaluasiTrainer.map((trainer) => (
+                  <section key={trainer.kode} className="rounded-xl border border-zinc-100 p-4">
+                    <h3 className="mb-4 text-sm font-medium text-zinc-800">{trainer.nama}</h3>
+                    <div className="space-y-4">
+                      {PERTANYAAN_TRAINER.map((item) => (
+                        <div key={item.key}>
+                          <p className="mb-1.5 text-xs text-zinc-600">{item.label}</p>
+                          <ScoreBar value={trainer.rataRata[item.key]} />
+                        </div>
+                      ))}
+                    </div>
+                    {trainer.saran.length > 0 && (
+                      <div className="mt-4 border-t border-zinc-100 pt-4">
+                        <h4 className="mb-2 text-sm font-medium text-zinc-700">Saran Trainer</h4>
+                        <ul className="space-y-2">
+                          {trainer.saran.map((saran, index) => (
+                            <li key={index} className="whitespace-pre-wrap rounded-lg bg-zinc-50 px-3 py-2 text-sm text-zinc-600">{saran}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </section>
+                ))}
+                {data.rataRata.nilaiTrainer > 0 && (
+                  <div>
+                    <h3 className="mb-3 text-sm font-medium text-zinc-700">Penilaian Trainer Umum</h3>
+                    <ScoreBar value={data.rataRata.nilaiTrainer} />
+                  </div>
+                )}
+                {data.evaluasiTrainer.length === 0 && data.rataRata.nilaiTrainer === 0 && (
+                  <p className="text-sm text-zinc-500">Belum ada evaluasi trainer.</p>
+                )}
+              </div>
             </div>
 
             {/* Komentar / Manfaat */}

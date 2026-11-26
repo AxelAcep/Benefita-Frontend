@@ -15,6 +15,7 @@ export interface TambahPesertaFormData {
   noIndukPerusahaan: string;
   alamat: string;
   noTelp: string;
+  noHp: string;
   noFax: string;
   email: string;
   alamatPengirimanSertifikat: string;
@@ -65,6 +66,8 @@ interface ModalTambahPesertaProps {
   isLoading?: boolean;
   isEditMode?: boolean;
   initialData?: Partial<TambahPesertaFormData>;
+  perusahaan?: Perusahaan | null;
+  tanggalInvoice?: string | null;
   inputOleh?: string;
   tanggalInput?: string;
   tanggalUpdate?: string;
@@ -80,6 +83,7 @@ const INITIAL_FORM: TambahPesertaFormData = {
   noIndukPerusahaan: "",
   alamat: "",
   noTelp: "",
+  noHp: "",
   noFax: "",
   email: "",
   alamatPengirimanSertifikat: "",
@@ -270,6 +274,8 @@ export default function ModalTambahPeserta({
   isLoading,
   isEditMode,
   initialData,
+  perusahaan,
+  tanggalInvoice,
   inputOleh,
   tanggalInput,
   tanggalUpdate,
@@ -347,6 +353,7 @@ export default function ModalTambahPeserta({
               <Label required>Perusahaan / Instansi</Label>
               <PerusahaanSelect
                 value={form.noIndukPerusahaan}
+                initialOption={perusahaan}
                 onChange={(noInduk) => setField("noIndukPerusahaan", noInduk)}
               />
             </div>
@@ -362,7 +369,16 @@ export default function ModalTambahPeserta({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-2">
+            <div>
+              <Label>No. WhatsApp</Label>
+              <TextInput
+                placeholder="Masukkan No. WhatsApp"
+                value={form.noHp}
+                onChange={(v) => setField("noHp", v)}
+                type="tel"
+              />
+            </div>
             <div>
               <Label>No. Telp</Label>
               <TextInput
@@ -587,6 +603,11 @@ export default function ModalTambahPeserta({
                   value={form.noInvoice}
                   onChange={(v) => setField("noInvoice", v)}
                 />
+                {tanggalInvoice && form.noInvoice === initialData?.noInvoice && (
+                  <p className="mt-1.5 text-xs text-zinc-500">
+                    Tanggal invoice: {new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", day: "numeric", month: "long", year: "numeric" }).format(new Date(tanggalInvoice))}
+                  </p>
+                )}
               </div>
               <div>
                 <Label>No. Inv Ujian</Label>

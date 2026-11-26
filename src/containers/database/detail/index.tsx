@@ -399,9 +399,9 @@ function DetailInstansi({ id, slug }: { id: string; slug: keyof typeof DETAIL })
               }
             />
           )}
-          {activeTab === "peserta" && <TabPeserta />}
+          {activeTab === "peserta" && <TabPeserta key={id} id={id} />}
           {activeTab === "contact-person" && <TabContactPerson id={id} />}
-          {activeTab === "daily" && <TabDaily id={id} />}
+          {activeTab === "daily" && <TabDaily key={id} id={id} />}
           {activeTab === "riwayat" && <TabRiwayat id={id} />}
         </div>
       </div>

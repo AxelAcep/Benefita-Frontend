@@ -16,7 +16,6 @@ import {
   Settings,
   LogOut,
   ChevronDown,
-  Menu,
   TextCursorInput,
   X,
   FileText,
@@ -28,6 +27,7 @@ import { Icons } from "@/assets";
 // Tambah useAuth di import
 import { useAuth } from "@/context/AuthContext";
 import { usePermission } from "@/context/PermissionContext";
+import { useSidebar } from "@/context/SidebarContext";
 
 // Di dalam component Sidebar(), tambah:
 // ---------------------------------------------------------------------------
@@ -311,7 +311,16 @@ export default function Sidebar() {
     return {};
   });
 
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const { desktopOpen, mobileOpen, close } = useSidebar();
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") close();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen, close]);
 
   useEffect(() => {
     localStorage.setItem("openMenus", JSON.stringify(openMenus));
@@ -432,7 +441,7 @@ export default function Sidebar() {
     }
     nav.addEventListener("scroll", onScroll);
     return () => nav.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [desktopOpen, mobileOpen]);
 
   function NavContent({ onLinkClick }: { onLinkClick?: () => void }) {
     return (
@@ -516,6 +525,7 @@ export default function Sidebar() {
         <div className="px-2 py-3 border-t border-zinc-200 space-y-0.5">
           <Link
             href="/karyawan/profil"
+            onClick={onLinkClick}
             className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-600 hover:text-emerald-600"
             prefetch={false}
           >
@@ -538,8 +548,8 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-[250px] bg-white">
-        <div className="flex justify-center pb-4 pt-4">
+      {desktopOpen && <aside id="desktop-sidebar" aria-label="Navigasi utama" className="hidden md:flex flex-col fixed left-0 top-0 z-40 h-screen w-[220px] bg-white">
+        <div className="flex items-center justify-between gap-3 px-4 pb-4 pt-4">
           <div className="w-full max-w-[10rem]">
             <Image
               src={Icons.BenefitaText}
@@ -548,32 +558,30 @@ export default function Sidebar() {
               priority
             />
           </div>
+          <button type="button" onClick={close} aria-label="Tutup sidebar" className="shrink-0 rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-emerald-600">
+            <X aria-hidden="true" className="size-4" />
+          </button>
         </div>
-        <NavContent />
-      </aside>
+        <NavContent onLinkClick={close} />
+      </aside>}
 
       {/* Mobile */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-3 left-3 z-50 p-2 bg-white rounded"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
-
       {mobileOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/50"
-            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            onClick={close}
           />
-          <aside className="fixed left-0 top-0 h-screen w-[220px] bg-white z-50 flex flex-col">
+          <aside id="mobile-sidebar" aria-label="Navigasi utama" className="fixed left-0 top-0 h-screen w-[220px] bg-white z-50 flex flex-col md:hidden">
             <button
-              onClick={() => setMobileOpen(false)}
+              type="button"
+              aria-label="Tutup sidebar"
+              onClick={close}
               className="self-end p-3"
             >
               <X className="w-5 h-5" />
             </button>
-            <NavContent onLinkClick={() => setMobileOpen(false)} />
+            <NavContent onLinkClick={close} />
           </aside>
         </>
       )}

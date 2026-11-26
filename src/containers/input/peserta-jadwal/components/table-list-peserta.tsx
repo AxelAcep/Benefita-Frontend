@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Users, Plus } from "lucide-react";
 import { TablePagination } from "@/components/base/table-pagination";
 import type { PesertaTrainingListItem } from "@/lib/types/input-peserta";
@@ -34,6 +35,13 @@ interface TableListPesertaProps {
 }
 
 const PAGE_SIZE = 10;
+const COMPANY_ROUTES: Record<string, string> = {
+  PERUSAHAAN: "perusahaan",
+  PEMDA: "pemda",
+  SEKOLAH: "sekolah",
+  RUMAH_SAKIT: "rumah-sakit",
+  INSTANSI_DAERAH: "instansi-daerah",
+};
 
 // ─────────────────────────────────────────────
 // CELL HELPERS
@@ -53,17 +61,18 @@ function formatRupiah(val: number | null | undefined) {
 
 function StatusBadge({ status }: { status: string | null }) {
   if (!status) return <span className="text-zinc-300">–</span>;
+  const isCancelled = status.trim().toUpperCase() === "CANCEL";
   const color =
     status === "FIX"
       ? "bg-emerald-50 text-emerald-600"
-      : status === "Cancel"
-        ? "bg-red-50 text-red-500"
+      : isCancelled
+        ? "bg-red-50 text-red-600"
         : "bg-zinc-100 text-zinc-500";
   return (
     <span
       className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${color}`}
     >
-      {status}
+      {isCancelled ? "BTL" : status}
     </span>
   );
 }
@@ -131,18 +140,24 @@ export default function TableListPeserta({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[2000px]">
-          <thead>
+      <div
+        role="region"
+        aria-label="Tabel peserta, gulir untuk melihat seluruh data"
+        tabIndex={0}
+        className="max-h-[65vh] overflow-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-emerald-600"
+      >
+        <table className="w-full">
+          <thead className="sticky top-0 z-10 bg-zinc-50">
             <tr className="border-b border-zinc-100 bg-zinc-50/60">
               {[
                 "No",
                 "Nama",
                 "Perusahaan",
+                "No. WA",
                 "AE",
-                "Own Env",
+                "Own\nEnv",
                 "Status",
-                "Status Uji",
+                "Status\nUji",
                 "Konf",
                 "Biaya",
                 "Diskon",
@@ -158,7 +173,7 @@ export default function TableListPeserta({
               ].map((h) => (
                 <th
                   key={h}
-                  className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left whitespace-nowrap"
+                  className="px-3 py-2 text-[10px] font-semibold text-zinc-400 text-left whitespace-pre"
                 >
                   {h}
                 </th>
@@ -170,7 +185,7 @@ export default function TableListPeserta({
             {isLoading ? (
               <tr>
                 <td
-                  colSpan={19}
+                  colSpan={20}
                   className="px-4 py-12 text-center text-xs text-zinc-400"
                 >
                   Memuat data...
@@ -179,7 +194,7 @@ export default function TableListPeserta({
             ) : data.length === 0 ? (
               <tr>
                 <td
-                  colSpan={19}
+                  colSpan={20}
                   className="px-4 py-12 text-center text-xs text-zinc-400"
                 >
                   Tidak ada data tersedia.
@@ -194,13 +209,21 @@ export default function TableListPeserta({
                   <td className="px-3 py-3 text-xs text-zinc-400 align-top">
                     {(currentPage - 1) * PAGE_SIZE + i + 1}
                   </td>
-                  <td className="px-3 py-3 text-xs text-zinc-700 font-medium align-top whitespace-nowrap">
-                    {row.nama}
+                  <td className="px-3 py-3 text-xs text-zinc-700 font-medium align-top">
+                    <div className="w-28 whitespace-normal wrap-anywhere leading-relaxed">{row.nama}</div>
                   </td>
                   <td className="px-3 py-3 text-xs align-top">
-                    <span className="text-emerald-600 font-semibold cursor-pointer hover:underline">
-                      {row.perusahaan?.company ?? "-"}
-                    </span>
+                    {row.perusahaan?.noInduk ? (
+                      <Link
+                        href={`/database/${COMPANY_ROUTES[row.perusahaan.jenisInstansi ?? "PERUSAHAAN"] ?? "perusahaan"}/${encodeURIComponent(row.perusahaan.noInduk)}`}
+                        className="font-semibold text-emerald-600 hover:underline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                      >
+                        {row.perusahaan.company || row.perusahaan.noInduk}
+                      </Link>
+                    ) : <Dash>{row.perusahaan?.company}</Dash>}
+                  </td>
+                  <td className="px-3 py-3 text-xs text-zinc-600 align-top">
+                    <Dash>{row.noHp}</Dash>
                   </td>
                   <td className="px-3 py-3 text-xs text-zinc-600 align-top">
                     <Dash>{row.accExecutive}</Dash>
@@ -219,7 +242,13 @@ export default function TableListPeserta({
                     </div>
                   </td>
                   <td className="px-3 py-3 text-xs text-zinc-600 align-top">
-                    <Dash>{row.ujian ? "Ya" : null}</Dash>
+                    <span title={row.ujian ?? undefined} className="whitespace-nowrap">
+                      <Dash>{row.ujian
+                        ?.replace(/\bRefresh\b/gi, "Ref")
+                        .replace(/\bUjian\b/gi, "Uji")
+                        .replace(/\bPelatihan\b/gi, "Pel")
+                        .trim()}</Dash>
+                    </span>
                   </td>
                   <td className="px-3 py-3 align-top">
                     {row.pegawaiKonfirmasi ? (
@@ -283,7 +312,9 @@ export default function TableListPeserta({
                     </div>
                   </td>
                   <td className="px-3 py-3 text-xs text-zinc-600 align-top">
-                    <Dash>{row.catatan}</Dash>
+                    <div className="w-32 whitespace-pre-wrap wrap-anywhere leading-relaxed">
+                      <Dash>{row.catatan}</Dash>
+                    </div>
                   </td>
                   <td className="px-3 py-3 align-top">
                     <div className="flex flex-col gap-1">

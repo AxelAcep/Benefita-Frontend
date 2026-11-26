@@ -11,6 +11,7 @@ import {
 
 interface PerusahaanSelectProps {
   value?: string; // noInduk ATAU teks manual
+  initialOption?: PerusahaanOption | null;
   onChange: (noInduk: string, company: string) => void;
   placeholder?: string;
   disabled?: boolean;
@@ -23,6 +24,7 @@ interface PerusahaanSelectProps {
 
 export function PerusahaanSelect({
   value,
+  initialOption,
   onChange,
   placeholder = "Pilih perusahaan...",
   disabled = false,
@@ -33,7 +35,9 @@ export function PerusahaanSelect({
   const [search, setSearch] = useState("");
   const [options, setOptions] = useState<PerusahaanOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selected, setSelected] = useState<PerusahaanOption | null>(null);
+  const [selected, setSelected] = useState<PerusahaanOption | null>(
+    initialOption && initialOption.noInduk === value ? initialOption : null,
+  );
   const [manualMode, setManualMode] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -71,11 +75,14 @@ export function PerusahaanSelect({
 
   // Sync selected label dari value (misal pas edit)
   useEffect(() => {
+    let cancelled = false;
     if (!value) {
       setSelected(null);
       return;
     }
-    const found = options.find((o) => o.noInduk === value);
+    const found = initialOption?.noInduk === value
+      ? initialOption
+      : options.find((o) => o.noInduk === value);
     if (found) {
       setSelected(found);
       setManualMode(false);
@@ -83,6 +90,7 @@ export function PerusahaanSelect({
     }
     // Belum ketemu di options yang lagi ke-load → cek ke seluruh list
     fetchFn("").then((data) => {
+      if (cancelled) return;
       const match = data.find((o) => o.noInduk === value);
       if (match) {
         setSelected(match);
@@ -91,8 +99,11 @@ export function PerusahaanSelect({
         // Beneran gak ketemu → berarti value ini teks manual
         setManualMode(true);
       }
+    }).catch(() => {
+      if (!cancelled) setSelected(null);
     });
-  }, [value, fetchFn]);
+    return () => { cancelled = true; };
+  }, [value, fetchFn, initialOption]);
 
   const handleSelect = (option: PerusahaanOption) => {
     setSelected(option);

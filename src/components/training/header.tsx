@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { SidebarToggle } from "@/components/sidebar-toggle";
 import { generatePastelBg, generatePastelText } from "@/lib/pastelColor";
 
 interface BreadcrumbItem {
@@ -55,6 +56,7 @@ export default function Header({
   return (
     <div className="px-6 py-4 bg-white border-b border-zinc-100 flex items-center justify-between">
       <div className="flex items-center gap-3 min-w-0">
+        <SidebarToggle />
         <div className="min-w-0">
           {breadcrumbs.length > 0 && (
             <p className="text-xs text-zinc-400">

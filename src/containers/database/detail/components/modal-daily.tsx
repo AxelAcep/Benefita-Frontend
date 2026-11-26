@@ -9,6 +9,7 @@ import type { DailyActivityItem } from "@/lib/services/perusahaan.service";
 // ─────────────────────────────────────────────
 
 export type DailyActivityFormData = {
+  nama: string;
   kontak: string;
   jenisTraining: string;
   keterangan: string;
@@ -31,6 +32,7 @@ interface ModalDailyActivityProps {
 // ─────────────────────────────────────────────
 
 const EMPTY_FORM: DailyActivityFormData = {
+  nama: "",
   kontak: "",
   jenisTraining: "",
   keterangan: "",
@@ -42,11 +44,12 @@ const EMPTY_FORM: DailyActivityFormData = {
 
 function toForm(item: DailyActivityItem): DailyActivityFormData {
   return {
+    nama: item.nama ?? "",
     kontak: item.kontak ?? "",
     jenisTraining: item.jenisTraining ?? "",
     keterangan: item.keterangan ?? "",
     kategori: item.kategori ?? "",
-    inout: item.inout ?? "",
+    inout: item.inout === "IN" ? "I" : item.inout === "OUT" ? "O" : item.inout ?? "",
     tanggal: item.tanggal ?? "",
     dateTarget: item.dateTarget
       ? new Date(item.dateTarget).toISOString().split("T")[0]
@@ -81,6 +84,7 @@ export default function ModalDailyActivity({
   ) => setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleSubmit = () => {
+    if (!form.nama.trim() || !form.kontak.trim()) return;
     onSubmit(form);
   };
 
@@ -135,6 +139,11 @@ export default function ModalDailyActivity({
 
         {/* ── Body ── */}
         <div className="px-6 py-5 space-y-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-zinc-600">Nama kontak</label>
+            <input value={form.nama} onChange={(e) => set("nama", e.target.value)} disabled={isSaving} maxLength={255} required className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800" />
+          </div>
+          {data && <p className="text-xs text-zinc-600">F-UP: {data.followUp || data.pegawai?.nama || "-"}</p>}
           {/* Row 1: Kontak + Jenis Training */}
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
@@ -146,7 +155,7 @@ export default function ModalDailyActivity({
                 value={form.kontak}
                 onChange={(e) => set("kontak", e.target.value)}
                 disabled={isSaving}
-                placeholder="Nomor kontak"
+                placeholder="WhatsApp, WA, telepon, atau email"
                 className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 placeholder:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition disabled:opacity-50 disabled:bg-zinc-50"
               />
             </div>
@@ -161,6 +170,7 @@ export default function ModalDailyActivity({
                 className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition bg-white appearance-none disabled:opacity-50 disabled:bg-zinc-50"
               >
                 <option value="">Pilih Jenis Training</option>
+                {form.jenisTraining && !["REG", "INH_1", "INH_2", "INH_3", "INH_4", "INH_5", "KONS"].includes(form.jenisTraining) && <option value={form.jenisTraining}>{form.jenisTraining}</option>}
                 <option value="REG">REG</option>
                 <option value="INH_1">INH_1</option>
                 <option value="INH_2">INH_2</option>
@@ -185,6 +195,7 @@ export default function ModalDailyActivity({
                 className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition bg-white appearance-none disabled:opacity-50 disabled:bg-zinc-50"
               >
                 <option value="">Pilih Kategori</option>
+                {form.kategori && !["ENV", "CSR", "TSM", "EPM", "KEU"].includes(form.kategori) && <option value={form.kategori}>{form.kategori}</option>}
                 <option value="ENV">ENV</option>
                 <option value="CSR">CSR</option>
                 <option value="TSM">TSM</option>
@@ -203,8 +214,8 @@ export default function ModalDailyActivity({
                 className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 transition bg-white appearance-none disabled:opacity-50 disabled:bg-zinc-50"
               >
                 <option value="">Pilih</option>
-                <option value="IN">IN</option>
-                <option value="OUT">OUT</option>
+                <option value="I">I — Masuk</option>
+                <option value="O">O — Keluar</option>
               </select>
             </div>
           </div>
@@ -223,7 +234,7 @@ export default function ModalDailyActivity({
               <input
                 type="date"
                 value={
-                  isEdit ? form.tanggal : new Date().toISOString().split("T")[0]
+                  isEdit ? form.tanggal : new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())
                 }
                 onChange={(e) => set("tanggal", e.target.value)}
                 disabled={true}
@@ -277,7 +288,7 @@ export default function ModalDailyActivity({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isSaving}
+            disabled={isSaving || !form.nama.trim() || !form.kontak.trim()}
             className="flex items-center gap-1.5 px-4 py-2 text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg disabled:opacity-40 transition-colors"
           >
             <Save className="w-3.5 h-3.5" />

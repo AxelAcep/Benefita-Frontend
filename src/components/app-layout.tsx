@@ -4,6 +4,7 @@ import React from "react";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/training/header";
 import { useAuth } from "@/context/AuthContext";
+import { useSidebar } from "@/context/SidebarContext";
 
 interface BreadcrumbItem {
   label: string;
@@ -23,6 +24,7 @@ export default function AppLayout({ children, breadcrumbs }: AppLayoutProps) {
   // useEffect, sehingga header sempat kosong lalu terisi, dan kegagalannya
   // ditelan console.error.
   const { user } = useAuth();
+  const { desktopOpen } = useSidebar();
 
   const hariIni = new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
@@ -34,7 +36,7 @@ export default function AppLayout({ children, breadcrumbs }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen bg-zinc-100 overflow-hidden">
       <Sidebar />
-      <div className="flex flex-col flex-1 md:ml-[250px] min-w-0 overflow-x-hidden">
+      <div className={`flex flex-col flex-1 min-w-0 overflow-x-hidden ${desktopOpen ? "md:ml-[220px]" : ""}`}>
         <Header
           breadcrumbs={breadcrumbs}
           subtitle={`Hari Ini : ${hariIni}`}

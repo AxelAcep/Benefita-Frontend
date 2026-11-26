@@ -16,4 +16,16 @@ export interface RekapEvaluasiResponse {
   };
   komentarManfaatPeserta: string[];
   komentarManfaatPerusahaan: string[];
+  saranPelaksanaan: string[];
+  evaluasiTrainer: {
+    kode: string;
+    nama: string;
+    totalMengisi: number;
+    rataRata: {
+      nilaiPenjelasan: number;
+      nilaiPenguasaan: number;
+      nilaiSuasana: number;
+    };
+    saran: string[];
+  }[];
 }

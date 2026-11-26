@@ -1,7 +1,8 @@
 export interface PesertaTrainingListItem {
   id: number;
   nama: string;
-  perusahaan: { noInduk: string; company: string | null };
+  noHp: string | null;
+  perusahaan: { noInduk: string; company: string | null; jenisInstansi?: string };
   accExecutive: string | null;
   ownEnv: string | null;
   metode: string | null;
@@ -28,6 +29,7 @@ export interface PesertaTrainingListItem {
 }
 
 export interface PesertaTraining extends PesertaTrainingListItem {
+  tanggalInvoice: string | null;
   jabatan: string | null;
   alamat: string | null;
   noTelp: string | null;
@@ -60,6 +62,11 @@ export interface PesertaTraining extends PesertaTrainingListItem {
 }
 
 export interface JadwalSummary {
+  batch: number | null;
+  trainer: string | null;
+  biayaOnline: number;
+  biayaOffline: number;
+  biayaSertifikasi: number | null;
   noJadwal: string;
   metode: string;
   biaya: number;
@@ -94,6 +101,7 @@ export interface CreatePesertaTrainingRequest {
   jabatan?: string;
   alamat?: string;
   noTelp?: string;
+  noHp?: string;
   noFax?: string;
   email?: string;
   alamatPengirimanSertifikat?: string;

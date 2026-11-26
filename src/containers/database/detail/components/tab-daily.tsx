@@ -17,7 +17,7 @@ import ModalDailyActivity, {
   type DailyActivityFormData,
 } from "./modal-daily";
 import Notification from "@/components/base/notifications";
-import { getSession } from "@/lib/services/login.service";
+import { useCan } from "@/hooks/use-can";
 
 // ─────────────────────────────────────────────
 // PROPS
@@ -57,7 +57,9 @@ export default function TabDaily({ id }: TabDailyProps) {
     label: string;
   } | null>(null);
 
-  const session = getSession();
+  const canCreate = useCan("database", "create");
+  const canUpdate = useCan("database", "update");
+  const canDelete = useCan("database", "delete");
 
   // ── Debounce search ──
   useEffect(() => {
@@ -80,7 +82,7 @@ export default function TabDaily({ id }: TabDailyProps) {
     search: debouncedSearch || undefined,
   });
 
-  const { data: editData, isLoading: isLoadingOne } = useGetOneDailyActivity(
+  const { data: editData, isLoading: isLoadingOne, error: editError } = useGetOneDailyActivity(
     id,
     isEditMode ? modalMode : null,
   );
@@ -91,7 +93,7 @@ export default function TabDaily({ id }: TabDailyProps) {
 
   const isSaving = isCreating || isUpdating;
 
-  const data: DailyActivityItem[] = response?.data ?? [];
+  const data: DailyActivityItem[] = error ? [] : response?.data ?? [];
   const meta = response?.meta ?? {
     total: 0,
     page: 1,
@@ -135,18 +137,16 @@ export default function TabDaily({ id }: TabDailyProps) {
   const handleModalClose = () => setModalMode(null);
 
   const handleModalSubmit = (form: DailyActivityFormData) => {
-    // pegawaiId → dari user yang login (ambil dari session/context)
-    // perusahaan → dari id props (noInduk perusahaan)
-    const today = new Date().toISOString().split("T")[0];
+
     const payload = {
-      pegawaiId: session?.user.id || "",
+      nama: form.nama,
       kontak: form.kontak || "",
       jenisTraining: form.jenisTraining || "",
       keterangan: form.keterangan || "",
       kategori: form.kategori || "",
       inout: form.inout || "",
-      tanggal: isEditMode ? form.tanggal : today,
-      perusahaan: id, // otomatis dari props
+      tanggal: form.tanggal,
+      perusahaan: id,
       dateTarget: form.dateTarget || null,
     };
 
@@ -250,7 +250,8 @@ export default function TabDaily({ id }: TabDailyProps) {
               onChange={handleSearch}
               placeholder="Cari kontak, jenis training, kategori..."
             />
-            <TableButton icon="plus" onClick={handleTambah}>
+            <TableButton icon="plus" onClick={handleTambah}
+                disabled={!canCreate}>
               Tambah Data
             </TableButton>
           </div>
@@ -281,6 +282,9 @@ export default function TabDaily({ id }: TabDailyProps) {
                   Kontak
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">
+                  F-UP
+                </th>
+                <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">
                   Jenis Training
                 </th>
                 <th className="px-4 py-2 text-[10px] font-semibold text-zinc-400 text-left">
@@ -307,7 +311,7 @@ export default function TabDaily({ id }: TabDailyProps) {
               {isLoading ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="text-center py-8 text-xs text-zinc-400"
                   >
                     Memuat data...
@@ -316,7 +320,7 @@ export default function TabDaily({ id }: TabDailyProps) {
               ) : data.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={11}
                     className="text-center py-8 text-xs text-zinc-400"
                   >
                     {debouncedSearch
@@ -334,10 +338,13 @@ export default function TabDaily({ id }: TabDailyProps) {
                       {(meta.page - 1) * meta.limit + index + 1}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-700 font-medium">
-                      {row.pegawai?.nama || "-"}
+                      {row.nama || "-"}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
                       {row.kontak || "-"}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-zinc-600">
+                      {row.followUp || row.pegawai?.nama || "-"}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
                       {row.jenisTraining || "-"}
@@ -348,9 +355,9 @@ export default function TabDaily({ id }: TabDailyProps) {
                     <td className="px-4 py-3 text-xs text-center">
                       <span
                         className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
-                          row.inout === "IN"
+                          ["I", "IN"].includes(row.inout)
                             ? "bg-blue-100 text-blue-600"
-                            : row.inout === "OUT"
+                            : ["O", "OUT"].includes(row.inout)
                               ? "bg-orange-100 text-orange-600"
                               : "bg-zinc-100 text-zinc-500"
                         }`}
@@ -359,19 +366,20 @@ export default function TabDaily({ id }: TabDailyProps) {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {row.tanggal || "-"}
+                      {new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }).format(new Date(row.createdAt))}
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
                       {row.dateTarget
                         ? new Date(row.dateTarget).toLocaleDateString("id-ID")
                         : "-"}
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-600 max-w-xs truncate">
+                    <td className="px-4 py-3 text-xs text-zinc-600 max-w-sm whitespace-pre-wrap break-words">
                       {row.keterangan || "-"}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       <div className="flex items-center gap-3">
                         <button
+                          disabled={!canUpdate}
                           onClick={() => handleEdit(row.id)}
                           className="text-emerald-500 hover:text-emerald-600 hover:underline transition-colors"
                         >
@@ -384,7 +392,7 @@ export default function TabDaily({ id }: TabDailyProps) {
                               `${row.jenisTraining} - ${row.tanggal}`,
                             )
                           }
-                          disabled={isDeleting}
+                          disabled={isDeleting || !canDelete}
                           className="text-red-400 hover:text-red-500 hover:underline transition-colors disabled:opacity-40"
                         >
                           Hapus
@@ -448,14 +456,14 @@ export default function TabDaily({ id }: TabDailyProps) {
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeleteTarget(null)}
-                disabled={isDeleting}
+                disabled={isDeleting || !canDelete}
                 className="px-4 py-2 text-xs font-semibold text-zinc-600 bg-zinc-100 rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-40"
               >
                 Batal
               </button>
               <button
                 onClick={handleConfirmDelete}
-                disabled={isDeleting}
+                disabled={isDeleting || !canDelete}
                 className="px-4 py-2 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-40"
               >
                 {isDeleting ? "Menghapus..." : "Ya, Hapus"}
@@ -466,10 +474,19 @@ export default function TabDaily({ id }: TabDailyProps) {
       )}
 
       {/* ── Create / Edit Modal ── */}
-      {isModalOpen && (
+      {isModalOpen && editError && (
+        <div role="alert" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl p-6 text-sm text-red-600">
+            {editError}
+            <button onClick={handleModalClose} className="block mt-4 underline">Tutup</button>
+          </div>
+        </div>
+      )}
+      {isModalOpen && !editError && (
         <ModalDailyActivity
+          key={modalMode}
           data={isEditMode ? (isLoadingOne ? null : (editData ?? null)) : null}
-          isLoading={isEditMode && isLoadingOne}
+          isLoading={isEditMode && (isLoadingOne || !editData)}
           isSaving={isSaving}
           onClose={handleModalClose}
           onSubmit={handleModalSubmit}
